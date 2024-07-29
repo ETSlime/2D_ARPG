@@ -48,10 +48,10 @@ static int		g_EnemyCount = ENEMY_MAX;
 static INTERPOLATION_DATA g_MoveTbl0[] = {
 	//ç¿ïW									âÒì]ó¶							ägëÂó¶					éûä‘
 	{ XMFLOAT3(50.0f,  150.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
-	{ XMFLOAT3(250.0f, 150.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 3.14f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
-	{ XMFLOAT3(50.0f, 150.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
+	{ XMFLOAT3(250.0f, 150.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 3.14f),	XMFLOAT3(0.0f, 0.0f, 1.0f),	60 },
+	{ XMFLOAT3(50.0f, 250.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
 	{ XMFLOAT3(125.0f, 50.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
-	{ XMFLOAT3(250.0f, 150.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
+	{ XMFLOAT3(250.0f, 250.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
 };
 
 

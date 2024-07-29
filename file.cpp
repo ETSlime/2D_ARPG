@@ -96,7 +96,7 @@ void SaveData(void)
 	FILE *fp;
 
 	printf("\nセーブ開始・・・");
-	fp = fopen("savedata.bin", "wb");			// ファイルをバイナリ書き込みモードでOpenする
+	fopen_s(&fp, "savedata.bin", "wb");			// ファイルをバイナリ書き込みモードでOpenする
 
 	if (fp != NULL)								// ファイルがあれば書き込み、無ければ無視
 	{	
@@ -127,7 +127,7 @@ void LoadData(void)
 	FILE* fp;
 
 	printf("\nロード開始・・・");
-	fp = fopen("savedata.bin", "rb");	// ファイルをバイナリ読み込みモードでOpenする
+	fopen_s(&fp, "savedata.bin", "rb");	// ファイルをバイナリ読み込みモードでOpenする
 
 	if (fp != NULL)						// ファイルがあれば書き込み、無ければ無視
 	{
