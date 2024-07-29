@@ -6,6 +6,7 @@
 //=============================================================================
 #pragma once
 
+#include <iostream>
 
 #pragma warning(push)
 #pragma warning(disable:4005)
@@ -92,3 +93,4 @@ int CheckGameClear(void);
 
 void SetLoadGame(BOOL flg);
 
+XMFLOAT3 AddXMFLOAT3(const XMFLOAT3& v1, const XMFLOAT3& v2);

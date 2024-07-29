@@ -61,8 +61,16 @@ BOOL g_LoadGame = FALSE;					// NewGame
 //=============================================================================
 // メイン関数
 //=============================================================================
+void CreateConsole()
+{
+	AllocConsole();
+	FILE* fp;
+	freopen_s(&fp, "CONOUT$", "w", stdout);
+}
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	CreateConsole();
+
 	UNREFERENCED_PARAMETER(hPrevInstance);	// 無くても良いけど、警告が出る（未使用宣言）
 	UNREFERENCED_PARAMETER(lpCmdLine);		// 無くても良いけど、警告が出る（未使用宣言）
 
@@ -526,3 +534,8 @@ void SetLoadGame(BOOL flg)
 	g_LoadGame = flg;
 }
 
+
+XMFLOAT3 AddXMFLOAT3(const XMFLOAT3& v1, const XMFLOAT3& v2)
+{
+	return XMFLOAT3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+}

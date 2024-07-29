@@ -16,22 +16,56 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define TEXTURE_WIDTH				(200/2)	// キャラサイズ
-#define TEXTURE_HEIGHT				(200/2)	// 
-#define TEXTURE_MAX					(2)		// テクスチャの数
+#define TEXTURE_WIDTH						(200/2)	// キャラサイズ
+#define TEXTURE_HEIGHT						(200/2)	// 
+#define TEXTURE_NORMAL_ATTACK1_WIDTH		(380/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK1_HEIGHT		(320/2)	// 
+#define TEXTURE_NORMAL_ATTACK3_WIDTH		(360/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(280/2)	//
+#define TEXTURE_NORMAL_ATTACK4_WIDTH		(280/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK4_HEIGHT		(280/2)	//
+#define TEXTURE_JUMP_WIDTH					(280/2)	// キャラサイズ
+#define TEXTURE_JUMP_HEIGHT					(280/2)	//
+#define TEXTURE_MAX							(20)		// テクスチャの数
 
-#define TEXTURE_PATTERN_DIVIDE_X	(3)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_PATTERN_DIVIDE_Y	(4)		// アニメパターンのテクスチャ内分割数（Y)
-#define ANIM_PATTERN_NUM			(TEXTURE_PATTERN_DIVIDE_X*TEXTURE_PATTERN_DIVIDE_Y)	// アニメーションパターン数
-#define ANIM_WAIT					(4)		// アニメーションの切り替わるWait値
+#define TEXTURE_PATTERN_DIVIDE_X				(4)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_WALK_PATTERN_DIVIDE_X			(4)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_RUN_PATTERN_DIVIDE_X			(8)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_DASH_PATTERN_DIVIDE_X			(1)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_JUMP_PATTERN_DIVIDE_X			(10)	// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X	(7)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X	(9)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)		// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(13)	// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_PATTERN_DIVIDE_Y				(1)		// アニメパターンのテクスチャ内分割数（Y)
+
+
+#define ANIM_PATTERN_NUM						(TEXTUREf_PATTERN_DIVIDE_X*TEXTURE_PATTERN_DIVIDE_Y)	// アニメーションパターン数
+#define ANIM_WAIT								(10)		// アニメーションの切り替わるWait値
+#define ANIM_WAIT_IDLE							(30)		// アニメーションの切り替わるWait値
+#define ANIM_WAIT_RUN							(5)		// アニメーションの切り替わるWait値
+#define ANIM_WAIT_DASH							(1)		// アニメーションの切り替わるWait値
+#define ANIM_WAIT_ATTACK						(5)		// アニメーションの切り替わるWait値
+#define ANIM_WAIT_JUMP							(7)		// アニメーションの切り替わるWait値
+#define ANIM_DASH_FRAME							(10)
+#define ANIM_NORMAL_ATTACK1_FRAME				(7)
+#define ANIM_NORMAL_ATTACK2_FRAME				(9)
+#define ANIM_NORMAL_ATTACK3_FRAME				(8)
+#define ANIM_NORMAL_ATTACK4_FRAME				(13)
+
+
+#define TEXTURE_NORMAL_ATTACK1_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, 0.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(10.0f, -10.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK4_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
 
 // プレイヤーの画面内配置座標
 #define PLAYER_DISP_X				(SCREEN_WIDTH/2)
 #define PLAYER_DISP_Y				(SCREEN_HEIGHT/2 + TEXTURE_HEIGHT)
 
 // ジャンプ処理
-#define	PLAYER_JUMP_CNT_MAX			(30)		// 30フレームで着地する
-#define	PLAYER_JUMP_Y_MAX			(300.0f)	// ジャンプの高さ
+#define	PLAYER_JUMP_CNT_MAX			(60)		// 60フレームで着地する
+#define	PLAYER_JUMP_Y_MAX			(10.0f)	// ジャンプの高さ
 
 
 //*****************************************************************************
@@ -47,8 +81,21 @@ static ID3D11Buffer				*g_VertexBuffer = NULL;				// 頂点情報
 static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char *g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/char01.png",
+	"data/TEXTURE/char/char_idle_right.png",	
+	"data/TEXTURE/char/char_idle_left.png",
+	"data/TEXTURE/char/char_walkforward.png",
+	"data/TEXTURE/char/char_walkbackward.png",	
+	"data/TEXTURE/char/char_runforward.png",	
+	"data/TEXTURE/char/char_runrollback.png",
+	"data/TEXTURE/char/char_dashforward.png",
+	"data/TEXTURE/char/char_dashbackward.png",
+	"data/TEXTURE/char/char_attack1.png",
+	"data/TEXTURE/char/char_attack2.png",
+	"data/TEXTURE/char/char_attack3.png",
+	"data/TEXTURE/char/char_attack4.png",
+	"data/TEXTURE/char/char_jump.png",
 	"data/TEXTURE/shadow000.jpg",
+	"data/TEXTURE/char01.png",
 };
 
 
@@ -103,25 +150,40 @@ HRESULT InitPlayer(void)
 		g_Player[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Player[i].w = TEXTURE_WIDTH;
 		g_Player[i].h = TEXTURE_HEIGHT;
+		g_Player[i].shadowY = g_Player[i].pos.y;
 		g_Player[i].texNo = 0;
+		g_Player[i].state = IDLE;
 
 		g_Player[i].countAnim = 0;
 		g_Player[i].patternAnim = 0;
+		g_Player[i].patternAnimOld = 0;
+		g_Player[i].animFrameCount = 0;
+		g_Player[i].dashCount = 0;
 
 		g_Player[i].move = XMFLOAT3(4.0f, 0.0f, 0.0f);		// 移動量
 
-		g_Player[i].dir = CHAR_DIR_DOWN;					// 下向きにしとくか
-		g_Player[i].moving = FALSE;							// 移動中フラグ
-		g_Player[i].patternAnim = g_Player[i].dir * TEXTURE_PATTERN_DIVIDE_X;
+		g_Player[i].dir = CHAR_DIR_RIGHT;					// 右向きにしとくか
+		g_Player[i].running = FALSE;
+		g_Player[i].playAnim = FALSE;
+		g_Player[i].dashOnAir = FALSE;
+		g_Player[i].patternAnim = CHAR_IDLE_RIGHT;
+
+		g_Player[i].attackPattern = NONE;
+		g_Player[i].actionQueueStart = 0;
+		g_Player[i].actionQueueEnd = 0;
+		g_Player[i].actionQueueClearTime = 0;
 
 		// ジャンプの初期化
 		g_Player[i].jump = FALSE;
 		g_Player[i].jumpCnt = 0;
-		g_Player[i].jumpY = 0.0f;
 		g_Player[i].jumpYMax = PLAYER_JUMP_Y_MAX;
 
+		for (int j = 0; j < ACTION_QUEUE_SIZE; j++)
+		{
+			g_Player[i].actionQueue[j] = 0;
+		}
+
 		// 分身用
-		g_Player[i].dash = FALSE;
 		for (int j = 0; j < PLAYER_OFFSET_CNT; j++)
 		{
 			g_Player[i].offset[j] = g_Player[i].pos;
@@ -173,6 +235,8 @@ void UpdatePlayer(void)
 		{
 			g_PlayerCount++;		// 生きてるプレイヤーの数
 
+			if (g_Player[i].state == IDLE) g_Player[i].shadowY = g_Player[i].pos.y;
+
 			// 地形との当たり判定用に座標のバックアップを取っておく
 			XMFLOAT3 pos_old = g_Player[i].pos;
 
@@ -183,129 +247,199 @@ void UpdatePlayer(void)
 			}
 			g_Player[i].offset[0] = pos_old;
 
-			// アニメーション  
-			if (g_Player[i].moving == TRUE)
+			UpdateActionQueue();
+			g_Player[i].dashCount++;
+
+			// 現在のアニメーションが終了したかどうかを確認
+			if (g_Player[i].playAnim == FALSE)
 			{
-				g_Player[i].countAnim += 1.0f;
-				if (g_Player[i].countAnim > ANIM_WAIT)
+				if (g_Player[i].actionQueueStart != g_Player[i].actionQueueEnd)
 				{
-					g_Player[i].countAnim = 0.0f;
-					// パターンの切り替え
-					g_Player[i].patternAnim = (g_Player[i].dir * TEXTURE_PATTERN_DIVIDE_X) + ((g_Player[i].patternAnim + 1) % TEXTURE_PATTERN_DIVIDE_X);
+					// キュー内の次のアクションを実行
+					int action = g_Player[i].actionQueue[g_Player[i].actionQueueStart];
+					g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE;
+
+					g_Player[i].patternAnim = 0;
+					g_Player[i].state = action;
+					g_Player->animFrameCount = 0;
+					g_Player->playAnim = TRUE;
 				}
+				// 落ちる状態に戻る？
+				//else if (g_Player[i].jumpCnt > 0)
+				//{
+				//	g_Player[i].state = JUMP;
+				//	g_Player[i].patternAnim = g_Player[i].patternAnimOld;
+				//}
+				else
+				{
+					g_Player[i].state = IDLE;
+					g_Player[i].attackPattern = NONE;
+				}
+
 			}
 
-			// キー入力で移動 
+				
+
+			// キー入力で移動
+			//if (g_Player[i].state == IDLE)
 			{
 				float speed = g_Player[i].move.x;
 
-				g_Player[i].moving = FALSE;
-				g_Player[i].dash = FALSE;
+				g_Player[i].running = FALSE;
 
-				if (GetKeyboardPress(DIK_C) || IsButtonPressed(0, BUTTON_A))
+				if (GetKeyboardPress(DIK_RIGHT) && g_Player[i].playAnim == FALSE)
 				{
-					speed *= 4;
-					g_Player[i].dash = TRUE;
-				}
 
-
-				if (GetKeyboardPress(DIK_DOWN))
-				{
-					g_Player[i].pos.y += speed;
-					g_Player[i].dir = CHAR_DIR_DOWN;
-					g_Player[i].moving = TRUE;
-				}
-				else if (GetKeyboardPress(DIK_UP))
-				{
-					g_Player[i].pos.y -= speed;
-					g_Player[i].dir = CHAR_DIR_UP;
-					g_Player[i].moving = TRUE;
-				}
-
-				if (GetKeyboardPress(DIK_RIGHT))
-				{
 					g_Player[i].pos.x += speed;
 					g_Player[i].dir = CHAR_DIR_RIGHT;
-					g_Player[i].moving = TRUE;
+					g_Player[i].state = WALK;
+					if (GetKeyboardPress(DIK_LSHIFT))
+					{
+						g_Player[i].pos.x += speed / 2;
+						g_Player[i].running = TRUE;
+						g_Player[i].state = RUN;
+					}
 				}
-				else if (GetKeyboardPress(DIK_LEFT))
+				else if (GetKeyboardPress(DIK_LEFT) && g_Player[i].playAnim == FALSE)
 				{
 					g_Player[i].pos.x -= speed;
 					g_Player[i].dir = CHAR_DIR_LEFT;
-					g_Player[i].moving = TRUE;
+					g_Player[i].state = WALK;
+					if (GetKeyboardPress(DIK_LSHIFT))
+					{
+						g_Player[i].pos.x -= speed / 2;
+						g_Player[i].running = TRUE;
+						g_Player[i].state = RUN;
+					}
+				}
+
+				if (GetKeyboardTrigger(DIK_C) && g_Player[i].dashCount >= DASH_CD_TIME)
+				{
+					// もしアイドル状態なら、すぐにアクションを実行
+					if (g_Player[i].playAnim == FALSE)
+					{
+						g_Player[i].patternAnim = 0;
+						g_Player[i].state = DASH;
+						g_Player->animFrameCount = 0;
+						g_Player[i].dashCount = 0;
+						g_Player->playAnim = TRUE;
+					}
+					// 空中の状態
+					else if (g_Player[i].jumpCnt > PLAYER_JUMP_CNT_MAX / 2)
+					{
+						g_Player[i].patternAnimOld = g_Player[i].patternAnim;
+						g_Player[i].patternAnim = 0;
+						g_Player[i].state = DASH;
+						g_Player[i].dashOnAir = TRUE;
+						g_Player[i].dashCount = 0;
+						g_Player->animFrameCount = 0;
+					}
+					// その他の状態の場合、アクションをキューに追加
+					else
+					{
+						g_Player[i].actionQueue[g_Player[i].actionQueueEnd] = DASH;
+						g_Player[i].actionQueueEnd = (g_Player[i].actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+						// キューのオーバーフローを防止
+						if (g_Player[i].actionQueueEnd == g_Player[i].actionQueueStart)
+						{
+							g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
+						}
+					}
+
+				}
+				else if (GetKeyboardTrigger(DIK_SPACE))
+				{
+					// もしアイドル状態なら、すぐにアクションを実行
+					if (g_Player[i].playAnim == FALSE)
+					{
+						g_Player[i].patternAnim = 0;
+						g_Player[i].state = JUMP;
+						g_Player->animFrameCount = 0;
+						g_Player->playAnim = TRUE;
+
+						g_Player[i].state = JUMP;
+						g_Player[i].jumpCnt = 0;
+					}
+					// その他の状態の場合、アクションをキューに追加
+					else
+					{
+						g_Player[i].actionQueue[g_Player[i].actionQueueEnd] = JUMP;
+						g_Player[i].actionQueueEnd = (g_Player[i].actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+						// キューのオーバーフローを防止
+						if (g_Player[i].actionQueueEnd == g_Player[i].actionQueueStart)
+						{
+							g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
+						}
+					}
+				}
+				else if (GetKeyboardTrigger(DIK_X))
+				{
+					switch (g_Player[i].state)
+					{
+						// もしアイドル状態なら、すぐにアクションを実行
+					case IDLE:
+					case WALK:
+					case RUN:
+						g_Player[i].patternAnim = 0;
+						g_Player[i].state = ATTACK;
+						g_Player->animFrameCount = 0;
+						g_Player->playAnim = TRUE;
+						g_Player->attackPattern = NORMAL_ATTACK1;
+						break;
+
+					case DASH:
+					case ATTACK:
+					case JUMP:
+						// もしアイドル状態なら、すぐにアクションを実行
+						if (g_Player->playAnim == FALSE)
+						{
+							g_Player[i].patternAnim = 0;
+							g_Player->animFrameCount = 0;
+							g_Player->playAnim = TRUE;
+							g_Player->attackPattern++;
+						}
+						// 空中の状態
+						else if (g_Player[i].jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player[i].state != ATTACK)
+						{
+							g_Player[i].patternAnimOld = g_Player[i].patternAnim;
+							g_Player[i].patternAnim = 0;
+							g_Player[i].state = ATTACK;
+							g_Player->animFrameCount = 0;
+						}
+						// その他の状態の場合、アクションをキューに追加
+						else
+						{
+							g_Player[i].actionQueue[g_Player[i].actionQueueEnd] = ATTACK;
+							g_Player[i].actionQueueEnd = (g_Player[i].actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+							// キューのオーバーフローを防止
+							if (g_Player[i].actionQueueEnd == g_Player[i].actionQueueStart)
+							{
+								g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
+							}
+						}
+	
+						break;
+					default:
+						break;
+					}
+
 				}
 
 				// ゲームパッドでで移動処理
-				if (IsButtonPressed(0, BUTTON_DOWN))
-				{
-					g_Player[i].pos.y += speed;
-					g_Player[i].dir = CHAR_DIR_DOWN;
-					g_Player[i].moving = TRUE;
-				}
-				else if (IsButtonPressed(0, BUTTON_UP))
-				{
-					g_Player[i].pos.y -= speed;
-					g_Player[i].dir = CHAR_DIR_UP;
-					g_Player[i].moving = TRUE;
-				}
 
 				if (IsButtonPressed(0, BUTTON_RIGHT))
 				{
 					g_Player[i].pos.x += speed;
-					g_Player[i].dir = CHAR_DIR_RIGHT;
-					g_Player[i].moving = TRUE;
+					g_Player[i].dir = CHAR_IDLE_RIGHT;
 				}
 				else if (IsButtonPressed(0, BUTTON_LEFT))
 				{
 					g_Player[i].pos.x -= speed;
-					g_Player[i].dir = CHAR_DIR_LEFT;
-					g_Player[i].moving = TRUE;
+					g_Player[i].dir = CHAR_IDLE_LEFT;
 				}
-
-				// 力業ジャンプ処理
-				//if (g_jumpCnt > 0)
-				//{
-				//	g_Player[i].pos.y += g_jump[g_jumpCnt];
-				//	g_jumpCnt++;
-				//	if (g_jumpCnt >= PLAYER_JUMP_CNT_MAX)
-				//	{
-				//		g_jumpCnt = 0;
-				//	}
-				//}
-
-				//if ((g_jumpCnt == 0) && (GetKeyboardTrigger(DIK_J)))
-				//{
-				//	g_Player[i].pos.y += g_jump[g_jumpCnt];
-				//	g_jumpCnt++;
-				//}
-
-
-
-
-				// ジャンプ処理中？
-				if (g_Player[i].jump == TRUE)
-				{
-					float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player[i].jumpCnt;
-					float y = g_Player[i].jumpYMax * cosf(XM_PI / 2 + angle);
-					g_Player[i].jumpY = y;
-
-					g_Player[i].jumpCnt++;
-					if (g_Player[i].jumpCnt > PLAYER_JUMP_CNT_MAX)
-					{
-						g_Player[i].jump = FALSE;
-						g_Player[i].jumpCnt = 0;
-						g_Player[i].jumpY = 0.0f;
-					}
-
-				}
-				// ジャンプボタン押した？
-				else if ((g_Player[i].jump == FALSE) && (GetKeyboardTrigger(DIK_J)))
-				{
-					g_Player[i].jump = TRUE;
-					g_Player[i].jumpCnt = 0;
-					g_Player[i].jumpY = 0.0f;
-				}
-
 
 				// MAP外チェック
 				BG* bg = GetBG();
@@ -362,21 +496,48 @@ void UpdatePlayer(void)
 					}
 				}
 
+
+
 				// バレット処理
-				if (GetKeyboardTrigger(DIK_SPACE))
-				{
-					XMFLOAT3 pos = g_Player[i].pos;
-					pos.y += g_Player[i].jumpY;
-					SetBullet(pos);
-				}
+				//if (GetKeyboardTrigger(DIK_SPACE))
+				//{
+				//	XMFLOAT3 pos = g_Player[i].pos;
+				//	pos.y += g_Player[i].jumpY;
+				//	SetBullet(pos);
+				//}
 
-				if (IsButtonTriggered(0, BUTTON_B))
-				{
-					XMFLOAT3 pos = g_Player[i].pos;
-					pos.y += g_Player[i].jumpY;
-					SetBullet(pos);
-				}
+				//if (IsButtonTriggered(0, BUTTON_B))
+				//{
+				//	XMFLOAT3 pos = g_Player[i].pos;
+				//	pos.y += g_Player[i].jumpY;
+				//	SetBullet(pos);
+				//}
 
+			}
+
+			// アニメーション  
+			switch (g_Player[i].state)
+			{
+			case IDLE:
+				PlayIdleAnim();
+				break;
+			case WALK:
+				PlayWalkAnim();
+				break;
+			case RUN:
+				PlayRunningAnim();
+				break;
+			case DASH:
+				PlayDashAnim();
+				break;
+			case ATTACK:
+				PlayAttackAnim();
+				break;
+			case JUMP:
+				PlayJumpAnim();
+				break;
+			default:
+				break;
 			}
 		}
 	}
@@ -429,18 +590,20 @@ void DrawPlayer(void)
 				SetBlendState(BLEND_MODE_SUBTRACT);	// 減算合成
 
 				// テクスチャ設定
-				GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+				GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[CHAR_SHADOW]);
 
 				float px = g_Player[i].pos.x - bg->pos.x;	// プレイヤーの表示位置X
-				float py = g_Player[i].pos.y - bg->pos.y;	// プレイヤーの表示位置Y
-				float pw = g_Player[i].w;		// プレイヤーの表示幅
-				float ph = g_Player[i].h/4;		// プレイヤーの表示高さ
+				float py = g_Player[i].shadowY - bg->pos.y;	// プレイヤーの表示位置Y
+				float pw = TEXTURE_WIDTH;		// プレイヤーの表示幅
+				float ph = TEXTURE_WIDTH /4;		// プレイヤーの表示高さ
 				py += 50.0f;		// 足元に表示
 
 				float tw = 1.0f;	// テクスチャの幅
 				float th = 1.0f;	// テクスチャの高さ
 				float tx = 0.0f;	// テクスチャの左上X座標
 				float ty = 0.0f;	// テクスチャの左上Y座標
+
+
 
 				// １枚のポリゴンの頂点とテクスチャ座標を設定
 				SetSpriteColor(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
@@ -454,7 +617,7 @@ void DrawPlayer(void)
 			}
 
 			// プレイヤーの分身を描画
-			if (g_Player[i].dash)
+			if (g_Player[i].state == DASH)
 			{	// ダッシュ中だけ分身処理
 				DrawPlayerOffset(i);
 			}
@@ -468,13 +631,15 @@ void DrawPlayer(void)
 			float pw = g_Player[i].w;		// プレイヤーの表示幅
 			float ph = g_Player[i].h;		// プレイヤーの表示高さ
 
-			py += g_Player[i].jumpY;		// ジャンプ中の高さを足す
+			AdjustAttackTexturePosition(px, py);
+
+			//py += g_Player[i].jumpY;		// ジャンプ中の高さを足す
 
 			// アニメーション用
-			float tw = 1.0f / TEXTURE_PATTERN_DIVIDE_X;	// テクスチャの幅
+			float tw = 1.0f / GetTexturePatternDivideX();	// テクスチャの幅
 			float th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
-			float tx = (float)(g_Player[i].patternAnim % TEXTURE_PATTERN_DIVIDE_X) * tw;	// テクスチャの左上X座標
-			float ty = (float)(g_Player[i].patternAnim / TEXTURE_PATTERN_DIVIDE_X) * th;	// テクスチャの左上Y座標
+			float tx = (float)(g_Player[i].patternAnim % GetTexturePatternDivideX()) * tw;	// テクスチャの左上X座標
+			float ty = (float)(g_Player[i].patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
 
 			//float tw = 1.0f;	// テクスチャの幅
 			//float th = 1.0f;	// テクスチャの高さ
@@ -532,10 +697,10 @@ void DrawPlayerOffset(int no)
 		float ph = g_Player[no].h;		// プレイヤーの表示高さ
 
 		// アニメーション用
-		float tw = 1.0f / TEXTURE_PATTERN_DIVIDE_X;	// テクスチャの幅
+		float tw = 1.0f / GetTexturePatternDivideX();	// テクスチャの幅
 		float th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
-		float tx = (float)(g_Player[no].patternAnim % TEXTURE_PATTERN_DIVIDE_X) * tw;	// テクスチャの左上X座標
-		float ty = (float)(g_Player[no].patternAnim / TEXTURE_PATTERN_DIVIDE_X) * th;	// テクスチャの左上Y座標
+		float tx = (float)(g_Player[no].patternAnim % GetTexturePatternDivideX()) * tw;	// テクスチャの左上X座標
+		float ty = (float)(g_Player[no].patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
 
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
@@ -550,5 +715,310 @@ void DrawPlayerOffset(int no)
 	}
 }
 
+void PlayRunningAnim(void)
+{
+	g_Player->w = TEXTURE_WIDTH;
+	g_Player->h = TEXTURE_HEIGHT;
+
+	switch (g_Player->dir)
+	{
+	case CHAR_DIR_LEFT:
+		g_Player->texNo = CHAR_RUN_LEFT;
+		break;
+	case CHAR_DIR_RIGHT:
+		g_Player->texNo = CHAR_RUN_RIGHT;
+		break;
+	default:
+		break;
+	}
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_RUN)
+	{
+		g_Player->countAnim = 0.0f;
+		// パターンの切り替え
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+	}
+}
+
+void PlayIdleAnim(void)
+{
+	g_Player->w = TEXTURE_WIDTH;
+	g_Player->h = TEXTURE_HEIGHT;
+
+	g_Player->countAnim += 1.0f;
+	switch (g_Player->dir)
+	{
+	case CHAR_DIR_LEFT:
+		g_Player->texNo = CHAR_IDLE_LEFT;
+		break;
+	case CHAR_DIR_RIGHT:
+		g_Player->texNo = CHAR_IDLE_RIGHT;
+		break;
+	default:
+		break;
+	}
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_IDLE)
+	{
+		g_Player->countAnim = 0.0f;
+		// パターンの切り替え
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+	}
+}
+
+void PlayDashAnim(void)
+{
+	g_Player->w = TEXTURE_WIDTH;
+	g_Player->h = TEXTURE_HEIGHT;
+
+	float speed = g_Player->move.x;
+	switch (g_Player->dir)
+	{
+	case CHAR_DIR_LEFT:
+		g_Player->texNo = CHAR_DASH_LEFT;
+		g_Player->pos.x -= speed * 2;
+		break;
+	case CHAR_DIR_RIGHT:
+		g_Player->texNo = CHAR_DASH_RIGHT;
+		g_Player->pos.x += speed * 2;
+		break;
+	default:
+		break;
+	}
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_DASH)
+	{
+		g_Player->countAnim = 0.0f;
+		// パターンの切り替え
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+		g_Player->animFrameCount++;
+	}
+	if (g_Player->animFrameCount == ANIM_DASH_FRAME)
+	{
+		g_Player->animFrameCount = 0;
+
+		if (g_Player->jumpCnt > 0)	
+			g_Player->state = JUMP;
+		else
+		{
+			g_Player->state = IDLE;
+			g_Player->playAnim = FALSE;
+		}
+
+	}
+}
+
+void PlayAttackAnim(void)
+{
+	//if (g_Player->attackPattern == ATTACK_PATTERN_MAX)
+	//{
+	//	g_Player->animFrameCount = 0;
+	//	g_Player->state = IDLE;
+	//	g_Player->playAnim = FALSE;
+	//	return;
+	//}
+
+	if (g_Player->attackPattern == ATTACK_PATTERN_MAX ||
+		g_Player->attackPattern == NONE)
+		g_Player->attackPattern = NORMAL_ATTACK1;
 
 
+	AdjustAttackTextureSize();
+
+	//std::cout << g_Player->w << std::endl;
+
+	int attackFrame = 0;
+
+	float speed = g_Player->move.x;
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+		g_Player->texNo = CHAR_NORMAL_ATTACK1;
+		attackFrame = ANIM_NORMAL_ATTACK1_FRAME;
+		break;
+	case NORMAL_ATTACK2:
+		g_Player->texNo = CHAR_NORMAL_ATTACK2;
+		attackFrame = ANIM_NORMAL_ATTACK2_FRAME;
+		break;
+	case NORMAL_ATTACK3:
+		g_Player->texNo = CHAR_NORMAL_ATTACK3;
+		attackFrame = ANIM_NORMAL_ATTACK3_FRAME;
+		break;
+	case NORMAL_ATTACK4:
+		g_Player->texNo = CHAR_NORMAL_ATTACK4;
+		attackFrame = ANIM_NORMAL_ATTACK4_FRAME;
+		break;
+	default:
+		break;
+	}
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_ATTACK)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 2)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 2;
+		g_Player->animFrameCount++;
+	}
+	if (g_Player->animFrameCount == attackFrame)
+	{
+		g_Player->animFrameCount = 0;
+
+		if (g_Player->jumpCnt > 0)
+			g_Player->state = JUMP;
+		else
+		{
+			g_Player->state = IDLE;
+			g_Player->playAnim = FALSE;
+		}
+
+		g_Player->attackPattern++;
+	}
+}
+
+void PlayWalkAnim(void)
+{
+	g_Player->w = TEXTURE_WIDTH;
+	g_Player->h = TEXTURE_HEIGHT;
+
+	switch (g_Player->dir)
+	{
+	case CHAR_DIR_LEFT:
+		g_Player->texNo = CHAR_WALK_LEFT;
+		break;
+	case CHAR_DIR_RIGHT:
+		g_Player->texNo = CHAR_WALK_RIGHT;
+		break;
+	default:
+		break;
+	}
+	g_Player->countAnim++;
+	if (g_Player->countAnim > ANIM_WAIT)
+	{
+		g_Player->countAnim = 0.0f;
+		// パターンの切り替え
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+	}
+}
+
+void PlayJumpAnim()
+{
+	g_Player->w = TEXTURE_JUMP_WIDTH;
+	g_Player->h = TEXTURE_JUMP_HEIGHT;
+
+	g_Player->texNo = CHAR_JUMP;
+
+	float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->jumpCnt;
+	float y = g_Player->jumpYMax * cosf(angle);
+	g_Player->pos.y -= y;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_JUMP)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 3)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 4;
+		g_Player->animFrameCount++;
+	}
+
+	g_Player->jumpCnt++;
+	if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX)
+	{
+		g_Player->dashOnAir = FALSE;
+		g_Player->playAnim = FALSE;
+		g_Player->state = IDLE;
+		g_Player->jumpCnt = 0;
+	}
+
+}
+
+int GetTexturePatternDivideX()
+{
+	switch (g_Player->texNo)
+	{
+	case CHAR_IDLE_RIGHT:
+	case CHAR_IDLE_LEFT:
+		return TEXTURE_PATTERN_DIVIDE_X;
+	case CHAR_WALK_RIGHT:
+	case CHAR_WALK_LEFT:
+		return TEXTURE_WALK_PATTERN_DIVIDE_X;
+	case CHAR_RUN_RIGHT:
+	case CHAR_RUN_LEFT:
+		return TEXTURE_RUN_PATTERN_DIVIDE_X;
+	case CHAR_DASH_RIGHT:
+	case CHAR_DASH_LEFT:
+		return TEXTURE_DASH_PATTERN_DIVIDE_X;
+	case CHAR_JUMP:
+		return TEXTURE_JUMP_PATTERN_DIVIDE_X;
+	case CHAR_NORMAL_ATTACK1:
+		return TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X;
+	case CHAR_NORMAL_ATTACK2:
+		return TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X;
+	case CHAR_NORMAL_ATTACK3:
+		return TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X;
+	case CHAR_NORMAL_ATTACK4:
+		return TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X;
+	default:
+		return 0;
+	}
+}
+
+void UpdateActionQueue(void)
+{
+	g_Player->actionQueueClearTime++;
+	if (g_Player->actionQueueClearTime == ACTION_QUEUE_CLEAR_WAIT)
+	{
+		g_Player->actionQueueStart = 0;
+		g_Player->actionQueueEnd = 0;
+		g_Player->actionQueueClearTime = 0;
+	}
+
+}
+
+void AdjustAttackTextureSize()
+{
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+		g_Player->w = TEXTURE_NORMAL_ATTACK1_WIDTH;
+		g_Player->h = TEXTURE_NORMAL_ATTACK1_HEIGHT;
+		break;
+	case NORMAL_ATTACK3:
+		g_Player->w = TEXTURE_NORMAL_ATTACK3_WIDTH;
+		g_Player->h = TEXTURE_NORMAL_ATTACK3_HEIGHT;
+		break;
+	case NORMAL_ATTACK4:
+		g_Player->w = TEXTURE_NORMAL_ATTACK4_WIDTH;
+		g_Player->h = TEXTURE_NORMAL_ATTACK4_HEIGHT;
+		break;
+	default:
+		break;
+	}
+}
+
+void AdjustAttackTexturePosition(float& px, float& py)
+{
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+		px += TEXTURE_NORMAL_ATTACK1_OFFSET.x;
+		py += TEXTURE_NORMAL_ATTACK1_OFFSET.y;
+		break;
+	case NORMAL_ATTACK2:
+		px += TEXTURE_NORMAL_ATTACK2_OFFSET.x;
+		py += TEXTURE_NORMAL_ATTACK2_OFFSET.y;
+		break;
+	case NORMAL_ATTACK3:
+		px += TEXTURE_NORMAL_ATTACK3_OFFSET.x;
+		py += TEXTURE_NORMAL_ATTACK3_OFFSET.y;
+		break;
+	case NORMAL_ATTACK4:
+		px += TEXTURE_NORMAL_ATTACK4_OFFSET.x;
+		py += TEXTURE_NORMAL_ATTACK4_OFFSET.y;
+		break;
+	default:
+		break;
+	}
+}
