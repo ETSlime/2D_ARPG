@@ -1,52 +1,53 @@
-//=============================================================================
+ï»¿//=============================================================================
 //
-// BGˆ— [bg.cpp]
+// BGå‡¦ç† [bg.cpp]
 // Author : 
 //
 //=============================================================================
 #include "bg.h"
 
 //*****************************************************************************
-// ƒ}ƒNƒ’è‹`
+// ãƒã‚¯ãƒ­å®šç¾©
 //*****************************************************************************
-#define TEXTURE_WIDTH				(8000)			// (SCREEN_WIDTH)	// ”wŒiƒTƒCƒY
-#define TEXTURE_HEIGHT				(1080)			// (SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(3)				// ƒeƒNƒXƒ`ƒƒ‚Ì”
 
-#define TEXTURE_WIDTH_LOGO			(480)			// ƒƒSƒTƒCƒY
+#define TEXTURE_WIDTH_LOGO			(480)			// ãƒ­ã‚´ã‚µã‚¤ã‚º
 #define TEXTURE_HEIGHT_LOGO			(80)			// 
 
 //*****************************************************************************
-// ƒvƒƒgƒ^ƒCƒvéŒ¾
+// ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€
 //*****************************************************************************
 
 
 //*****************************************************************************
-// ƒOƒ[ƒoƒ‹•Ï”
+// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
 //*****************************************************************************
-static ID3D11Buffer				*g_VertexBuffer = NULL;		// ’¸“_î•ñ
-static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ƒeƒNƒXƒ`ƒƒî•ñ
+static ID3D11Buffer				*g_VertexBuffer = NULL;		// é ‚ç‚¹æƒ…å ±
+static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±
+
+#ifdef _DEBUG	
+static ID3D11Buffer* g_AABBVertexBuffer = NULL;
+#endif
+
 
 static char *g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/map.png",
-	"data/TEXTURE/sky000.jpg",
-	"data/TEXTURE/sky001.jpg",
+	"data/TEXTURE/map/map01.png",
 };
 
 
-static BOOL	g_Load = FALSE;		// ‰Šú‰»‚ğs‚Á‚½‚©‚Ìƒtƒ‰ƒO
+static BOOL	g_Load = FALSE;		// åˆæœŸåŒ–ã‚’è¡Œã£ãŸã‹ã®ãƒ•ãƒ©ã‚°
 static BG	g_BG;
+static AABB g_AABB[MAP01_GROUND_MAX];
 
 
 
 //=============================================================================
-// ‰Šú‰»ˆ—
+// åˆæœŸåŒ–å‡¦ç†
 //=============================================================================
 HRESULT InitBG(void)
 {
 	ID3D11Device *pDevice = GetDevice();
 
-	//ƒeƒNƒXƒ`ƒƒ¶¬
+	//ãƒ†ã‚¯ã‚¹ãƒãƒ£ç”Ÿæˆ
 	for (int i = 0; i < TEXTURE_MAX; i++)
 	{
 		g_Texture[i] = NULL;
@@ -59,7 +60,7 @@ HRESULT InitBG(void)
 	}
 
 
-	// ’¸“_ƒoƒbƒtƒ@¶¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DYNAMIC;
@@ -68,22 +69,60 @@ HRESULT InitBG(void)
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
-
-	// •Ï”‚Ì‰Šú‰»
+	// å¤‰æ•°ã®åˆæœŸåŒ–
 	g_BG.w     = TEXTURE_WIDTH;
 	g_BG.h     = TEXTURE_HEIGHT;
 	g_BG.pos   = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_BG.texNo = 0;
 
-	g_BG.scrl  = 0.0f;		// TEXƒXƒNƒ[ƒ‹
-	g_BG.scrl2 = 0.0f;		// TEXƒXƒNƒ[ƒ‹
+	g_BG.scrl  = 0.0f;		// TEXã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
+	g_BG.scrl2 = 0.0f;		// TEXã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
+
+	// AABB
+	for (int i = 0; i < MAP01_GROUND_MAX; i++)
+	{
+		g_AABB[i].pos.x = 0;
+		g_AABB[i].pos.y = 0;
+		g_AABB[i].w = 0;
+		g_AABB[i].h = 0;
+	}
+
+	g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
+	g_AABB[0].pos.y = TEXTURE_HEIGHT - (TEXTURE_HEIGHT - GROUND_H) * 0.5f;
+	g_AABB[0].w = TEXTURE_WIDTH * 0.5;
+	g_AABB[0].h = GROUND_H;
+
+	g_AABB[1].pos.x = TEXTURE_WIDTH * 0.5f;
+	g_AABB[1].pos.y = TEXTURE_HEIGHT - (TEXTURE_HEIGHT - GROUND_H) * 0.5f;
+	g_AABB[1].w = TEXTURE_WIDTH * 0.5;
+	g_AABB[1].h = GROUND_H;
+
+
+#ifdef _DEBUG	
+	// debug
+	{
+		int aabbCount = MAP01_GROUND_MAX;
+		const int maxVertices = MAP01_GROUND_MAX * 4;  // æ¯ä¸ªAABB 4ä¸ªé¡¶ç‚¹ (2D)
+
+		D3D11_BUFFER_DESC bd;
+		ZeroMemory(&bd, sizeof(bd));
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.ByteWidth = sizeof(VERTEX_3D) * maxVertices;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		// åˆ›å»ºé¡¶ç‚¹ç¼“å†²åŒº
+		GetDevice()->CreateBuffer(&bd, NULL, &g_AABBVertexBuffer);
+	}
+#endif
+
 
 	g_Load = TRUE;
 	return S_OK;
 }
 
 //=============================================================================
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 //=============================================================================
 void UninitBG(void)
 {
@@ -108,17 +147,17 @@ void UninitBG(void)
 }
 
 //=============================================================================
-// XVˆ—
+// æ›´æ–°å‡¦ç†
 //=============================================================================
 void UpdateBG(void)
 {
-	g_BG.old_pos = g_BG.pos;	// ‚PƒtƒŒ‘O‚Ìî•ñ‚ğ•Û‘¶
+	g_BG.old_pos = g_BG.pos;	// ï¼‘ãƒ•ãƒ¬å‰ã®æƒ…å ±ã‚’ä¿å­˜
 
 
-	//g_BG.scrl -= 0.0f;		// 0.005f;		// ƒXƒNƒ[ƒ‹
+	//g_BG.scrl -= 0.0f;		// 0.005f;		// ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
 
 
-#ifdef _DEBUG	// ƒfƒoƒbƒOî•ñ‚ğ•\¦‚·‚é
+#ifdef _DEBUG	// ãƒ‡ãƒãƒƒã‚°æƒ…å ±ã‚’è¡¨ç¤ºã™ã‚‹
 
 
 #endif
@@ -126,68 +165,90 @@ void UpdateBG(void)
 }
 
 //=============================================================================
-// •`‰æˆ—
+// æç”»å‡¦ç†
 //=============================================================================
 void DrawBG(void)
 {
-	// ’¸“_ƒoƒbƒtƒ@İ’è
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡è¨­å®š
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
 	GetDeviceContext()->IASetVertexBuffers(0, 1, &g_VertexBuffer, &stride, &offset);
 
-	// ƒ}ƒgƒŠƒNƒXİ’è
+	// ãƒãƒˆãƒªã‚¯ã‚¹è¨­å®š
 	SetWorldViewProjection2D();
 
-	// ƒvƒŠƒ~ƒeƒBƒuƒgƒ|ƒƒWİ’è
+	// ãƒ—ãƒªãƒŸãƒ†ã‚£ãƒ–ãƒˆãƒãƒ­ã‚¸è¨­å®š
 	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
-	// ƒ}ƒeƒŠƒAƒ‹İ’è
+	// ãƒãƒ†ãƒªã‚¢ãƒ«è¨­å®š
 	MATERIAL material;
 	ZeroMemory(&material, sizeof(material));
 	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	SetMaterial(material);
 
-	// ’n–Ê‚ğ•`‰æ
+
+	// åœ°é¢ã‚’æç”»
 	{
-		// ƒeƒNƒXƒ`ƒƒİ’è
+		// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_BG.texNo]);
 
-		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ğİ’è
+		// ï¼‘æšã®ãƒãƒªã‚´ãƒ³ã®é ‚ç‚¹ã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’è¨­å®š
 		SetSpriteLTColor(g_VertexBuffer,
 			0 - g_BG.pos.x, 0 - g_BG.pos.y, g_BG.w, g_BG.h,
 			0.0f, 0.0f, 1.0f, 1.0f,
 			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-		// ƒ|ƒŠƒSƒ“•`‰æ
+		// ãƒãƒªã‚´ãƒ³æç”»
 		GetDeviceContext()->Draw(4, 0);
 	}
 
 
-	// ‹ó‚ğ•`‰æ
-	{
-		// ƒeƒNƒXƒ`ƒƒİ’è
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
-
-		// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ğİ’è
-		//float	tx = (g_BG.pos.x - g_BG.old_pos.x) * ((float)SCREEN_WIDTH / TEXTURE_WIDTH);
-		//g_BG.scrl += tx * 0.001f;
-		g_BG.scrl += 0.001f;
-
-		SetSpriteLTColor(g_VertexBuffer,
-			0.0f, 0.0f, SCREEN_WIDTH, SKY_H,
-			g_BG.scrl, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-
-		// ƒ|ƒŠƒSƒ“•`‰æ
-		GetDeviceContext()->Draw(4, 0);
-	}
-
-	// ‚È‚ñ‚¿‚á‚Á‚Ä‘½dƒXƒNƒ[ƒ‹
+	// ç©ºã‚’æç”»
 	//{
-	//	// ƒeƒNƒXƒ`ƒƒİ’è
+	//	// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
+	//	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+
+	//	// ï¼‘æšã®ãƒãƒªã‚´ãƒ³ã®é ‚ç‚¹ã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’è¨­å®š
+	//	//float	tx = (g_BG.pos.x - g_BG.old_pos.x) * ((float)SCREEN_WIDTH / TEXTURE_WIDTH);
+	//	//g_BG.scrl += tx * 0.001f;
+	//	g_BG.scrl += 0.001f;
+
+	//	SetSpriteLTColor(g_VertexBuffer,
+	//		0.0f, 0.0f, SCREEN_WIDTH, SKY_H,
+	//		g_BG.scrl, 0.0f, 1.0f, 1.0f,
+	//		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	//	// ãƒãƒªã‚´ãƒ³æç”»
+	//	GetDeviceContext()->Draw(4, 0);
+	//}
+
+#ifdef _DEBUG
+		MATERIAL materialAABB;
+		ZeroMemory(&materialAABB, sizeof(materialAABB));
+		materialAABB.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialAABB.noTexSampling = 1;
+
+
+		SetMaterial(materialAABB);
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
+		for (int i = 0; i < MAP01_GROUND_MAX; ++i)
+		{
+			SetSpriteColorRotation(g_AABBVertexBuffer, g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, g_AABB[i].w, g_AABB[i].h,
+				0.0f, 0.0f, 0.0f, 0.0f,
+				XMFLOAT4(1.0f, 0.0f, 0.0f, 0.2f),
+				0.0f);
+
+			GetDeviceContext()->Draw(4, i * 4);
+		}
+#endif
+
+
+	// ãªã‚“ã¡ã‚ƒã£ã¦å¤šé‡ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«
+	//{
+	//	// ãƒ†ã‚¯ã‚¹ãƒãƒ£è¨­å®š
 	//	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
 
-	//	// ‚P–‡‚Ìƒ|ƒŠƒSƒ“‚Ì’¸“_‚ÆƒeƒNƒXƒ`ƒƒÀ•W‚ğİ’è
+	//	// ï¼‘æšã®ãƒãƒªã‚´ãƒ³ã®é ‚ç‚¹ã¨ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’è¨­å®š
 	//	float	tx = (g_BG.pos.x - g_BG.old_pos.x) * ((float)SCREEN_WIDTH / TEXTURE_WIDTH);
 	//	g_BG.scrl2 += tx * 0.01f;
 	//	//g_BG.scrl2 += 0.003f;
@@ -197,7 +258,7 @@ void DrawBG(void)
 	//		g_BG.scrl2, 0.0f, 1.0f, 1.0f,
 	//		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
-	//	// ƒ|ƒŠƒSƒ“•`‰æ
+	//	// ãƒãƒªã‚´ãƒ³æç”»
 	//	GetDeviceContext()->Draw(4, 0);
 	//}
 
@@ -206,13 +267,18 @@ void DrawBG(void)
 
 
 //=============================================================================
-// BG\‘¢‘Ì‚Ìæ“ªƒAƒhƒŒƒX‚ğæ“¾
+// BGæ§‹é€ ä½“ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
 //=============================================================================
 BG* GetBG(void)
 {
 	return &g_BG;
 }
 
+
+AABB* GetMap01AABB(void)
+{
+	return g_AABB;
+}
 
 
 

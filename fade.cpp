@@ -192,8 +192,7 @@ void DrawFade(void)
 	// タイトルの背景を描画
 	{
 		// テクスチャ設定
-		std::cout << g_TexNo << std::endl;
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_TexNo]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		//SetVertex(0.0f, 0.0f, SCREEN_WIDTH, TEXTURE_WIDTH, 0.0f, 0.0f, 1.0f, 1.0f);

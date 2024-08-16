@@ -120,7 +120,7 @@ void UpdateInput(void)
 	UpdateKeyboard();
 	
 	// マウスの更新
-	UpdateMouse();
+	//UpdateMouse();
 	
 	// パッドの更新
 	UpdatePad();

@@ -22,6 +22,34 @@
 #define DASH_CD_TIME			(40)
 #define ATTACK_PATTERN_MAX		(4)		// キューをクリアするまでの待機時間
 
+#define PLAYER_INIT_POS_X		(1250.0f)
+#define PLAYER_INIT_POS_Y		(1740.0f)
+#define FALLING_THRESHOLD		(4.0f)
+
+#define SET_PLAYER_POS_Y(y_value) \
+    do { \
+        g_Player->pos.y = (y_value); \
+        g_Player->bodyAABB.pos.y = (y_value); \
+    } while (0)
+
+#define SET_PLAYER_POS_X(x_value) \
+    do { \
+        g_Player->pos.x = (x_value); \
+        g_Player->bodyAABB.pos.x = (x_value); \
+    } while (0)
+
+#define CHANGE_PLAYER_POS_Y(y_value) \
+    do { \
+        g_Player->pos.y += (y_value); \
+        g_Player->bodyAABB.pos.y += (y_value); \
+    } while (0)
+
+#define CHANGE_PLAYER_POS_X(x_value) \
+    do { \
+        g_Player->pos.x += (x_value); \
+        g_Player->bodyAABB.pos.x += (x_value); \
+    } while (0)
+
 // animation
 enum
 {
@@ -104,8 +132,12 @@ struct PLAYER
 	BOOL		jump;			// ジャンプフラグ
 	int			jumpCnt;		// ジャンプ中のカウント
 	float		jumpYMax;		// 
-};
 
+	float		onAirCnt;
+
+	AABB		bodyAABB;
+	AABB		attackAABB;
+};
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -133,3 +165,6 @@ void AdjustAttackTexturePosition(float& px, float& py);
 void AdjustAttackTextureSize(void);
 
 void UpdateActionQueue(void);
+
+// プレイヤーと地面の衝突判定関数、垂直方向の衝突判定を追加
+BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground);

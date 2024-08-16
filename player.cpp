@@ -20,10 +20,10 @@
 #define TEXTURE_HEIGHT						(200/2)	// 
 #define TEXTURE_NORMAL_ATTACK1_WIDTH		(380/2)	// キャラサイズ
 #define TEXTURE_NORMAL_ATTACK1_HEIGHT		(320/2)	// 
-#define TEXTURE_NORMAL_ATTACK3_WIDTH		(360/2)	// キャラサイズ
-#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(280/2)	//
-#define TEXTURE_NORMAL_ATTACK4_WIDTH		(280/2)	// キャラサイズ
-#define TEXTURE_NORMAL_ATTACK4_HEIGHT		(280/2)	//
+#define TEXTURE_NORMAL_ATTACK3_WIDTH		(375/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(290/2)	//
+#define TEXTURE_NORMAL_ATTACK4_WIDTH		(290/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK4_HEIGHT		(290/2)	//
 #define TEXTURE_JUMP_WIDTH					(280/2)	// キャラサイズ
 #define TEXTURE_JUMP_HEIGHT					(280/2)	//
 #define TEXTURE_MAX							(20)		// テクスチャの数
@@ -79,6 +79,10 @@ void DrawPlayerOffset(int no);
 //*****************************************************************************
 static ID3D11Buffer				*g_VertexBuffer = NULL;				// 頂点情報
 static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
+
+#ifdef _DEBUG	
+static ID3D11Buffer* g_AABBVertexBuffer = NULL;
+#endif
 
 static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/char/char_idle_right.png",	
@@ -146,7 +150,7 @@ HRESULT InitPlayer(void)
 	{
 		g_PlayerCount++;
 		g_Player[i].use = TRUE;
-		g_Player[i].pos = XMFLOAT3(400.0f, 400.0f, 0.0f);	// 中心点から表示
+		g_Player[i].pos = XMFLOAT3(PLAYER_INIT_POS_X, PLAYER_INIT_POS_Y, 0.0f);	// 中心点から表示
 		g_Player[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Player[i].w = TEXTURE_WIDTH;
 		g_Player[i].h = TEXTURE_HEIGHT;
@@ -160,7 +164,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].animFrameCount = 0;
 		g_Player[i].dashCount = 0;
 
-		g_Player[i].move = XMFLOAT3(4.0f, 0.0f, 0.0f);		// 移動量
+		g_Player[i].move = XMFLOAT3(5.0f, 0.0f, 0.0f);		// 移動量
 
 		g_Player[i].dir = CHAR_DIR_RIGHT;					// 右向きにしとくか
 		g_Player[i].running = FALSE;
@@ -178,6 +182,8 @@ HRESULT InitPlayer(void)
 		g_Player[i].jumpCnt = 0;
 		g_Player[i].jumpYMax = PLAYER_JUMP_Y_MAX;
 
+		g_Player[i].onAirCnt = 0;
+
 		for (int j = 0; j < ACTION_QUEUE_SIZE; j++)
 		{
 			g_Player[i].actionQueue[j] = 0;
@@ -188,7 +194,28 @@ HRESULT InitPlayer(void)
 		{
 			g_Player[i].offset[j] = g_Player[i].pos;
 		}
+
+		// AABB
+		g_Player[i].bodyAABB.pos = g_Player[i].pos;
+		g_Player[i].bodyAABB.w = g_Player[i].w;
+		g_Player[i].bodyAABB.h = g_Player[i].h;
 	}
+
+#ifdef _DEBUG	
+	{
+		int aabbCount = MAP01_GROUND_MAX;
+		const int maxVertices = MAP01_GROUND_MAX * 4;
+
+		D3D11_BUFFER_DESC bd;
+		ZeroMemory(&bd, sizeof(bd));
+		bd.Usage = D3D11_USAGE_DYNAMIC;
+		bd.ByteWidth = sizeof(VERTEX_3D) * maxVertices;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		GetDevice()->CreateBuffer(&bd, NULL, &g_AABBVertexBuffer);
+	}
+#endif
 
 
 	g_Load = TRUE;
@@ -284,33 +311,65 @@ void UpdatePlayer(void)
 			//if (g_Player[i].state == IDLE)
 			{
 				float speed = g_Player[i].move.x;
+				
+#ifdef _DEBUG
+				if (GetKeyboardPress(DIK_UP) && GetKeyboardPress(DIK_LCONTROL))
+				{
+					CHANGE_PLAYER_POS_Y(-speed * 5);
+					g_Player[i].dir = CHAR_DIR_RIGHT;
+					g_Player[i].state = WALK;
+				}
+				else if (GetKeyboardPress(DIK_DOWN) && GetKeyboardPress(DIK_LCONTROL))
+				{
+					CHANGE_PLAYER_POS_Y(speed * 5);
+					g_Player[i].dir = CHAR_DIR_LEFT;
+					g_Player[i].state = WALK;
+				}
+
+				if (GetKeyboardPress(DIK_LEFT) && GetKeyboardPress(DIK_LCONTROL))
+				{
+					CHANGE_PLAYER_POS_X(-speed * 5);
+					g_Player[i].dir = CHAR_DIR_RIGHT;
+					g_Player[i].state = WALK;
+				}
+				else if (GetKeyboardPress(DIK_RIGHT) && GetKeyboardPress(DIK_LCONTROL))
+				{
+					CHANGE_PLAYER_POS_X(speed * 5);
+					g_Player[i].dir = CHAR_DIR_LEFT;
+					g_Player[i].state = WALK;
+				}
+#endif
 
 				g_Player[i].running = FALSE;
 
 				if (GetKeyboardPress(DIK_RIGHT) && g_Player[i].playAnim == FALSE)
 				{
-
-					g_Player[i].pos.x += speed;
+					CHANGE_PLAYER_POS_X(speed);
 					g_Player[i].dir = CHAR_DIR_RIGHT;
 					g_Player[i].state = WALK;
 					if (GetKeyboardPress(DIK_LSHIFT))
 					{
-						g_Player[i].pos.x += speed / 2;
+						CHANGE_PLAYER_POS_X(speed * 0.5f);
 						g_Player[i].running = TRUE;
 						g_Player[i].state = RUN;
 					}
+
+					std::cout << g_Player[i].pos.x << " ";
+					std::cout << g_Player[i].pos.y << std::endl;
 				}
 				else if (GetKeyboardPress(DIK_LEFT) && g_Player[i].playAnim == FALSE)
 				{
-					g_Player[i].pos.x -= speed;
+					CHANGE_PLAYER_POS_X(-speed);
 					g_Player[i].dir = CHAR_DIR_LEFT;
 					g_Player[i].state = WALK;
 					if (GetKeyboardPress(DIK_LSHIFT))
 					{
-						g_Player[i].pos.x -= speed / 2;
+						CHANGE_PLAYER_POS_X(-speed * 0.5f);
 						g_Player[i].running = TRUE;
 						g_Player[i].state = RUN;
 					}
+					std::cout << g_Player[i].pos.x << " ";
+					std::cout << g_Player[i].pos.y << std::endl;
 				}
 
 				if (GetKeyboardTrigger(DIK_C) && g_Player[i].dashCount >= DASH_CD_TIME)
@@ -441,27 +500,61 @@ void UpdatePlayer(void)
 					g_Player[i].dir = CHAR_IDLE_LEFT;
 				}
 
+				if (GetKeyboardPress(DIK_Z))
+				{
+					// プレイヤーの位置を更新する前に接地を確認
+					AABB* grounds = GetMap01AABB();
+					BOOL onGround = false;
+					for (int j = 0; j < MAP01_GROUND_MAX; j++)
+					{ 
+						if (CheckGroundCollision(g_Player, grounds[j]))
+						{
+							onGround = true;
+							break;
+						} 
+					}
+					if (!onGround)
+					{
+						if (g_Player->onAirCnt < PLAYER_JUMP_CNT_MAX * 0.5f)
+						{
+							// cos関数を使用して下落速度を計算
+							float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->onAirCnt;
+							g_Player->move.y = g_Player->jumpYMax * sinf(angle);
+
+							// 滞空時間を増加させる
+							g_Player->onAirCnt++;
+						}
+						else
+						{
+							// 滞空時間が最大に達したら、下落速度を最大値に保つ
+							g_Player->move.y = g_Player->jumpYMax;
+						}
+						CHANGE_PLAYER_POS_Y(g_Player->move.y);
+					}
+					
+				}
+
 				// MAP外チェック
 				BG* bg = GetBG();
 
-				if (g_Player[i].pos.x < 0.0f)
+				if (g_Player[i].bodyAABB.pos.x < 0.0f)
 				{
-					g_Player[i].pos.x = 0.0f;
+					SET_PLAYER_POS_X(0.0f);
 				}
 
-				if (g_Player[i].pos.x > bg->w)
+				if (g_Player[i].bodyAABB.pos.x > bg->w)
 				{
-					g_Player[i].pos.x = bg->w;
+					SET_PLAYER_POS_X(bg->w);
 				}
 
-				if (g_Player[i].pos.y < 0.0f)
+				if (g_Player[i].bodyAABB.pos.y < 0.0f)
 				{
-					g_Player[i].pos.y = 0.0f;
+					SET_PLAYER_POS_Y(0.0f);
 				}
 
-				if (g_Player[i].pos.y > bg->h)
+				if (g_Player[i].bodyAABB.pos.y > bg->h)
 				{
-					g_Player[i].pos.y = bg->h;
+					SET_PLAYER_POS_Y(bg->h);
 				}
 
 				// プレイヤーの立ち位置からMAPのスクロール座標を計算する
@@ -654,6 +747,28 @@ void DrawPlayer(void)
 			// ポリゴン描画
 			GetDeviceContext()->Draw(4, 0);
 
+
+#ifdef _DEBUG
+			{
+				MATERIAL materialAABB;
+				ZeroMemory(&materialAABB, sizeof(materialAABB));
+				materialAABB.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+				materialAABB.noTexSampling = 1;
+
+				SetMaterial(materialAABB);
+				GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
+				for (int i = 0; i < MAP01_GROUND_MAX; ++i)
+				{
+					SetSpriteColorRotation(g_AABBVertexBuffer, g_Player[i].bodyAABB.pos.x - bg->pos.x, 
+						g_Player[i].bodyAABB.pos.y - bg->pos.y, g_Player[i].bodyAABB.w, g_Player[i].bodyAABB.h,
+						0.0f, 0.0f, 0.0f, 0.0f,
+						XMFLOAT4(0.0f, 1.0f, 0.0f, 0.2f),
+						0.0f);
+
+					GetDeviceContext()->Draw(4, i * 4);
+				}
+			}
+#endif
 		}
 	}
 
@@ -777,11 +892,13 @@ void PlayDashAnim(void)
 	{
 	case CHAR_DIR_LEFT:
 		g_Player->texNo = CHAR_DASH_LEFT;
-		g_Player->pos.x -= speed * 2;
+		//g_Player->pos.x -= speed * 2;
+		CHANGE_PLAYER_POS_X(-speed * 2);
 		break;
 	case CHAR_DIR_RIGHT:
 		g_Player->texNo = CHAR_DASH_RIGHT;
-		g_Player->pos.x += speed * 2;
+		//g_Player->pos.x += speed * 2;
+		CHANGE_PLAYER_POS_X(speed * 2);
 		break;
 	default:
 		break;
@@ -826,7 +943,8 @@ void PlayAttackAnim(void)
 
 	AdjustAttackTextureSize();
 
-	//std::cout << g_Player->w << std::endl;
+	std::cout << g_Player->w << std::endl;
+	std::cout << g_Player->attackPattern << std::endl;
 
 	int attackFrame = 0;
 
@@ -904,14 +1022,19 @@ void PlayWalkAnim(void)
 
 void PlayJumpAnim()
 {
+	if (GetKeyboardPress(DIK_RIGHT))
+		CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8);
+	else if (GetKeyboardPress(DIK_LEFT))
+		CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8);
+
 	g_Player->w = TEXTURE_JUMP_WIDTH;
 	g_Player->h = TEXTURE_JUMP_HEIGHT;
 
 	g_Player->texNo = CHAR_JUMP;
 
 	float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->jumpCnt;
-	float y = g_Player->jumpYMax * cosf(angle);
-	g_Player->pos.y -= y;
+	g_Player->move.y = g_Player->jumpYMax * cosf(angle);
+	CHANGE_PLAYER_POS_Y(-g_Player->move.y);
 
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > ANIM_WAIT_JUMP)
@@ -931,6 +1054,11 @@ void PlayJumpAnim()
 		g_Player->state = IDLE;
 		g_Player->jumpCnt = 0;
 	}
+
+}
+
+void PlayFallAnim()
+{
 
 }
 
@@ -977,11 +1105,73 @@ void UpdateActionQueue(void)
 
 }
 
+BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground)
+{
+	// プレイヤーのAABB情報を取得
+	XMFLOAT3 playerPos = g_Player->bodyAABB.pos;
+	float playerW = g_Player->bodyAABB.w;
+	float playerH = g_Player->bodyAABB.h;
+
+	// 地面のAABB情報を取得
+	XMFLOAT3 groundPos = ground.pos;
+	float groundW = ground.w;
+	float groundH = ground.h;
+
+	// 衝突確認
+	BOOL isColliding = CollisionBB(playerPos, playerW, playerH, groundPos, groundW, groundH);
+
+	std::cout << isColliding << std::endl;
+
+	// プレイヤーが地面の上でどれくらい重なっているかを計算
+	float overlapLeft = max(playerPos.x - playerW / 2, groundPos.x - groundW / 2);
+	float overlapRight = min(playerPos.x + playerW / 2, groundPos.x + groundW / 2);
+	float overlapWidth = overlapRight - overlapLeft;
+
+	// 落ちる閾値
+	float threshold = playerW / FALLING_THRESHOLD;
+
+	// プレイヤーのy方向の速度が0より小さい（プレイヤーが落下中）場合、かつ衝突が発生し、重なりが閾値を超えている場合
+	if (isColliding && g_Player->move.y > 0 && overlapWidth >= threshold) 
+	{
+		// プレイヤーが落下中でかつ地面に十分接触している、落下を止め
+		g_Player->move.y = 0.0f;
+
+		// プレイヤーの滞空時間をリセットする
+		g_Player->onAirCnt = 0;
+
+		// プレイヤーの位置を地面の上に調整し、地面を通り抜けないようにする
+		SET_PLAYER_POS_Y(groundPos.y - groundH / 2 - playerH / 2);
+
+		return true;
+	}
+	else if (isColliding && overlapWidth < threshold) 
+	{
+		// プレイヤーが地面の上にあまり重なっていないので落下を続行
+		// プレイヤーを少し押し出して、地面と衝突しないようにする
+		if (playerPos.x < groundPos.x) 
+		{
+			// プレイヤーが左側にある場合
+			CHANGE_PLAYER_POS_X(-1.0f);// 少し左に押し出す
+		}
+		else 
+		{
+			// プレイヤーが右側にある場合
+			CHANGE_PLAYER_POS_X(1.0f);// 少し右に押し出す
+		}
+	}
+
+	return false;
+}
+
 void AdjustAttackTextureSize()
 {
 	switch (g_Player->attackPattern)
 	{
 	case NORMAL_ATTACK1:
+		g_Player->w = TEXTURE_NORMAL_ATTACK1_WIDTH;
+		g_Player->h = TEXTURE_NORMAL_ATTACK1_HEIGHT;
+		break;
+	case NORMAL_ATTACK2:
 		g_Player->w = TEXTURE_NORMAL_ATTACK1_WIDTH;
 		g_Player->h = TEXTURE_NORMAL_ATTACK1_HEIGHT;
 		break;
