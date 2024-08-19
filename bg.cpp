@@ -85,17 +85,18 @@ HRESULT InitBG(void)
 		g_AABB[i].pos.y = 0;
 		g_AABB[i].w = 0;
 		g_AABB[i].h = 0;
+		g_AABB[i].tag = WALL_AABB;
 	}
 
 	g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
-	g_AABB[0].pos.y = TEXTURE_HEIGHT - (TEXTURE_HEIGHT - GROUND_H) * 0.5f;
+	g_AABB[0].pos.y = TEXTURE_HEIGHT * 0.5f;// -(TEXTURE_HEIGHT - GROUND_H) * 0.5f;
 	g_AABB[0].w = TEXTURE_WIDTH * 0.5;
-	g_AABB[0].h = GROUND_H;
+	g_AABB[0].h = TEXTURE_HEIGHT * 0.5;
 
-	g_AABB[1].pos.x = TEXTURE_WIDTH * 0.5f;
-	g_AABB[1].pos.y = TEXTURE_HEIGHT - (TEXTURE_HEIGHT - GROUND_H) * 0.5f;
-	g_AABB[1].w = TEXTURE_WIDTH * 0.5;
-	g_AABB[1].h = GROUND_H;
+	//g_AABB[1].pos.x = TEXTURE_WIDTH * 0.5f;
+	//g_AABB[1].pos.y = TEXTURE_HEIGHT - (TEXTURE_HEIGHT - GROUND_H) * 0.5f;
+	//g_AABB[1].w = TEXTURE_WIDTH * 0.5;
+	//g_AABB[1].h = GROUND_H;
 
 
 #ifdef _DEBUG	

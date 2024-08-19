@@ -24,7 +24,7 @@
 
 #define PLAYER_INIT_POS_X		(1250.0f)
 #define PLAYER_INIT_POS_Y		(1740.0f)
-#define FALLING_THRESHOLD		(4.0f)
+#define FALLING_THRESHOLD		(3.0f)
 
 #define SET_PLAYER_POS_Y(y_value) \
     do { \
@@ -74,6 +74,8 @@ enum
 {
 	CHAR_DIR_LEFT,
 	CHAR_DIR_RIGHT,
+	CHAR_DIR_UP,
+	CHAR_DIR_DOWN,
 };
 
 // states
@@ -85,6 +87,7 @@ enum
 	DASH,
 	ATTACK,
 	JUMP,
+	FALL,
 };
 
 // attack pattern
@@ -133,7 +136,7 @@ struct PLAYER
 	int			jumpCnt;		// ジャンプ中のカウント
 	float		jumpYMax;		// 
 
-	float		onAirCnt;
+	int			onAirCnt;
 
 	AABB		bodyAABB;
 	AABB		attackAABB;
@@ -161,10 +164,18 @@ void PlayRunningAnim(void);
 void PlayDashAnim(void);
 void PlayAttackAnim(void);
 void PlayJumpAnim(void);
+void PlayFallAnim(void);
 void AdjustAttackTexturePosition(float& px, float& py);
 void AdjustAttackTextureSize(void);
 
+// キー入力で移動
+void UpdateKeyboardInput(void);
+// ゲームパッドでで移動
+void UpdateGamepadInput(void);
+// 当たり判定
+void UpdateGroundCollision(void);
 void UpdateActionQueue(void);
 
-// プレイヤーと地面の衝突判定関数、垂直方向の衝突判定を追加
-BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground);
+// プレイヤーと地面の衝突判定関数
+BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground);
+BOOL CheckMoveCollision(float move, int dir);

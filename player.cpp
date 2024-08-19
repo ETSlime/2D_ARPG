@@ -199,6 +199,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].bodyAABB.pos = g_Player[i].pos;
 		g_Player[i].bodyAABB.w = g_Player[i].w;
 		g_Player[i].bodyAABB.h = g_Player[i].h;
+		g_Player[i].bodyAABB.tag = PLAYER_BODY_AABB;
 	}
 
 #ifdef _DEBUG	
@@ -307,232 +308,15 @@ void UpdatePlayer(void)
 
 				
 
-			// キー入力で移動
-			//if (g_Player[i].state == IDLE)
 			{
-				float speed = g_Player[i].move.x;
+
+				UpdateKeyboardInput();
+				UpdateGamepadInput();
+
+				UpdateGroundCollision();
 				
-#ifdef _DEBUG
-				if (GetKeyboardPress(DIK_UP) && GetKeyboardPress(DIK_LCONTROL))
-				{
-					CHANGE_PLAYER_POS_Y(-speed * 5);
-					g_Player[i].dir = CHAR_DIR_RIGHT;
-					g_Player[i].state = WALK;
-				}
-				else if (GetKeyboardPress(DIK_DOWN) && GetKeyboardPress(DIK_LCONTROL))
-				{
-					CHANGE_PLAYER_POS_Y(speed * 5);
-					g_Player[i].dir = CHAR_DIR_LEFT;
-					g_Player[i].state = WALK;
-				}
-
-				if (GetKeyboardPress(DIK_LEFT) && GetKeyboardPress(DIK_LCONTROL))
-				{
-					CHANGE_PLAYER_POS_X(-speed * 5);
-					g_Player[i].dir = CHAR_DIR_RIGHT;
-					g_Player[i].state = WALK;
-				}
-				else if (GetKeyboardPress(DIK_RIGHT) && GetKeyboardPress(DIK_LCONTROL))
-				{
-					CHANGE_PLAYER_POS_X(speed * 5);
-					g_Player[i].dir = CHAR_DIR_LEFT;
-					g_Player[i].state = WALK;
-				}
-#endif
-
-				g_Player[i].running = FALSE;
-
-				if (GetKeyboardPress(DIK_RIGHT) && g_Player[i].playAnim == FALSE)
-				{
-					CHANGE_PLAYER_POS_X(speed);
-					g_Player[i].dir = CHAR_DIR_RIGHT;
-					g_Player[i].state = WALK;
-					if (GetKeyboardPress(DIK_LSHIFT))
-					{
-						CHANGE_PLAYER_POS_X(speed * 0.5f);
-						g_Player[i].running = TRUE;
-						g_Player[i].state = RUN;
-					}
-
-					std::cout << g_Player[i].pos.x << " ";
-					std::cout << g_Player[i].pos.y << std::endl;
-				}
-				else if (GetKeyboardPress(DIK_LEFT) && g_Player[i].playAnim == FALSE)
-				{
-					CHANGE_PLAYER_POS_X(-speed);
-					g_Player[i].dir = CHAR_DIR_LEFT;
-					g_Player[i].state = WALK;
-					if (GetKeyboardPress(DIK_LSHIFT))
-					{
-						CHANGE_PLAYER_POS_X(-speed * 0.5f);
-						g_Player[i].running = TRUE;
-						g_Player[i].state = RUN;
-					}
-					std::cout << g_Player[i].pos.x << " ";
-					std::cout << g_Player[i].pos.y << std::endl;
-				}
-
-				if (GetKeyboardTrigger(DIK_C) && g_Player[i].dashCount >= DASH_CD_TIME)
-				{
-					// もしアイドル状態なら、すぐにアクションを実行
-					if (g_Player[i].playAnim == FALSE)
-					{
-						g_Player[i].patternAnim = 0;
-						g_Player[i].state = DASH;
-						g_Player->animFrameCount = 0;
-						g_Player[i].dashCount = 0;
-						g_Player->playAnim = TRUE;
-					}
-					// 空中の状態
-					else if (g_Player[i].jumpCnt > PLAYER_JUMP_CNT_MAX / 2)
-					{
-						g_Player[i].patternAnimOld = g_Player[i].patternAnim;
-						g_Player[i].patternAnim = 0;
-						g_Player[i].state = DASH;
-						g_Player[i].dashOnAir = TRUE;
-						g_Player[i].dashCount = 0;
-						g_Player->animFrameCount = 0;
-					}
-					// その他の状態の場合、アクションをキューに追加
-					else
-					{
-						g_Player[i].actionQueue[g_Player[i].actionQueueEnd] = DASH;
-						g_Player[i].actionQueueEnd = (g_Player[i].actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
-
-						// キューのオーバーフローを防止
-						if (g_Player[i].actionQueueEnd == g_Player[i].actionQueueStart)
-						{
-							g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
-						}
-					}
-
-				}
-				else if (GetKeyboardTrigger(DIK_SPACE))
-				{
-					// もしアイドル状態なら、すぐにアクションを実行
-					if (g_Player[i].playAnim == FALSE)
-					{
-						g_Player[i].patternAnim = 0;
-						g_Player[i].state = JUMP;
-						g_Player->animFrameCount = 0;
-						g_Player->playAnim = TRUE;
-
-						g_Player[i].state = JUMP;
-						g_Player[i].jumpCnt = 0;
-					}
-					// その他の状態の場合、アクションをキューに追加
-					else
-					{
-						g_Player[i].actionQueue[g_Player[i].actionQueueEnd] = JUMP;
-						g_Player[i].actionQueueEnd = (g_Player[i].actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
-
-						// キューのオーバーフローを防止
-						if (g_Player[i].actionQueueEnd == g_Player[i].actionQueueStart)
-						{
-							g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
-						}
-					}
-				}
-				else if (GetKeyboardTrigger(DIK_X))
-				{
-					switch (g_Player[i].state)
-					{
-						// もしアイドル状態なら、すぐにアクションを実行
-					case IDLE:
-					case WALK:
-					case RUN:
-						g_Player[i].patternAnim = 0;
-						g_Player[i].state = ATTACK;
-						g_Player->animFrameCount = 0;
-						g_Player->playAnim = TRUE;
-						g_Player->attackPattern = NORMAL_ATTACK1;
-						break;
-
-					case DASH:
-					case ATTACK:
-					case JUMP:
-						// もしアイドル状態なら、すぐにアクションを実行
-						if (g_Player->playAnim == FALSE)
-						{
-							g_Player[i].patternAnim = 0;
-							g_Player->animFrameCount = 0;
-							g_Player->playAnim = TRUE;
-							g_Player->attackPattern++;
-						}
-						// 空中の状態
-						else if (g_Player[i].jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player[i].state != ATTACK)
-						{
-							g_Player[i].patternAnimOld = g_Player[i].patternAnim;
-							g_Player[i].patternAnim = 0;
-							g_Player[i].state = ATTACK;
-							g_Player->animFrameCount = 0;
-						}
-						// その他の状態の場合、アクションをキューに追加
-						else
-						{
-							g_Player[i].actionQueue[g_Player[i].actionQueueEnd] = ATTACK;
-							g_Player[i].actionQueueEnd = (g_Player[i].actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
-
-							// キューのオーバーフローを防止
-							if (g_Player[i].actionQueueEnd == g_Player[i].actionQueueStart)
-							{
-								g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
-							}
-						}
-	
-						break;
-					default:
-						break;
-					}
-
-				}
-
-				// ゲームパッドでで移動処理
-
-				if (IsButtonPressed(0, BUTTON_RIGHT))
-				{
-					g_Player[i].pos.x += speed;
-					g_Player[i].dir = CHAR_IDLE_RIGHT;
-				}
-				else if (IsButtonPressed(0, BUTTON_LEFT))
-				{
-					g_Player[i].pos.x -= speed;
-					g_Player[i].dir = CHAR_IDLE_LEFT;
-				}
-
-				if (GetKeyboardPress(DIK_Z))
-				{
-					// プレイヤーの位置を更新する前に接地を確認
-					AABB* grounds = GetMap01AABB();
-					BOOL onGround = false;
-					for (int j = 0; j < MAP01_GROUND_MAX; j++)
-					{ 
-						if (CheckGroundCollision(g_Player, grounds[j]))
-						{
-							onGround = true;
-							break;
-						} 
-					}
-					if (!onGround)
-					{
-						if (g_Player->onAirCnt < PLAYER_JUMP_CNT_MAX * 0.5f)
-						{
-							// cos関数を使用して下落速度を計算
-							float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->onAirCnt;
-							g_Player->move.y = g_Player->jumpYMax * sinf(angle);
-
-							// 滞空時間を増加させる
-							g_Player->onAirCnt++;
-						}
-						else
-						{
-							// 滞空時間が最大に達したら、下落速度を最大値に保つ
-							g_Player->move.y = g_Player->jumpYMax;
-						}
-						CHANGE_PLAYER_POS_Y(g_Player->move.y);
-					}
-					
-				}
+				if (g_Player[i].move.y >= g_Player->jumpYMax * 0.5f && g_Player[i].state == IDLE)
+					g_Player[i].state = FALL;
 
 				// MAP外チェック
 				BG* bg = GetBG();
@@ -628,6 +412,9 @@ void UpdatePlayer(void)
 				break;
 			case JUMP:
 				PlayJumpAnim();
+				break;
+			case FALL:
+				PlayFallAnim();
 				break;
 			default:
 				break;
@@ -775,6 +562,259 @@ void DrawPlayer(void)
 
 }
 
+void UpdateKeyboardInput(void)
+{
+	float speed = g_Player->move.x;
+
+#ifdef _DEBUG
+	if (GetKeyboardPress(DIK_UP) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_Y(-speed * 5);
+		g_Player->dir = CHAR_DIR_RIGHT;
+		g_Player->state = WALK;
+	}
+	else if (GetKeyboardPress(DIK_DOWN) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_Y(speed * 5);
+		g_Player->dir = CHAR_DIR_LEFT;
+		g_Player->state = WALK;
+	}
+
+	if (GetKeyboardPress(DIK_LEFT) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_X(-speed * 5);
+		g_Player->dir = CHAR_DIR_RIGHT;
+		g_Player->state = WALK;
+	}
+	else if (GetKeyboardPress(DIK_RIGHT) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_X(speed * 5);
+		g_Player->dir = CHAR_DIR_LEFT;
+		g_Player->state = WALK;
+	}
+#endif
+
+	g_Player->running = FALSE;
+
+	if (GetKeyboardPress(DIK_RIGHT) && g_Player->playAnim == FALSE)
+	{
+		g_Player->dir = CHAR_DIR_RIGHT;
+		if (g_Player->move.y == 0)
+		{
+			g_Player->state = WALK;
+			if (CheckMoveCollision(speed, g_Player->dir))
+				CHANGE_PLAYER_POS_X(speed);
+			if (GetKeyboardPress(DIK_LSHIFT))
+			{
+				g_Player->running = TRUE;
+				g_Player->state = RUN;
+				if (CheckMoveCollision(speed * 0.5f, g_Player->dir))
+					CHANGE_PLAYER_POS_X(speed * 0.5f);
+
+			}
+		}
+		else if (CheckMoveCollision(speed * 0.8f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speed * 0.8f);
+
+		std::cout << g_Player->pos.x << " ";
+		std::cout << g_Player->pos.y << std::endl;
+	}
+	else if (GetKeyboardPress(DIK_LEFT) && g_Player->playAnim == FALSE)
+	{
+		g_Player->dir = CHAR_DIR_LEFT;
+		if (g_Player->move.y == 0)
+		{
+			g_Player->state = WALK;
+			if (CheckMoveCollision(-speed, g_Player->dir))
+				CHANGE_PLAYER_POS_X(-speed);
+			if (GetKeyboardPress(DIK_LSHIFT))
+			{
+				if (CheckMoveCollision(-speed * 0.5f, g_Player->dir))
+					CHANGE_PLAYER_POS_X(-speed * 0.5f);
+				g_Player->running = TRUE;
+				g_Player->state = RUN;
+			}
+		}
+		else if (CheckMoveCollision(-speed * 0.8f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(-speed * 0.8f);
+
+		std::cout << g_Player->pos.x << " ";
+		std::cout << g_Player->pos.y << std::endl;
+	}
+
+	if (GetKeyboardTrigger(DIK_C) && g_Player->dashCount >= DASH_CD_TIME)
+	{
+		// もしアイドル状態なら、すぐにアクションを実行
+		if (g_Player->playAnim == FALSE)
+		{
+			g_Player->patternAnim = 0;
+			g_Player->state = DASH;
+			g_Player->animFrameCount = 0;
+			g_Player->dashCount = 0;
+			g_Player->playAnim = TRUE;
+		}
+		// 空中の状態
+		else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2)
+		{
+			g_Player->patternAnimOld = g_Player->patternAnim;
+			g_Player->patternAnim = 0;
+			g_Player->state = DASH;
+			g_Player->dashOnAir = TRUE;
+			g_Player->dashCount = 0;
+			g_Player->animFrameCount = 0;
+		}
+		// その他の状態の場合、アクションをキューに追加
+		else
+		{
+			g_Player->actionQueue[g_Player->actionQueueEnd] = DASH;
+			g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+			// キューのオーバーフローを防止
+			if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
+			{
+				g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
+			}
+		}
+
+	}
+	else if (GetKeyboardTrigger(DIK_SPACE))
+	{
+		// もしアイドル状態なら、すぐにアクションを実行
+		if (g_Player->playAnim == FALSE)
+		{
+			g_Player->patternAnim = 0;
+			g_Player->state = JUMP;
+			g_Player->animFrameCount = 0;
+			g_Player->playAnim = TRUE;
+
+			g_Player->state = JUMP;
+			g_Player->jumpCnt = 0;
+		}
+		// その他の状態の場合、アクションをキューに追加
+		else
+		{
+			g_Player->actionQueue[g_Player->actionQueueEnd] = JUMP;
+			g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+			// キューのオーバーフローを防止
+			if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
+			{
+				g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
+			}
+		}
+	}
+	else if (GetKeyboardTrigger(DIK_X))
+	{
+		switch (g_Player->state)
+		{
+			// もしアイドル状態なら、すぐにアクションを実行
+		case IDLE:
+		case WALK:
+		case RUN:
+			g_Player->patternAnim = 0;
+			g_Player->state = ATTACK;
+			g_Player->animFrameCount = 0;
+			g_Player->playAnim = TRUE;
+			g_Player->attackPattern = NORMAL_ATTACK1;
+			break;
+
+		case DASH:
+		case ATTACK:
+		case JUMP:
+		case FALL:
+			// もしアイドル状態なら、すぐにアクションを実行
+			if (g_Player->playAnim == FALSE)
+			{
+				g_Player->patternAnim = 0;
+				g_Player->animFrameCount = 0;
+				g_Player->playAnim = TRUE;
+				g_Player->attackPattern++;
+			}
+			// 空中の状態
+			else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->state != ATTACK)
+			{
+				g_Player->patternAnimOld = g_Player->patternAnim;
+				g_Player->patternAnim = 0;
+				g_Player->state = ATTACK;
+				g_Player->animFrameCount = 0;
+			}
+			// その他の状態の場合、アクションをキューに追加
+			else
+			{
+				g_Player->actionQueue[g_Player->actionQueueEnd] = ATTACK;
+				g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+				// キューのオーバーフローを防止
+				if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
+				{
+					g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // 最も古いアクションを破棄
+				}
+			}
+
+			break;
+		default:
+			break;
+		}
+
+	}
+}
+
+void UpdateGamepadInput(void)
+{
+	float speed = g_Player->move.x;
+
+	if (IsButtonPressed(0, BUTTON_RIGHT))
+	{
+		g_Player->pos.x += speed;
+		g_Player->dir = CHAR_IDLE_RIGHT;
+	}
+	else if (IsButtonPressed(0, BUTTON_LEFT))
+	{
+		g_Player->pos.x -= speed;
+		g_Player->dir = CHAR_IDLE_LEFT;
+	}
+}
+
+void UpdateGroundCollision(void)
+{
+	if (GetKeyboardPress(DIK_Z))
+	{
+		// プレイヤーの位置を更新する前に接地を確認
+		AABB* grounds = GetMap01AABB();
+		BOOL onGround = false;
+		for (int j = 0; j < MAP01_GROUND_MAX; j++)
+		{
+			if (CheckGroundCollision(g_Player, &grounds[j]))
+			{
+				onGround = true;
+				break;
+			}
+		}
+
+		
+		if (!onGround && g_Player->jumpCnt == 0)
+		{
+			if (g_Player->onAirCnt < PLAYER_JUMP_CNT_MAX * 0.5f)
+			{
+				// cos関数を使用して下落速度を計算
+				float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->onAirCnt;
+				
+				g_Player->move.y = g_Player->jumpYMax * sinf(angle);
+
+				// 滞空時間を増加させる
+				g_Player->onAirCnt++;
+			}
+			else
+			{
+				// 滞空時間が最大に達したら、下落速度を最大値に保つ
+				g_Player->move.y = g_Player->jumpYMax;
+			}
+			if (g_Player->playAnim == false)
+				CHANGE_PLAYER_POS_Y(g_Player->move.y);
+		}
+	}
+}
+
 
 //=============================================================================
 // Player構造体の先頭アドレスを取得
@@ -892,13 +932,13 @@ void PlayDashAnim(void)
 	{
 	case CHAR_DIR_LEFT:
 		g_Player->texNo = CHAR_DASH_LEFT;
-		//g_Player->pos.x -= speed * 2;
-		CHANGE_PLAYER_POS_X(-speed * 2);
+		if (CheckMoveCollision(-speed * 2, g_Player->dir))
+			CHANGE_PLAYER_POS_X(-speed * 2);
 		break;
 	case CHAR_DIR_RIGHT:
 		g_Player->texNo = CHAR_DASH_RIGHT;
-		//g_Player->pos.x += speed * 2;
-		CHANGE_PLAYER_POS_X(speed * 2);
+		if (CheckMoveCollision(speed * 2, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speed * 2);
 		break;
 	default:
 		break;
@@ -1022,10 +1062,10 @@ void PlayWalkAnim(void)
 
 void PlayJumpAnim()
 {
-	if (GetKeyboardPress(DIK_RIGHT))
-		CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8);
-	else if (GetKeyboardPress(DIK_LEFT))
-		CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8);
+	if (GetKeyboardPress(DIK_RIGHT) && CheckMoveCollision(g_Player->move.x * 0.8f, CHAR_DIR_RIGHT))
+		CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8f);
+	else if (GetKeyboardPress(DIK_LEFT) && CheckMoveCollision(-g_Player->move.x * 0.8f, CHAR_DIR_LEFT))
+		CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8f);
 
 	g_Player->w = TEXTURE_JUMP_WIDTH;
 	g_Player->h = TEXTURE_JUMP_HEIGHT;
@@ -1033,8 +1073,9 @@ void PlayJumpAnim()
 	g_Player->texNo = CHAR_JUMP;
 
 	float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->jumpCnt;
-	g_Player->move.y = g_Player->jumpYMax * cosf(angle);
-	CHANGE_PLAYER_POS_Y(-g_Player->move.y);
+	g_Player->move.y = -1.0f * g_Player->jumpYMax * cosf(angle);
+	if (CheckMoveCollision(g_Player->move.y, CHAR_DIR_UP))
+		CHANGE_PLAYER_POS_Y(g_Player->move.y);
 
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > ANIM_WAIT_JUMP)
@@ -1047,6 +1088,7 @@ void PlayJumpAnim()
 	}
 
 	g_Player->jumpCnt++;
+	g_Player->onAirCnt = g_Player->jumpCnt * 0.5f;
 	if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX)
 	{
 		g_Player->dashOnAir = FALSE;
@@ -1059,7 +1101,20 @@ void PlayJumpAnim()
 
 void PlayFallAnim()
 {
+	g_Player->w = TEXTURE_JUMP_WIDTH;
+	g_Player->h = TEXTURE_JUMP_HEIGHT;
 
+	g_Player->texNo = CHAR_JUMP;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_JUMP)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 3)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 4;
+		g_Player->animFrameCount++;
+	}
 }
 
 int GetTexturePatternDivideX()
@@ -1105,7 +1160,61 @@ void UpdateActionQueue(void)
 
 }
 
-BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground)
+BOOL CheckMoveCollision(float move, int dir)
+{
+	// 壁のAABB情報を取得
+	AABB* walls = GetMap01AABB();
+	for (int i = 0; i < MAP01_GROUND_MAX; i++)
+	{
+		if (walls[i].tag == GROUND_AABB) continue;
+
+		XMFLOAT3 wallPos = walls[i].pos;
+		float wallW = walls[i].w;
+		float wallH = walls[i].h;
+
+		// 衝突確認
+		BOOL isColliding = CollisionBB(g_Player->pos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH);
+
+		if (isColliding)
+		{
+			switch (dir)
+			{
+			case CHAR_DIR_LEFT:
+			case CHAR_DIR_RIGHT:
+				if (move > 0 && g_Player->pos.x < wallPos.x)
+				{
+					// プレイヤーが右に移動していて、壁が右側にある場合
+					SET_PLAYER_POS_X(wallPos.x - wallW / 2 - g_Player->bodyAABB.w / 2); // 右への進行を停止
+				}
+				else if (move < 0 && g_Player->pos.x > wallPos.x)
+				{
+					// プレイヤーが左に移動していて、壁が左側にある場合
+					SET_PLAYER_POS_X(wallPos.x + wallW / 2 + g_Player->bodyAABB.w / 2); // 左への進行を停止
+				}
+				return false;
+				break;
+			case CHAR_DIR_UP:
+			case CHAR_DIR_DOWN:
+				if (move > 0 && g_Player->pos.y < wallPos.y)
+				{
+					// プレイヤーが右に移動していて、壁が右側にある場合
+					SET_PLAYER_POS_Y(wallPos.y - wallH / 2 - g_Player->bodyAABB.h / 2); // 上への進行を停止
+				}
+				return false;
+				break;
+			default:
+				break;
+			}
+
+			//g_Player->move.x = 0.0f; // 衝突時にx方向の移動を止める
+		}
+	}
+
+	return true;
+
+}
+
+BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground)
 {
 	// プレイヤーのAABB情報を取得
 	XMFLOAT3 playerPos = g_Player->bodyAABB.pos;
@@ -1113,14 +1222,12 @@ BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground)
 	float playerH = g_Player->bodyAABB.h;
 
 	// 地面のAABB情報を取得
-	XMFLOAT3 groundPos = ground.pos;
-	float groundW = ground.w;
-	float groundH = ground.h;
+	XMFLOAT3 groundPos = ground->pos;
+	float groundW = ground->w;
+	float groundH = ground->h;
 
 	// 衝突確認
 	BOOL isColliding = CollisionBB(playerPos, playerW, playerH, groundPos, groundW, groundH);
-
-	std::cout << isColliding << std::endl;
 
 	// プレイヤーが地面の上でどれくらい重なっているかを計算
 	float overlapLeft = max(playerPos.x - playerW / 2, groundPos.x - groundW / 2);
@@ -1131,16 +1238,27 @@ BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground)
 	float threshold = playerW / FALLING_THRESHOLD;
 
 	// プレイヤーのy方向の速度が0より小さい（プレイヤーが落下中）場合、かつ衝突が発生し、重なりが閾値を超えている場合
-	if (isColliding && g_Player->move.y > 0 && overlapWidth >= threshold) 
+	if (isColliding && g_Player->move.y >= 0 && overlapWidth >= threshold) 
 	{
 		// プレイヤーが落下中でかつ地面に十分接触している、落下を止め
 		g_Player->move.y = 0.0f;
 
 		// プレイヤーの滞空時間をリセットする
 		g_Player->onAirCnt = 0;
+		// ジャンプの状態からidle状態に戻る
+		if (g_Player->jumpCnt > 0)
+		{
+			g_Player->dashOnAir = FALSE;
+			g_Player->playAnim = FALSE;
+			g_Player->state = IDLE;
+			g_Player->jumpCnt = 0;
+		}
 
+		
 		// プレイヤーの位置を地面の上に調整し、地面を通り抜けないようにする
-		SET_PLAYER_POS_Y(groundPos.y - groundH / 2 - playerH / 2);
+		SET_PLAYER_POS_Y(groundPos.y - groundH * 0.5f - playerH * 0.5f + 0.01f); // 0.01fのマージンを追加
+
+		ground->tag = GROUND_AABB;
 
 		return true;
 	}
@@ -1159,6 +1277,7 @@ BOOL CheckGroundCollision(PLAYER* g_Player, AABB ground)
 			CHANGE_PLAYER_POS_X(1.0f);// 少し右に押し出す
 		}
 	}
+	ground->tag = WALL_AABB;
 
 	return false;
 }
