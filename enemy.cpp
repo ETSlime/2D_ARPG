@@ -15,7 +15,7 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(200/2)	// ƒLƒƒƒ‰ƒTƒCƒY
 #define TEXTURE_HEIGHT				(200/2)	// 
-#define TEXTURE_MAX					(2)		// ƒeƒNƒXƒ`ƒƒ‚Ì”
+#define TEXTURE_MAX					(20)		// ƒeƒNƒXƒ`ƒƒ‚Ì”
 
 #define TEXTURE_PATTERN_DIVIDE_X	(1)		// ƒAƒjƒƒpƒ^[ƒ“‚ÌƒeƒNƒXƒ`ƒƒ“à•ªŠ„”iX)
 #define TEXTURE_PATTERN_DIVIDE_Y	(1)		// ƒAƒjƒƒpƒ^[ƒ“‚ÌƒeƒNƒXƒ`ƒƒ“à•ªŠ„”iY)
@@ -36,7 +36,6 @@ static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ƒeƒNƒXƒ`ƒ
 
 static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/enemy00.png",
-	"data/TEXTURE/bar_white.png",
 };
 
 

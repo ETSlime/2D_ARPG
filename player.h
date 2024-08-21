@@ -54,14 +54,10 @@
 // animation
 enum
 {
-	CHAR_IDLE_RIGHT,
-	CHAR_IDLE_LEFT,
-	CHAR_WALK_RIGHT,
-	CHAR_WALK_LEFT,
-	CHAR_RUN_RIGHT,
-	CHAR_RUN_LEFT,
-	CHAR_DASH_RIGHT,
-	CHAR_DASH_LEFT,
+	CHAR_IDLE,
+	CHAR_WALK,
+	CHAR_RUN,
+	CHAR_DASH,
 	CHAR_NORMAL_ATTACK1,
 	CHAR_NORMAL_ATTACK2,
 	CHAR_NORMAL_ATTACK3,
@@ -119,6 +115,7 @@ struct PLAYER
 	int			texNo;			// テクスチャ番号
 	int			state;
 	int			animFrameCount;
+	BOOL		invertTex;
 
 	// dash
 	int			dashCount;

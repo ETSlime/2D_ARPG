@@ -16,14 +16,16 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define TEXTURE_WIDTH						(200/2)	// キャラサイズ
-#define TEXTURE_HEIGHT						(200/2)	// 
+#define TEXTURE_IDLE_WIDTH					(200/2)	// キャラサイズ
+#define TEXTURE_IDLE_HEIGHT					(200/2)	// 
 #define TEXTURE_NORMAL_ATTACK1_WIDTH		(380/2)	// キャラサイズ
 #define TEXTURE_NORMAL_ATTACK1_HEIGHT		(320/2)	// 
 #define TEXTURE_NORMAL_ATTACK3_WIDTH		(375/2)	// キャラサイズ
 #define TEXTURE_NORMAL_ATTACK3_HEIGHT		(290/2)	//
 #define TEXTURE_NORMAL_ATTACK4_WIDTH		(290/2)	// キャラサイズ
 #define TEXTURE_NORMAL_ATTACK4_HEIGHT		(290/2)	//
+#define TEXTURE_RUN_WIDTH					(220/2)	// キャラサイズ
+#define TEXTURE_RUN_HEIGHT					(220/2)	// 
 #define TEXTURE_JUMP_WIDTH					(280/2)	// キャラサイズ
 #define TEXTURE_JUMP_HEIGHT					(280/2)	//
 #define TEXTURE_MAX							(20)		// テクスチャの数
@@ -61,7 +63,7 @@
 
 // プレイヤーの画面内配置座標
 #define PLAYER_DISP_X				(SCREEN_WIDTH/2)
-#define PLAYER_DISP_Y				(SCREEN_HEIGHT/2 + TEXTURE_HEIGHT)
+#define PLAYER_DISP_Y				(SCREEN_HEIGHT/2 + TEXTURE_IDLE_HEIGHT)
 
 // ジャンプ処理
 #define	PLAYER_JUMP_CNT_MAX			(60)		// 60フレームで着地する
@@ -85,21 +87,16 @@ static ID3D11Buffer* g_AABBVertexBuffer = NULL;
 #endif
 
 static char *g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/char/char_idle_right.png",	
-	"data/TEXTURE/char/char_idle_left.png",
+	"data/TEXTURE/char/char_idle_right.png",
 	"data/TEXTURE/char/char_walkforward.png",
-	"data/TEXTURE/char/char_walkbackward.png",	
-	"data/TEXTURE/char/char_runforward.png",	
-	"data/TEXTURE/char/char_runrollback.png",
+	"data/TEXTURE/char/char_runforward.png",
 	"data/TEXTURE/char/char_dashforward.png",
-	"data/TEXTURE/char/char_dashbackward.png",
 	"data/TEXTURE/char/char_attack1.png",
 	"data/TEXTURE/char/char_attack2.png",
 	"data/TEXTURE/char/char_attack3.png",
 	"data/TEXTURE/char/char_attack4.png",
 	"data/TEXTURE/char/char_jump.png",
 	"data/TEXTURE/shadow000.jpg",
-	"data/TEXTURE/char01.png",
 };
 
 
@@ -152,11 +149,12 @@ HRESULT InitPlayer(void)
 		g_Player[i].use = TRUE;
 		g_Player[i].pos = XMFLOAT3(PLAYER_INIT_POS_X, PLAYER_INIT_POS_Y, 0.0f);	// 中心点から表示
 		g_Player[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_Player[i].w = TEXTURE_WIDTH;
-		g_Player[i].h = TEXTURE_HEIGHT;
+		g_Player[i].w = TEXTURE_IDLE_WIDTH;
+		g_Player[i].h = TEXTURE_IDLE_HEIGHT;
 		g_Player[i].shadowY = g_Player[i].pos.y;
 		g_Player[i].texNo = 0;
 		g_Player[i].state = IDLE;
+		g_Player[i].invertTex = FALSE;
 
 		g_Player[i].countAnim = 0;
 		g_Player[i].patternAnim = 0;
@@ -175,7 +173,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].dashOnAir = FALSE;
 		g_Player[i].jumpOnAir = TRUE;
 		g_Player[i].jumpOnAirCnt = 0;
-		g_Player[i].patternAnim = CHAR_IDLE_RIGHT;
+		g_Player[i].patternAnim = CHAR_IDLE;
 
 		g_Player[i].attackPattern = NONE;
 		g_Player[i].actionQueueStart = 0;
@@ -532,18 +530,18 @@ void DrawPlayer(void)
 
 			AdjustAttackTexturePosition(px, py);
 
-			//py += g_Player[i].jumpY;		// ジャンプ中の高さを足す
-
 			// アニメーション用
-			float tw = 1.0f / GetTexturePatternDivideX();	// テクスチャの幅
-			float th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
-			float tx = (float)(g_Player[i].patternAnim % GetTexturePatternDivideX()) * tw;	// テクスチャの左上X座標
-			float ty = (float)(g_Player[i].patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
-
-			//float tw = 1.0f;	// テクスチャの幅
-			//float th = 1.0f;	// テクスチャの高さ
-			//float tx = 0.0f;	// テクスチャの左上X座標
-			//float ty = 0.0f;	// テクスチャの左上Y座標
+			float tw, th, tx, ty;
+			tw = 1.0f / GetTexturePatternDivideX(); // テクスチャの幅
+			th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
+			ty = (float)(g_Player[i].patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
+			if (g_Player->invertTex)
+			{
+				tw *= -1.0f;
+				tx = (float)(g_Player[i].patternAnim % GetTexturePatternDivideX()) * (-1 * tw) - tw;	// テクスチャの左上X座標
+			}
+			else
+				tx = (float)(g_Player[i].patternAnim % GetTexturePatternDivideX()) * tw;
 
 			// １枚のポリゴンの頂点とテクスチャ座標を設定
 			SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
@@ -627,7 +625,6 @@ void UpdateKeyboardInput(void)
 				g_Player->state = RUN;
 				if (CheckMoveCollision(speed * 0.5f, g_Player->dir))
 					CHANGE_PLAYER_POS_X(speed * 0.5f);
-
 			}
 		}
 		else if (CheckMoveCollision(speed * 0.8f, g_Player->dir))
@@ -817,18 +814,18 @@ void UpdateKeyboardInput(void)
 
 void UpdateGamepadInput(void)
 {
-	float speed = g_Player->move.x;
+	//float speed = g_Player->move.x;
 
-	if (IsButtonPressed(0, BUTTON_RIGHT))
-	{
-		g_Player->pos.x += speed;
-		g_Player->dir = CHAR_IDLE_RIGHT;
-	}
-	else if (IsButtonPressed(0, BUTTON_LEFT))
-	{
-		g_Player->pos.x -= speed;
-		g_Player->dir = CHAR_IDLE_LEFT;
-	}
+	//if (IsButtonPressed(0, BUTTON_RIGHT))
+	//{
+	//	g_Player->pos.x += speed;
+	//	g_Player->dir = CHAR_IDLE_RIGHT;
+	//}
+	//else if (IsButtonPressed(0, BUTTON_LEFT))
+	//{
+	//	g_Player->pos.x -= speed;
+	//	g_Player->dir = CHAR_IDLE_LEFT;
+	//}
 }
 
 void UpdateGroundCollision(void)
@@ -907,8 +904,8 @@ void DrawPlayerShadow(void)
 
 	float px = g_Player->pos.x - bg->pos.x;	// プレイヤーの表示位置X
 	float py = g_Player->shadowY - bg->pos.y;	// プレイヤーの表示位置Y
-	float pw = TEXTURE_WIDTH;		// プレイヤーの表示幅
-	float ph = TEXTURE_WIDTH / 4;		// プレイヤーの表示高さ
+	float pw = TEXTURE_IDLE_WIDTH;		// プレイヤーの表示幅
+	float ph = TEXTURE_IDLE_WIDTH / 4;		// プレイヤーの表示高さ
 
 	// 地面との衝突判定に基づく影の位置
 	// プレイヤーの位置に対応する地面の高さを計算
@@ -980,9 +977,15 @@ void DrawPlayerOffset(int no)
 		// アニメーション用
 		float tw = 1.0f / GetTexturePatternDivideX();	// テクスチャの幅
 		float th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
-		float tx = (float)(g_Player[no].patternAnim % GetTexturePatternDivideX()) * tw;	// テクスチャの左上X座標
 		float ty = (float)(g_Player[no].patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
-
+		float tx;
+		if (g_Player->invertTex)
+		{
+			tw *= -1.0f;
+			tx = (float)(g_Player->patternAnim % GetTexturePatternDivideX()) * (-1 * tw) - tw;	// テクスチャの左上X座標
+		}
+		else
+			tx = (float)(g_Player->patternAnim % GetTexturePatternDivideX()) * tw;
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
@@ -998,20 +1001,12 @@ void DrawPlayerOffset(int no)
 
 void PlayRunningAnim(void)
 {
-	g_Player->w = TEXTURE_WIDTH;
-	g_Player->h = TEXTURE_HEIGHT;
+	g_Player->w = TEXTURE_RUN_WIDTH;
+	g_Player->h = TEXTURE_RUN_HEIGHT;
 
-	switch (g_Player->dir)
-	{
-	case CHAR_DIR_LEFT:
-		g_Player->texNo = CHAR_RUN_LEFT;
-		break;
-	case CHAR_DIR_RIGHT:
-		g_Player->texNo = CHAR_RUN_RIGHT;
-		break;
-	default:
-		break;
-	}
+	g_Player->texNo = CHAR_RUN;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > ANIM_WAIT_RUN)
 	{
@@ -1023,21 +1018,12 @@ void PlayRunningAnim(void)
 
 void PlayIdleAnim(void)
 {
-	g_Player->w = TEXTURE_WIDTH;
-	g_Player->h = TEXTURE_HEIGHT;
+	g_Player->w = TEXTURE_IDLE_WIDTH;
+	g_Player->h = TEXTURE_IDLE_HEIGHT;
 
 	g_Player->countAnim += 1.0f;
-	switch (g_Player->dir)
-	{
-	case CHAR_DIR_LEFT:
-		g_Player->texNo = CHAR_IDLE_LEFT;
-		break;
-	case CHAR_DIR_RIGHT:
-		g_Player->texNo = CHAR_IDLE_RIGHT;
-		break;
-	default:
-		break;
-	}
+	g_Player->texNo = CHAR_IDLE;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > ANIM_WAIT_IDLE)
@@ -1050,20 +1036,22 @@ void PlayIdleAnim(void)
 
 void PlayDashAnim(void)
 {
-	g_Player->w = TEXTURE_WIDTH;
-	g_Player->h = TEXTURE_HEIGHT;
+	g_Player->w = TEXTURE_RUN_WIDTH;
+	g_Player->h = TEXTURE_RUN_HEIGHT;
 
 	float speed = g_Player->move.x;
+
+	g_Player->texNo = CHAR_DASH;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
 	switch (g_Player->dir)
 	{
 	case CHAR_DIR_LEFT:
-		g_Player->texNo = CHAR_DASH_LEFT;
 		if (CheckMoveCollision(-speed * 2, g_Player->dir))
 			CHANGE_PLAYER_POS_X(-speed * 2);
 			
 		break;
 	case CHAR_DIR_RIGHT:
-		g_Player->texNo = CHAR_DASH_RIGHT;
 		if (CheckMoveCollision(speed * 2, g_Player->dir))
 			CHANGE_PLAYER_POS_X(speed * 2);
 		break;
@@ -1096,14 +1084,6 @@ void PlayDashAnim(void)
 
 void PlayAttackAnim(void)
 {
-	//if (g_Player->attackPattern == ATTACK_PATTERN_MAX)
-	//{
-	//	g_Player->animFrameCount = 0;
-	//	g_Player->state = IDLE;
-	//	g_Player->playAnim = FALSE;
-	//	return;
-	//}
-
 	if (g_Player->attackPattern == ATTACK_PATTERN_MAX ||
 		g_Player->attackPattern == NONE)
 		g_Player->attackPattern = NORMAL_ATTACK1;
@@ -1164,20 +1144,12 @@ void PlayAttackAnim(void)
 
 void PlayWalkAnim(void)
 {
-	g_Player->w = TEXTURE_WIDTH;
-	g_Player->h = TEXTURE_HEIGHT;
+	g_Player->w = TEXTURE_IDLE_WIDTH;
+	g_Player->h = TEXTURE_IDLE_HEIGHT;
 
-	switch (g_Player->dir)
-	{
-	case CHAR_DIR_LEFT:
-		g_Player->texNo = CHAR_WALK_LEFT;
-		break;
-	case CHAR_DIR_RIGHT:
-		g_Player->texNo = CHAR_WALK_RIGHT;
-		break;
-	default:
-		break;
-	}
+	g_Player->texNo = CHAR_WALK;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
 	g_Player->countAnim++;
 	if (g_Player->countAnim > ANIM_WAIT)
 	{
@@ -1189,15 +1161,19 @@ void PlayWalkAnim(void)
 
 void PlayJumpAnim()
 {
-	if (GetKeyboardPress(DIK_RIGHT) && CheckMoveCollision(g_Player->move.x * 0.8f, CHAR_DIR_RIGHT))
+	if (GetKeyboardPress(DIK_RIGHT))
 	{
 		g_Player->dir = CHAR_DIR_RIGHT;
-		CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8f);
+		g_Player->invertTex = FALSE;
+		if (CheckMoveCollision(g_Player->move.x * 0.8f, CHAR_DIR_RIGHT))
+			CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8f);
 	}
-	else if (GetKeyboardPress(DIK_LEFT) && CheckMoveCollision(-g_Player->move.x * 0.8f, CHAR_DIR_LEFT))
+	else if (GetKeyboardPress(DIK_LEFT))
 	{
 		g_Player->dir = CHAR_DIR_LEFT;
-		CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8f);
+		g_Player->invertTex = TRUE;
+		if (CheckMoveCollision(-g_Player->move.x * 0.8f, CHAR_DIR_LEFT))
+			CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8f);
 	}
 		
 
@@ -1262,17 +1238,13 @@ int GetTexturePatternDivideX()
 {
 	switch (g_Player->texNo)
 	{
-	case CHAR_IDLE_RIGHT:
-	case CHAR_IDLE_LEFT:
+	case CHAR_IDLE:
 		return TEXTURE_PATTERN_DIVIDE_X;
-	case CHAR_WALK_RIGHT:
-	case CHAR_WALK_LEFT:
+	case CHAR_WALK:
 		return TEXTURE_WALK_PATTERN_DIVIDE_X;
-	case CHAR_RUN_RIGHT:
-	case CHAR_RUN_LEFT:
+	case CHAR_RUN:
 		return TEXTURE_RUN_PATTERN_DIVIDE_X;
-	case CHAR_DASH_RIGHT:
-	case CHAR_DASH_LEFT:
+	case CHAR_DASH:
 		return TEXTURE_DASH_PATTERN_DIVIDE_X;
 	case CHAR_JUMP:
 		return TEXTURE_JUMP_PATTERN_DIVIDE_X;
@@ -1298,7 +1270,6 @@ void UpdateActionQueue(void)
 		g_Player->actionQueueEnd = 0;
 		g_Player->actionQueueClearTime = 0;
 	}
-
 }
 
 BOOL CheckMoveCollision(float move, int dir)
