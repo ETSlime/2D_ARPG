@@ -160,6 +160,7 @@ HRESULT InitPlayer(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
+void DrawPlayerShadow(void);
 
 PLAYER* GetPlayer(void);
 

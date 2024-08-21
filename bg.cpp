@@ -94,9 +94,9 @@ HRESULT InitBG(void)
 	g_AABB[0].h = GROUND_H * 0.5f;
 
 	g_AABB[1].pos.x = 910;
-	g_AABB[1].pos.y = 1506;
+	g_AABB[1].pos.y = 1806;
 	g_AABB[1].w = 150;
-	g_AABB[1].h = 1500;
+	g_AABB[1].h = 276;
 
 
 #ifdef _DEBUG	
@@ -236,11 +236,18 @@ void DrawBG(void)
 		{
 			int vertexOffset = i * 4;
 
-			SetSpriteColorRotation(g_AABBVertexBuffer, g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, g_AABB[i].w, g_AABB[i].h,
-				0.0f, 0.0f, 0.0f, 0.0f,
-				XMFLOAT4(1.0f, 0.0f, 0.0f, 0.2f),
-				0.0f,
-				vertexOffset);
+			if (g_AABB[i].tag == WALL_AABB)
+				SetSpriteColorRotation(g_AABBVertexBuffer, g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, g_AABB[i].w, g_AABB[i].h,
+					0.0f, 0.0f, 0.0f, 0.0f,
+					XMFLOAT4(1.0f, 0.0f, 0.0f, 0.2f),
+					0.0f,
+					vertexOffset);
+			else if (g_AABB[i].tag == GROUND_AABB)
+				SetSpriteColorRotation(g_AABBVertexBuffer, g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, g_AABB[i].w, g_AABB[i].h,
+					0.0f, 0.0f, 0.0f, 0.0f,
+					XMFLOAT4(1.0f, 1.0f, 0.0f, 0.2f),
+					0.0f,
+					vertexOffset);
 
 			GetDeviceContext()->Draw(4, vertexOffset);
 		}

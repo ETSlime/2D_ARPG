@@ -512,35 +512,8 @@ void DrawPlayer(void)
 		if (g_Player[i].use == TRUE)		// このプレイヤーが使われている？
 		{									// Yes
 
-			{	// 影表示
-				SetBlendState(BLEND_MODE_SUBTRACT);	// 減算合成
 
-				// テクスチャ設定
-				GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[CHAR_SHADOW]);
-
-				float px = g_Player[i].pos.x - bg->pos.x;	// プレイヤーの表示位置X
-				float py = g_Player[i].shadowY - bg->pos.y;	// プレイヤーの表示位置Y
-				float pw = TEXTURE_WIDTH;		// プレイヤーの表示幅
-				float ph = TEXTURE_WIDTH /4;		// プレイヤーの表示高さ
-				py += 50.0f;		// 足元に表示
-
-				float tw = 1.0f;	// テクスチャの幅
-				float th = 1.0f;	// テクスチャの高さ
-				float tx = 0.0f;	// テクスチャの左上X座標
-				float ty = 0.0f;	// テクスチャの左上Y座標
-
-
-
-				// １枚のポリゴンの頂点とテクスチャ座標を設定
-				SetSpriteColor(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
-					XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-
-				// ポリゴン描画
-				GetDeviceContext()->Draw(4, 0);
-
-				SetBlendState(BLEND_MODE_ALPHABLEND);	// 半透明処理を元に戻す
-
-			}
+			DrawPlayerShadow();
 
 			// プレイヤーの分身を描画
 			if (g_Player[i].state == DASH)
@@ -604,8 +577,6 @@ void DrawPlayer(void)
 #endif
 		}
 	}
-
-
 }
 
 void UpdateKeyboardInput(void)
@@ -662,8 +633,8 @@ void UpdateKeyboardInput(void)
 		else if (CheckMoveCollision(speed * 0.8f, g_Player->dir))
 			CHANGE_PLAYER_POS_X(speed * 0.8f);
 
-		//std::cout << g_Player->pos.x << " ";
-		//std::cout << g_Player->pos.y << std::endl;
+		std::cout << g_Player->pos.x << " ";
+		std::cout << g_Player->pos.y << std::endl;
 	}
 	else if (GetKeyboardPress(DIK_LEFT) && g_Player->playAnim == FALSE)
 	{
@@ -684,8 +655,8 @@ void UpdateKeyboardInput(void)
 		else if (CheckMoveCollision(-speed * 0.8f, g_Player->dir))
 			CHANGE_PLAYER_POS_X(-speed * 0.8f);
 
-		//std::cout << g_Player->pos.x << " ";
-		//std::cout << g_Player->pos.y << std::endl;
+		std::cout << g_Player->pos.x << " ";
+		std::cout << g_Player->pos.y << std::endl;
 	}
 
 	if (GetKeyboardTrigger(DIK_C) && g_Player->dashCount < g_Player->maxDashCount)
@@ -889,14 +860,17 @@ void UpdateGroundCollision(void)
 		for (int j = 0; j < MAP01_GROUND_MAX; j++)
 		{
 			if (CheckGroundCollision(g_Player, &grounds[j]))
-			{
 				onGround = TRUE;
-				break;
-			}
 		}
 		if (g_Player->playAnim == TRUE || onGround)
 			CHANGE_PLAYER_POS_Y(-g_Player->move.y);
-
+	}
+	else
+	{
+		for (int j = 0; j < MAP01_GROUND_MAX; j++)
+		{
+			CheckGroundCollision(g_Player, &grounds[j]);
+		}
 	}
 
 	//if (GetKeyboardPress(DIK_Z))
@@ -921,6 +895,68 @@ int GetPlayerCount(void)
 	return g_PlayerCount;
 }
 
+void DrawPlayerShadow(void)
+{
+	BG* bg = GetBG();
+
+	// 影表示
+	SetBlendState(BLEND_MODE_SUBTRACT);	// 減算合成
+
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[CHAR_SHADOW]);
+
+	float px = g_Player->pos.x - bg->pos.x;	// プレイヤーの表示位置X
+	float py = g_Player->shadowY - bg->pos.y;	// プレイヤーの表示位置Y
+	float pw = TEXTURE_WIDTH;		// プレイヤーの表示幅
+	float ph = TEXTURE_WIDTH / 4;		// プレイヤーの表示高さ
+
+	// 地面との衝突判定に基づく影の位置
+	// プレイヤーの位置に対応する地面の高さを計算
+	float shadowPosY = py;  // 影の最終的なY座標
+	float highestGroundY = FLT_MAX;  // 最も高い地面のY座標を保持
+
+	// 地面のAABB情報を取得
+	AABB* ground = GetMap01AABB();
+	BOOL isOnGround = false;
+
+	// プレイヤーが地面にいるかどうかを確認
+	for (int j = 0; j < MAP01_GROUND_MAX; j++)
+	{
+		float groundX = ground[j].pos.x;
+		float groundY = ground[j].pos.y;
+		float groundW = ground[j].w;
+		float groundH = ground[j].h;
+
+		// プレイヤーのx座標が地面の幅の範囲に入っているかどうかを確認
+		if (g_Player->pos.x >= groundX - groundW / 2 && g_Player->pos.x <= groundX + groundW / 2)
+		{
+			// もっとも高い地面を探す
+			if (groundY - groundH / 2 < highestGroundY)
+			{
+				highestGroundY = groundY - groundH / 2;  // 現在の地面が最も高いので更新
+				shadowPosY = groundY - groundH / 2 - bg->pos.y - 50.0f; // 地面の上に影を表示
+				isOnGround = true;  // プレイヤーが地面にいるとフラグを設定
+			}
+		}
+	}
+	py = shadowPosY + 50.0f;
+
+	float tw = 1.0f;	// テクスチャの幅
+	float th = 1.0f;	// テクスチャの高さ
+	float tx = 0.0f;	// テクスチャの左上X座標
+	float ty = 0.0f;	// テクスチャの左上Y座標
+
+
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColor(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+
+	SetBlendState(BLEND_MODE_ALPHABLEND);	// 半透明処理を元に戻す
+}
 
 //=============================================================================
 // プレイヤーの分身を描画
@@ -1172,8 +1208,17 @@ void PlayJumpAnim()
 
 	float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->jumpCnt;
 	g_Player->move.y = -1.0f * g_Player->jumpYMax * cosf(angle);
-	if (CheckMoveCollision(g_Player->move.y, CHAR_DIR_UP))
+
+	// 上方向か下方向かを判断して一度に処理
+	int direction = (g_Player->move.y < 0) ? CHAR_DIR_UP : CHAR_DIR_DOWN;
+	if (CheckMoveCollision(g_Player->move.y, direction))
+	{
 		CHANGE_PLAYER_POS_Y(g_Player->move.y);
+	}
+	else if (direction == CHAR_DIR_DOWN)
+	{
+		g_Player->jumpCnt = PLAYER_JUMP_CNT_MAX;
+	}
 
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > ANIM_WAIT_JUMP)
@@ -1187,7 +1232,7 @@ void PlayJumpAnim()
 
 	g_Player->jumpCnt++;
 	g_Player->onAirCnt = g_Player->jumpCnt * 0.5f;
-	if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX)
+	if (g_Player->jumpCnt >= PLAYER_JUMP_CNT_MAX)
 	{
 		g_Player->playAnim = FALSE;
 		g_Player->state = IDLE;
@@ -1275,9 +1320,9 @@ BOOL CheckMoveCollision(float move, int dir)
 		case CHAR_DIR_LEFT:
 		{
 			XMFLOAT3 newPos = XMFLOAT3(g_Player->pos.x + move, g_Player->pos.y, g_Player->pos.z);
-			//if (g_Player->pos.x + move - g_Player->bodyAABB.w * 0.5f < wallPos.x + wallW * 0.5f)
 
-			if (CollisionBB(newPos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH))
+			if (CollisionBB(newPos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH) &&
+				g_Player->bodyAABB.pos.x > wallPos.x)
 			{
 				// プレイヤーが左に移動していて、壁が左側にある場合
 				SET_PLAYER_POS_X(wallPos.x + wallW / 2 + g_Player->bodyAABB.w / 2 + 0.01f); // 左への進行を停止
@@ -1289,10 +1334,11 @@ BOOL CheckMoveCollision(float move, int dir)
 		case CHAR_DIR_RIGHT:
 		{
 			XMFLOAT3 newPos = XMFLOAT3(g_Player->pos.x + move, g_Player->pos.y, g_Player->pos.z);
-			if (CollisionBB(newPos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH))
+			if (CollisionBB(newPos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH) &&
+				g_Player->bodyAABB.pos.x < wallPos.x)
 			{
 				// プレイヤーが右に移動していて、壁が右側にある場合
-				SET_PLAYER_POS_X(wallPos.x - wallW / 2 - g_Player->bodyAABB.w / 2 + 0.01f); // 右への進行を停止
+				SET_PLAYER_POS_X(wallPos.x - wallW / 2 - g_Player->bodyAABB.w / 2 - 0.01f); // 右への進行を停止
 				return false;
 			}
 			break;
@@ -1301,12 +1347,23 @@ BOOL CheckMoveCollision(float move, int dir)
 		case CHAR_DIR_UP:
 		{
 			XMFLOAT3 newPos = XMFLOAT3(g_Player->pos.x, g_Player->pos.y + move, g_Player->pos.z);
-			//if (move > 0 && g_Player->pos.x < wallPos.x)
 			if (CollisionBB(newPos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH))
 			{
 				// プレイヤーが上に移動していて、壁が上側にある場合
-				SET_PLAYER_POS_Y(wallPos.y - wallH / 2 - g_Player->bodyAABB.h / 2); // 上への進行を停止
+				SET_PLAYER_POS_Y(wallPos.y + wallH / 2 + g_Player->bodyAABB.h / 2); // 上への進行を停止
 				std::cout << "push down" << std::endl;
+				return false;
+			}
+			break;
+		}
+		case CHAR_DIR_DOWN:
+		{
+			XMFLOAT3 newPos = XMFLOAT3(g_Player->pos.x, g_Player->pos.y + move, g_Player->pos.z);
+			if (CollisionBB(newPos, g_Player->bodyAABB.w, g_Player->bodyAABB.h, wallPos, wallW, wallH))
+			{
+				// プレイヤーが上に移動していて、壁が下側にある場合
+				SET_PLAYER_POS_Y(wallPos.y - wallH / 2 - g_Player->bodyAABB.h / 2); // 下への進行を停止
+				std::cout << "push up" << std::endl;
 				return false;
 			}
 			break;
@@ -1364,14 +1421,12 @@ BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground)
 		// 空中ダッシュ回数をリセット
 		g_Player->airDashCount = 0;
 		g_Player->jumpOnAirCnt = 0;
-		std::cout << "reset";
 
 		
 		// プレイヤーの位置を地面の上に調整し、地面を通り抜けないようにする
 		SET_PLAYER_POS_Y(groundPos.y - groundH * 0.5f - playerH * 0.5f + 0.01f); // 0.01fのマージンを追加
 
 		ground->tag = GROUND_AABB;
-
 		return true;
 	}
 	else if (isColliding && overlapWidth < threshold) 
