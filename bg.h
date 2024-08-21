@@ -31,8 +31,8 @@ struct BG
 #define TEXTURE_MAX					(3)				// テクスチャの数
 
 #define	SKY_H						(150.0f)	// 空のポリゴンの高さ
-#define MAP01_GROUND_MAX			(1)
-#define GROUND_H					(2006 - 1740 - 100)
+#define MAP01_GROUND_MAX			(10)
+#define GROUND_H					(2006 - 1720)
 
 
 //*****************************************************************************

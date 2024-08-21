@@ -89,21 +89,21 @@ HRESULT InitBG(void)
 	}
 
 	g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
-	g_AABB[0].pos.y = TEXTURE_HEIGHT * 0.5f;// -(TEXTURE_HEIGHT - GROUND_H) * 0.5f;
-	g_AABB[0].w = TEXTURE_WIDTH * 0.5;
-	g_AABB[0].h = TEXTURE_HEIGHT * 0.5;
+	g_AABB[0].pos.y = 1720.0f + (TEXTURE_HEIGHT - 1720.0f) * 0.5f;
+	g_AABB[0].w = TEXTURE_WIDTH;
+	g_AABB[0].h = GROUND_H * 0.5f;
 
-	//g_AABB[1].pos.x = TEXTURE_WIDTH * 0.5f;
-	//g_AABB[1].pos.y = TEXTURE_HEIGHT - (TEXTURE_HEIGHT - GROUND_H) * 0.5f;
-	//g_AABB[1].w = TEXTURE_WIDTH * 0.5;
-	//g_AABB[1].h = GROUND_H;
+	g_AABB[1].pos.x = 910;
+	g_AABB[1].pos.y = 1506;
+	g_AABB[1].w = 150;
+	g_AABB[1].h = 1500;
 
 
 #ifdef _DEBUG	
 	// debug
 	{
 		int aabbCount = MAP01_GROUND_MAX;
-		const int maxVertices = MAP01_GROUND_MAX * 4;  // 每个AABB 4个顶点 (2D)
+		const int maxVertices = MAP01_GROUND_MAX * 4;
 
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
@@ -234,12 +234,15 @@ void DrawBG(void)
 		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
 		for (int i = 0; i < MAP01_GROUND_MAX; ++i)
 		{
+			int vertexOffset = i * 4;
+
 			SetSpriteColorRotation(g_AABBVertexBuffer, g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, g_AABB[i].w, g_AABB[i].h,
 				0.0f, 0.0f, 0.0f, 0.0f,
 				XMFLOAT4(1.0f, 0.0f, 0.0f, 0.2f),
-				0.0f);
+				0.0f,
+				vertexOffset);
 
-			GetDeviceContext()->Draw(4, i * 4);
+			GetDeviceContext()->Draw(4, vertexOffset);
 		}
 #endif
 

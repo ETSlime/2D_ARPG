@@ -20,10 +20,11 @@
 #define ACTION_QUEUE_SIZE		(4)
 #define ACTION_QUEUE_CLEAR_WAIT	(150)
 #define DASH_CD_TIME			(40)
+#define MAX_DASH_COUNT			(2)
 #define ATTACK_PATTERN_MAX		(4)		// キューをクリアするまでの待機時間
 
 #define PLAYER_INIT_POS_X		(1250.0f)
-#define PLAYER_INIT_POS_Y		(1740.0f)
+#define PLAYER_INIT_POS_Y		(1742.0f)
 #define FALLING_THRESHOLD		(3.0f)
 
 #define SET_PLAYER_POS_Y(y_value) \
@@ -106,6 +107,7 @@ enum
 
 struct PLAYER
 {
+	// anim/texture/pos
 	XMFLOAT3	pos;			// ポリゴンの座標
 	XMFLOAT3	rot;			// ポリゴンの回転量
 	BOOL		use;			// true:使っている  false:未使用
@@ -117,27 +119,36 @@ struct PLAYER
 	int			texNo;			// テクスチャ番号
 	int			state;
 	int			animFrameCount;
-	int			dashCount;
 
+	// dash
+	int			dashCount;
+	int			dashCD;
+	int			airDashCount;
+	int			maxDashCount;
+
+	// state
 	int			dir;			// 向き（0:上 1:右 2:下 3:左）
 	BOOL		running;
 	BOOL		playAnim;
 	BOOL		dashOnAir;
+	BOOL		jumpOnAir;
+	BOOL		jump;			// ジャンプフラグ
+	int			jumpCnt;		// ジャンプ中のカウント
+	float		jumpYMax;		// 
+	int			jumpOnAirCnt;
+	int			onAirCnt;
+
 	XMFLOAT3	move;			// 移動速度
 	XMFLOAT3	offset[PLAYER_OFFSET_CNT];		// 残像ポリゴンの座標
 
+	//	action queue
 	int			attackPattern;
 	int			actionQueue[ACTION_QUEUE_SIZE];
 	int			actionQueueStart;
 	int			actionQueueEnd;
 	int			actionQueueClearTime;
 
-	BOOL		jump;			// ジャンプフラグ
-	int			jumpCnt;		// ジャンプ中のカウント
-	float		jumpYMax;		// 
-
-	int			onAirCnt;
-
+	// AABB
 	AABB		bodyAABB;
 	AABB		attackAABB;
 };

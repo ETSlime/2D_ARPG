@@ -190,12 +190,12 @@ void SetSpriteColor(ID3D11Buffer *buf, float X, float Y, float Width, float Heig
 
 void SetSpriteColorRotation(ID3D11Buffer *buf, float X, float Y, float Width, float Height,
 	float U, float V, float UW, float VH,
-	XMFLOAT4 Color, float Rot)
+	XMFLOAT4 Color, float Rot, int vertexOffset)
 {
 	D3D11_MAPPED_SUBRESOURCE msr;
 	GetDeviceContext()->Map(buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
 
-	VERTEX_3D *vertex = (VERTEX_3D*)msr.pData;
+	VERTEX_3D *vertex = (VERTEX_3D*)msr.pData + vertexOffset;
 
 	float hw, hh;
 	hw = Width * 0.5f;		// コンピューターは割り算が苦手

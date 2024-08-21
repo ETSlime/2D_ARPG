@@ -36,7 +36,7 @@ void SetSpriteColor(ID3D11Buffer *buf, float X, float Y, float Width, float Heig
 
 void SetSpriteColorRotation(ID3D11Buffer *buf, float X, float Y, float Width, float Height,
 	float U, float V, float UW, float VH,
-	XMFLOAT4 Color, float Rot);
+	XMFLOAT4 Color, float Rot, int vertexOffset = 0);
 
 void SetSpriteLeftTop(ID3D11Buffer *buf, float X, float Y, float Width, float Height, float U, float V, float UW, float VH);
 
