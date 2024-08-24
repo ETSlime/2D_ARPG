@@ -23,8 +23,8 @@
 #define MAX_DASH_COUNT			(2)
 #define ATTACK_PATTERN_MAX		(4)		// キューをクリアするまでの待機時間
 
-#define PLAYER_INIT_POS_X		(1250.0f)
-#define PLAYER_INIT_POS_Y		(1742.0f)
+#define PLAYER_INIT_POS_X		(938.0f)
+#define PLAYER_INIT_POS_Y		(1306.5f)
 #define FALLING_THRESHOLD		(3.0f)
 
 #define SET_PLAYER_POS_Y(y_value) \

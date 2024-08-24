@@ -16,34 +16,35 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define TEXTURE_IDLE_WIDTH					(200/2)	// キャラサイズ
-#define TEXTURE_IDLE_HEIGHT					(200/2)	// 
-#define TEXTURE_NORMAL_ATTACK1_WIDTH		(380/2)	// キャラサイズ
-#define TEXTURE_NORMAL_ATTACK1_HEIGHT		(320/2)	// 
-#define TEXTURE_NORMAL_ATTACK3_WIDTH		(375/2)	// キャラサイズ
-#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(290/2)	//
-#define TEXTURE_NORMAL_ATTACK4_WIDTH		(290/2)	// キャラサイズ
+#define TEXTURE_IDLE_WIDTH					(150/2)	// キャラサイズ
+#define TEXTURE_IDLE_HEIGHT					(150/2)	// 
+#define TEXTURE_NORMAL_ATTACK1_WIDTH		(285/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK1_HEIGHT		(240/2)	// 
+#define TEXTURE_NORMAL_ATTACK3_WIDTH		(281/2)	// キャラサイズ
+#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(217/2)	//
+#define TEXTURE_NORMAL_ATTACK4_WIDTH		(217/2)	// キャラサイズ
 #define TEXTURE_NORMAL_ATTACK4_HEIGHT		(290/2)	//
-#define TEXTURE_RUN_WIDTH					(220/2)	// キャラサイズ
-#define TEXTURE_RUN_HEIGHT					(220/2)	// 
-#define TEXTURE_JUMP_WIDTH					(280/2)	// キャラサイズ
-#define TEXTURE_JUMP_HEIGHT					(280/2)	//
-#define TEXTURE_MAX							(20)		// テクスチャの数
+#define TEXTURE_RUN_WIDTH					(165/2)	// キャラサイズ
+#define TEXTURE_RUN_HEIGHT					(165/2)	// 
+#define TEXTURE_JUMP_WIDTH					(210/2)	// キャラサイズ
+#define TEXTURE_JUMP_HEIGHT					(210/2)	//
+#define TEXTURE_MAX							(20)	// テクスチャの数
 
-#define TEXTURE_PATTERN_DIVIDE_X				(4)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_WALK_PATTERN_DIVIDE_X			(4)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_RUN_PATTERN_DIVIDE_X			(8)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_DASH_PATTERN_DIVIDE_X			(1)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_JUMP_PATTERN_DIVIDE_X			(10)	// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X	(7)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X	(9)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)		// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(13)	// アニメパターンのテクスチャ内分割数（X)
-#define TEXTURE_PATTERN_DIVIDE_Y				(1)		// アニメパターンのテクスチャ内分割数（Y)
+// アニメパターンのテクスチャ内分割数（X)
+#define TEXTURE_IDLE_PATTERN_DIVIDE_X			(4)		
+#define TEXTURE_WALK_PATTERN_DIVIDE_X			(4)
+#define TEXTURE_RUN_PATTERN_DIVIDE_X			(8)
+#define TEXTURE_DASH_PATTERN_DIVIDE_X			(1)
+#define TEXTURE_JUMP_PATTERN_DIVIDE_X			(10)
+#define TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X	(7)
+#define TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X	(9)
+#define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)
+#define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(13)
+#define TEXTURE_PATTERN_DIVIDE_Y				(1)
 
 
 #define ANIM_PATTERN_NUM						(TEXTUREf_PATTERN_DIVIDE_X*TEXTURE_PATTERN_DIVIDE_Y)	// アニメーションパターン数
-#define ANIM_WAIT								(10)		// アニメーションの切り替わるWait値
+#define ANIM_WAIT_WALK							(10)		// アニメーションの切り替わるWait値
 #define ANIM_WAIT_IDLE							(30)		// アニメーションの切り替わるWait値
 #define ANIM_WAIT_RUN							(5)		// アニメーションの切り替わるWait値
 #define ANIM_WAIT_DASH							(1)		// アニメーションの切り替わるWait値
@@ -67,7 +68,7 @@
 
 // ジャンプ処理
 #define	PLAYER_JUMP_CNT_MAX			(60)		// 60フレームで着地する
-#define	PLAYER_JUMP_Y_MAX			(10.0f)	// ジャンプの高さ
+#define	PLAYER_JUMP_Y_MAX			(7.5f)	// ジャンプの高さ
 
 
 //*****************************************************************************
@@ -165,7 +166,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].airDashCount = 0;
 		g_Player[i].maxDashCount = MAX_DASH_COUNT;
 
-		g_Player[i].move = XMFLOAT3(5.0f, 0.0f, 0.0f);		// 移動量
+		g_Player[i].move = XMFLOAT3(3.75f, 0.0f, 0.0f);		// 移動量
 
 		g_Player[i].dir = CHAR_DIR_RIGHT;					// 右向きにしとくか
 		g_Player[i].running = FALSE;
@@ -385,37 +386,73 @@ void UpdatePlayer(void)
 					SET_PLAYER_POS_Y(bg->h);
 				}
 
-				// プレイヤーの立ち位置からMAPのスクロール座標を計算する
-				bg->pos.x = g_Player[i].pos.x - PLAYER_DISP_X;
+				// 左右の制限距離（画面の三分の一）
+				float leftLimitX = SCREEN_WIDTH / 3;
+				float rightLimitX = SCREEN_WIDTH * 2 / 3;
+
+				// プレイヤーが画面内の移動範囲内かどうかを確認
+				if (g_Player[i].pos.x < bg->pos.x + leftLimitX) {
+					// プレイヤーが左の制限範囲を越えた場合は、背景を左にスクロール
+					bg->pos.x = g_Player[i].pos.x - leftLimitX;
+				}
+				else if (g_Player[i].pos.x > bg->pos.x + rightLimitX) {
+					// プレイヤーが右の制限範囲を越えた場合は、背景を右にスクロール
+					bg->pos.x = g_Player[i].pos.x - rightLimitX;
+				}
+
+				// 背景のX座標を画面端で制限
 				if (bg->pos.x < 0) bg->pos.x = 0;
 				if (bg->pos.x > bg->w - SCREEN_WIDTH) bg->pos.x = bg->w - SCREEN_WIDTH;
 
-				bg->pos.y = g_Player[i].pos.y - PLAYER_DISP_Y;
+				// 上下の制限距離（画面の三分の一）
+				float topLimitY = SCREEN_HEIGHT / 3;
+				float bottomLimitY = SCREEN_HEIGHT * 2 / 3;
+
+				// プレイヤーが画面内の移動範囲内かどうかを確認
+				if (g_Player[i].pos.y < bg->pos.y + topLimitY) {
+					// プレイヤーが上の制限範囲を越えた場合は、背景を上にスクロール
+					bg->pos.y = g_Player[i].pos.y - topLimitY;
+				}
+				else if (g_Player[i].pos.y > bg->pos.y + bottomLimitY) {
+					// プレイヤーが下の制限範囲を越えた場合は、背景を下にスクロール
+					bg->pos.y = g_Player[i].pos.y - bottomLimitY;
+				}
+
+				// 背景のY座標を画面端で制限
 				if (bg->pos.y < 0) bg->pos.y = 0;
 				if (bg->pos.y > bg->h - SCREEN_HEIGHT) bg->pos.y = bg->h - SCREEN_HEIGHT;
 
-				// 移動が終わったらエネミーとの当たり判定
-				{
-					ENEMY* enemy = GetEnemy();
+				//// プレイヤーの立ち位置からMAPのスクロール座標を計算する
+				//bg->pos.x = g_Player[i].pos.x - PLAYER_DISP_X;
+				//if (bg->pos.x < 0) bg->pos.x = 0;
+				//if (bg->pos.x > bg->w - SCREEN_WIDTH) bg->pos.x = bg->w - SCREEN_WIDTH;
 
-					// エネミーの数分当たり判定を行う
-					for (int j = 0; j < ENEMY_MAX; j++)
-					{
-						// 生きてるエネミーと当たり判定をする
-						if (enemy[j].use == TRUE)
-						{
-							BOOL ans = CollisionBB(g_Player[i].pos, g_Player[i].w, g_Player[i].h,
-								enemy[j].pos, enemy[j].w, enemy[j].h);
-							// 当たっている？
-							if (ans == TRUE)
-							{
-								// 当たった時の処理
-								enemy[j].use = FALSE;
-								AddScore(10);
-							}
-						}
-					}
-				}
+				//bg->pos.y = g_Player[i].pos.y - PLAYER_DISP_Y;
+				//if (bg->pos.y < 0) bg->pos.y = 0;
+				//if (bg->pos.y > bg->h - SCREEN_HEIGHT) bg->pos.y = bg->h - SCREEN_HEIGHT;
+
+				// 移動が終わったらエネミーとの当たり判定
+				//{
+				//	ENEMY* enemy = GetEnemy();
+
+				//	// エネミーの数分当たり判定を行う
+				//	for (int j = 0; j < ENEMY_MAX; j++)
+				//	{
+				//		// 生きてるエネミーと当たり判定をする
+				//		if (enemy[j].use == TRUE)
+				//		{
+				//			BOOL ans = CollisionBB(g_Player[i].pos, g_Player[i].w, g_Player[i].h,
+				//				enemy[j].pos, enemy[j].w, enemy[j].h);
+				//			// 当たっている？
+				//			if (ans == TRUE)
+				//			{
+				//				// 当たった時の処理
+				//				enemy[j].use = FALSE;
+				//				AddScore(10);
+				//			}
+				//		}
+				//	}
+				//}
 
 
 
@@ -1151,7 +1188,7 @@ void PlayWalkAnim(void)
 	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 
 	g_Player->countAnim++;
-	if (g_Player->countAnim > ANIM_WAIT)
+	if (g_Player->countAnim > ANIM_WAIT_WALK)
 	{
 		g_Player->countAnim = 0.0f;
 		// パターンの切り替え
@@ -1239,7 +1276,7 @@ int GetTexturePatternDivideX()
 	switch (g_Player->texNo)
 	{
 	case CHAR_IDLE:
-		return TEXTURE_PATTERN_DIVIDE_X;
+		return TEXTURE_IDLE_PATTERN_DIVIDE_X;
 	case CHAR_WALK:
 		return TEXTURE_WALK_PATTERN_DIVIDE_X;
 	case CHAR_RUN:
@@ -1257,7 +1294,7 @@ int GetTexturePatternDivideX()
 	case CHAR_NORMAL_ATTACK4:
 		return TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X;
 	default:
-		return 0;
+		return -1;
 	}
 }
 
@@ -1322,7 +1359,6 @@ BOOL CheckMoveCollision(float move, int dir)
 			{
 				// プレイヤーが上に移動していて、壁が上側にある場合
 				SET_PLAYER_POS_Y(wallPos.y + wallH / 2 + g_Player->bodyAABB.h / 2); // 上への進行を停止
-				std::cout << "push down" << std::endl;
 				return false;
 			}
 			break;
@@ -1334,7 +1370,6 @@ BOOL CheckMoveCollision(float move, int dir)
 			{
 				// プレイヤーが上に移動していて、壁が下側にある場合
 				SET_PLAYER_POS_Y(wallPos.y - wallH / 2 - g_Player->bodyAABB.h / 2); // 下への進行を停止
-				std::cout << "push up" << std::endl;
 				return false;
 			}
 			break;
@@ -1345,7 +1380,6 @@ BOOL CheckMoveCollision(float move, int dir)
 	}
 
 	return true;
-
 }
 
 BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground)

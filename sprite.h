@@ -24,7 +24,9 @@ enum
 	GROUND_AABB,
 	WALL_AABB,
 	PLAYER_BODY_AABB,
-	MONSTER_BODY_AABB
+	PLAYER_ATTACK_AABB,
+	ENEMY_BODY_AABB,
+	ENEMY_ATTACK_AABB
 };
 
 //*****************************************************************************

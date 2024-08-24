@@ -89,14 +89,14 @@ HRESULT InitBG(void)
 	}
 
 	g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
-	g_AABB[0].pos.y = 1720.0f + (TEXTURE_HEIGHT - 1720.0f) * 0.5f;
+	g_AABB[0].pos.y = 1290.0f + (TEXTURE_HEIGHT - 1290.0f) * 0.5f;
 	g_AABB[0].w = TEXTURE_WIDTH;
 	g_AABB[0].h = GROUND_H * 0.5f;
 
-	g_AABB[1].pos.x = 910;
-	g_AABB[1].pos.y = 1806;
-	g_AABB[1].w = 150;
-	g_AABB[1].h = 276;
+	g_AABB[1].pos.x = 682;
+	g_AABB[1].pos.y = 1355;
+	g_AABB[1].w = 113;
+	g_AABB[1].h = 207;
 
 
 #ifdef _DEBUG	
@@ -239,7 +239,7 @@ void DrawBG(void)
 			if (g_AABB[i].tag == WALL_AABB)
 				SetSpriteColorRotation(g_AABBVertexBuffer, g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, g_AABB[i].w, g_AABB[i].h,
 					0.0f, 0.0f, 0.0f, 0.0f,
-					XMFLOAT4(1.0f, 0.0f, 0.0f, 0.2f),
+					XMFLOAT4(0.0f, 1.0f, 0.0f, 0.2f),
 					0.0f,
 					vertexOffset);
 			else if (g_AABB[i].tag == GROUND_AABB)

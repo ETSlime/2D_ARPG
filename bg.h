@@ -26,13 +26,13 @@ struct BG
 };
 
 
-#define TEXTURE_WIDTH				(5026)//(3015)			// (SCREEN_WIDTH)	// 背景サイズ
-#define TEXTURE_HEIGHT				(2006)//(1360)			// (SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(3)				// テクスチャの数
+#define TEXTURE_WIDTH				(3770)//(3015)			// (SCREEN_WIDTH)	// 背景サイズ
+#define TEXTURE_HEIGHT				(1504)//(1360)			// (SCREEN_HEIGHT)	// 
+#define TEXTURE_MAX					(2)				// テクスチャの数
 
 #define	SKY_H						(150.0f)	// 空のポリゴンの高さ
-#define MAP01_GROUND_MAX			(10)
-#define GROUND_H					(2006 - 1720)
+#define MAP01_GROUND_MAX			(3)
+#define GROUND_H					(1504 - 1290)
 
 
 //*****************************************************************************
