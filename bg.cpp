@@ -93,10 +93,20 @@ HRESULT InitBG(void)
 	g_AABB[0].w = TEXTURE_WIDTH;
 	g_AABB[0].h = GROUND_H * 0.5f;
 
-	g_AABB[1].pos.x = 682;
-	g_AABB[1].pos.y = 1355;
-	g_AABB[1].w = 113;
-	g_AABB[1].h = 207;
+	g_AABB[1].pos.x = 685;
+	g_AABB[1].pos.y = 1226;
+	g_AABB[1].w = 103;
+	g_AABB[1].h = 224;
+
+	g_AABB[2].pos.x = 900;
+	g_AABB[2].pos.y = 857;
+	g_AABB[2].w = 640;
+	g_AABB[2].h = 40;
+
+	g_AABB[3].pos.x = 1450;
+	g_AABB[3].pos.y = 594;
+	g_AABB[3].w = 2200;
+	g_AABB[3].h = 40;
 
 
 #ifdef _DEBUG	

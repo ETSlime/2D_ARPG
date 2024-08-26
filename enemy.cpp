@@ -332,7 +332,7 @@ HRESULT InitEnemy(void)
 	g_Enemy[0].time = 0.0f;		// 線形補間用のタイマーをクリア
 	g_Enemy[0].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
 	g_Enemy[0].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
-	g_Enemy[0].pos = g_MoveTbl0[1].pos;
+	g_Enemy[0].pos = g_MoveTbl0[0].pos;
 
 	//// 1番だけ線形補間で動かしてみる
 	//g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
@@ -475,48 +475,6 @@ void UpdateEnemy(void)
 					{
 						g_Enemy[i].state = ENEMY_RETREAT;  // 倒退状態に移行
 					}
-					//else if (distanceToReturnPos > MAX_CHASE_DISTANCE)	// 最大追跡距離を超えた場合
-					//{
-					//	// プレイヤーが視野内にいる場合、倒退しながら視野外を待つ
-					//	if (distanceToPlayer < ENEMY_VISION_RADIUS) {
-
-					//		// プレイヤーが視野内にいるので倒退する
-					//		XMVECTOR direction = XMVector3Normalize(enemyPos - playerPos);  // 倒退方向（プレイヤーとは逆）
-					//		if (g_Enemy[i].canFly == FALSE)
-					//			direction = XMVectorSetY(direction, 0);  // Y方向の速度を0に設定
-					//		XMVECTOR moveStep = direction * g_Enemy[i].move.x * RETREAT_SPEED_RATE;
-					//		enemyPos += moveStep;
-
-
-					//		XMStoreFloat3(&g_Enemy[i].pos, enemyPos);
-					//		XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, enemyPos);
-
-					//		std::cout << "step back: " << g_Enemy[i].pos.x << std::endl;
-					//		
-					//		// 倒退中でも向きはプレイヤーに向ける
-					//		g_Enemy[i].stepBack = TRUE;
-					//		//g_Enemy[i].dir = (g_Enemy[i].pos.x < player->pos.x) ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
-					//	}
-					//	// プレイヤーが視野外に出た場合、WALK_BACK状態に遷移
-					//	else {
-					//		g_Enemy[i].state = ENEMY_WALK_BACK;  // 元の行動パスに戻る
-					//	}
-					//}
-					//else if (distanceToReturnPos > MIN_RETURN_DISTANCE)
-					//{
-					//	// 倒退する場合は、MIN_RETURN_DISTANCEまで後退を続ける
-					//	XMVECTOR direction = XMVector3Normalize(returnPos - enemyPos);  // 倒退方向（returnPosに向ける）
-					//	if (g_Enemy[i].canFly == FALSE)
-					//		direction = XMVectorSetY(direction, 0);  // Y方向の速度を0に設定
-					//	XMVECTOR moveStep = direction * g_Enemy[i].move.x * RETREAT_SPEED_RATE;
-					//	enemyPos += moveStep;
-
-					//	XMStoreFloat3(&g_Enemy[i].pos, enemyPos);
-					//	XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, enemyPos);
-					//	// 倒退中でも向きはプレイヤーに向ける
-					//	g_Enemy[i].stepBack = TRUE;
-					//}
-						
 					else if (distanceToPlayer > ENEMY_VISION_RADIUS)
 					{
 						// プレイヤーが視野範囲外に出た場合、元の位置に戻るためWALK_BACK状態に移行
@@ -551,7 +509,6 @@ void UpdateEnemy(void)
 					}
 					else
 					{
-						std::cout << "retreat" << std::endl;
 						// 倒退方向（プレイヤーとは逆）
 						XMVECTOR direction = XMVector3Normalize(enemyPos - playerPos);
 						if (g_Enemy[i].canFly == FALSE)
@@ -586,7 +543,6 @@ void UpdateEnemy(void)
 					}
 					else if (distanceToPlayer > ENEMY_ATTACK_RADIUS) 
 					{
-						std::cout << "cooldonw chase" << std::endl;
 						// 攻撃範囲外なら追跡を続ける
 						g_Enemy[i].stepBack = FALSE;
 						float speed = g_Enemy[i].move.x;  // 追跡速度
@@ -623,11 +579,9 @@ void UpdateEnemy(void)
 				case ENEMY_IDLE:
 				case ENEMY_WALK:
 				{
-					std::cout << "walk" << std::endl;
 					// プレイヤーが視野内にいて、敵がプレイヤーを向いている場合にCHASE状態に遷移
 					if (distanceToPlayer < ENEMY_VISION_RADIUS && CheckChasingPlayer(&g_Enemy[i]))
 					{
-						std::cout << "Chasing " << std::endl;
 						g_Enemy[i].state = ENEMY_CHASE;
 						g_Enemy[i].returnPos = g_Enemy[i].pos;  // 行動パスから離れる前の位置を記録
 					}
@@ -670,8 +624,15 @@ void UpdateEnemy(void)
 
 
 							// 計算して求めた移動量を現在の移動テーブルXYZに足している＝表示座標を求めている
+							XMVECTOR vec2Vector = XMLoadFloat3(&g_Enemy[i].pos);
 							XMStoreFloat3(&g_Enemy[i].pos, nowPos + Pos);
 							XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, nowPos + Pos);
+
+
+							if (XMVectorGetX(XMVector3Length(vec2Vector -(nowPos + Pos))) > 10.0f)
+							{
+								std::cout << "daf";
+							}
 
 							// 計算して求めた回転量を現在の移動テーブルに足している
 							XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);
@@ -708,7 +669,6 @@ void UpdateEnemy(void)
 					}
 					else
 					{
-						std::cout << "walk back" << std::endl;
 						// 元の行動パスに戻るために、記録した位置に移動する
 						g_Enemy[i].stepBack = FALSE;
 						XMVECTOR enemyPos = XMLoadFloat3(&g_Enemy[i].pos);
@@ -979,14 +939,16 @@ void PlayEnemyWalkAnim(ENEMY* enemy)
 			{
 				enemy->patternAnim = ANIM_WALK_PATTERN_NUM - 1;  // 最初のフレームであれば最後のフレームに戻る
 			}
-			else {
+			else 
+			{
 				enemy->patternAnim--;  // フレームを逆方向に進める
 			}
 		}
 		else
+		{
 			enemy->patternAnim = (enemy->patternAnim + 1) % ANIM_WALK_PATTERN_NUM;
+		}
 
-		std::cout << enemy->patternAnim << std::endl;
 	}
 }
 
@@ -1018,7 +980,7 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 	}
 
 	// 攻撃判定の更新
-	UpdateAttackAABB(enemy);
+	UpdateEnemyAttackAABB(enemy);
 
 	// アニメーションが終了したかをチェック
 	if (enemy->patternAnim == ANIM_ATTACK_PATTERN_NUM + ANIM_ATTACK_OFFSET - 1 && enemy->countAnim == ANIM_WAIT_ATTACK)
@@ -1103,7 +1065,7 @@ int GetCurrentTextureSizeH(int enemyType)
 	}
 }
 
-void UpdateAttackAABB(ENEMY* enemy)
+void UpdateEnemyAttackAABB(ENEMY* enemy)
 {
 	AttackAABBTBL* attackTable = nullptr;
 

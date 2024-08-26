@@ -15,6 +15,7 @@
 // マクロ定義
 //*****************************************************************************
 #define PLAYER_MAX				(1)		// プレイヤーのMax人数
+#define MAX_ATTACK_AABB			(3)
 
 #define	PLAYER_OFFSET_CNT		(8)	// 8分身
 #define ACTION_QUEUE_SIZE		(4)
@@ -26,6 +27,8 @@
 #define PLAYER_INIT_POS_X		(938.0f)
 #define PLAYER_INIT_POS_Y		(1306.5f)
 #define FALLING_THRESHOLD		(3.0f)
+#define HARDLANDING_HEIGHT		(60)
+#define	DIVE_ATTACK_SPEED		(10.0f)
 
 #define SET_PLAYER_POS_Y(y_value) \
     do { \
@@ -62,7 +65,12 @@ enum
 	CHAR_NORMAL_ATTACK2,
 	CHAR_NORMAL_ATTACK3,
 	CHAR_NORMAL_ATTACK4,
+	CHAR_DASH_ATTACK,
 	CHAR_JUMP,
+	CHAR_HARD_LANDING,
+	CHAR_HIT,
+	CHAR_KNOCKDOWN,
+	CHAR_REBOUND,
 	CHAR_SHADOW,
 };
 
@@ -85,6 +93,10 @@ enum
 	ATTACK,
 	JUMP,
 	FALL,
+	HARD_LANDING,
+	HIT,
+	KNOCKDOWN,
+	REBOUND,
 };
 
 // attack pattern
@@ -95,6 +107,7 @@ enum
 	NORMAL_ATTACK3,
 	NORMAL_ATTACK4,
 	NONE,
+	DASH_ATTACK,
 };
 
 //*****************************************************************************
@@ -147,7 +160,7 @@ struct PLAYER
 
 	// AABB
 	AABB		bodyAABB;
-	AABB		attackAABB;
+	AABB		attackAABB[MAX_ATTACK_AABB];
 };
 
 //*****************************************************************************
@@ -174,17 +187,26 @@ void PlayDashAnim(void);
 void PlayAttackAnim(void);
 void PlayJumpAnim(void);
 void PlayFallAnim(void);
-void AdjustAttackTexturePosition(float& px, float& py);
+void PlayHardLandingAnim(void);
+void AdjustAttackTexturePos(float& px, float& py);
 void AdjustAttackTextureSize(void);
+void AdjustAttackPlayerPos(void);
 
+void HandleActionQueue(void);
+void UpdateBackGroundScroll(void);
 // キー入力で移動
 void UpdateKeyboardInput(void);
+void HandlePlayerMove(float speed, int direction);
+void HandlePlayerDash(void);
+void HandlePlayerJump(void);
+void HandlePlayerAttack(void);
 // ゲームパッドでで移動
 void UpdateGamepadInput(void);
 // 当たり判定
 void UpdateGroundCollision(void);
 void UpdateActionQueue(void);
+void UpdatePlayerAttackAABB(void);
 
 // プレイヤーと地面の衝突判定関数
 BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground);
-BOOL CheckMoveCollision(float move, int dir);
+BOOL CheckMoveCollision(float move, int dir, BOOL checkGround = FALSE);

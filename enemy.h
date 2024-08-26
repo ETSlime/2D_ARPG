@@ -111,11 +111,12 @@ int GetEnemyCount(void);
 
 int GetCurrentTextureSizeW(int enemyType);
 int GetCurrentTextureSizeH(int enemyType);
+
+// anim
 void PlayEnemyWalkAnim(ENEMY* enemy);
 void PlayEnemyAttackAnim(ENEMY* enemy);
 void PlayEnemyIdleAnim(ENEMY* enemy);
 
-void UpdateAttackAABB(ENEMY* enemy);
+void UpdateEnemyAttackAABB(ENEMY* enemy);
 
 BOOL CheckChasingPlayer(const ENEMY* enemy);
-void ChasePlayer(ENEMY* enemy);

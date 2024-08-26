@@ -16,18 +16,23 @@
 //*****************************************************************************
 // ƒ}ƒNƒ’è‹`
 //*****************************************************************************
-#define TEXTURE_IDLE_WIDTH					(150/2)	// ƒLƒƒƒ‰ƒTƒCƒY
-#define TEXTURE_IDLE_HEIGHT					(150/2)	// 
-#define TEXTURE_NORMAL_ATTACK1_WIDTH		(285/2)	// ƒLƒƒƒ‰ƒTƒCƒY
-#define TEXTURE_NORMAL_ATTACK1_HEIGHT		(240/2)	// 
-#define TEXTURE_NORMAL_ATTACK3_WIDTH		(281/2)	// ƒLƒƒƒ‰ƒTƒCƒY
-#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(217/2)	//
-#define TEXTURE_NORMAL_ATTACK4_WIDTH		(217/2)	// ƒLƒƒƒ‰ƒTƒCƒY
-#define TEXTURE_NORMAL_ATTACK4_HEIGHT		(290/2)	//
-#define TEXTURE_RUN_WIDTH					(165/2)	// ƒLƒƒƒ‰ƒTƒCƒY
-#define TEXTURE_RUN_HEIGHT					(165/2)	// 
-#define TEXTURE_JUMP_WIDTH					(210/2)	// ƒLƒƒƒ‰ƒTƒCƒY
-#define TEXTURE_JUMP_HEIGHT					(210/2)	//
+// ƒLƒƒƒ‰ƒTƒCƒY
+#define TEXTURE_IDLE_WIDTH					(160/2)
+#define TEXTURE_IDLE_HEIGHT					(160/2) 
+#define TEXTURE_NORMAL_ATTACK1_WIDTH		(285/2)
+#define TEXTURE_NORMAL_ATTACK1_HEIGHT		(240/2)
+#define TEXTURE_NORMAL_ATTACK3_WIDTH		(281/2)
+#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(217/2)
+#define TEXTURE_NORMAL_ATTACK4_WIDTH		(230/2)
+#define TEXTURE_NORMAL_ATTACK4_HEIGHT		(245/2)
+#define TEXTURE_DASH_ATTACK_WIDTH			(290/2)
+#define TEXTURE_DASH_ATTACK_HEIGHT			(215/2)
+#define TEXTURE_RUN_WIDTH					(185/2)
+#define TEXTURE_RUN_HEIGHT					(185/2)
+#define TEXTURE_JUMP_WIDTH					(210/2)
+#define TEXTURE_JUMP_HEIGHT					(210/2)
+#define TEXTURE_HARDLAND_WIDTH				(200/2)
+#define TEXTURE_HARDLAND_HEIGHT				(160/2)
 #define TEXTURE_MAX							(20)	// ƒeƒNƒXƒ`ƒƒ‚Ì”
 
 // ƒAƒjƒƒpƒ^[ƒ“‚ÌƒeƒNƒXƒ`ƒƒ“à•ªŠ„”iX)
@@ -36,31 +41,46 @@
 #define TEXTURE_RUN_PATTERN_DIVIDE_X			(8)
 #define TEXTURE_DASH_PATTERN_DIVIDE_X			(1)
 #define TEXTURE_JUMP_PATTERN_DIVIDE_X			(10)
+#define TEXTURE_HARD_LANDING_PATTERN_DIVIDE_X	(4)
+#define TEXTURE_HIT_PATTERN_DIVIDE_X			(2)
+#define TEXTURE_KNOCKDOWN_PATTERN_DIVIDE_X		(3)
+#define TEXTURE_REBOUND_PATTERN_DIVIDE_X		(3)
 #define TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X	(7)
 #define TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X	(9)
 #define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)
 #define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(13)
+#define TEXTURE_DASH_ATTACK_PATTERN_DIVIDE_X	(8)
 #define TEXTURE_PATTERN_DIVIDE_Y				(1)
 
-
-#define ANIM_PATTERN_NUM						(TEXTUREf_PATTERN_DIVIDE_X*TEXTURE_PATTERN_DIVIDE_Y)	// ƒAƒjƒ[ƒVƒ‡ƒ“ƒpƒ^[ƒ“”
-#define ANIM_WAIT_WALK							(10)		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
-#define ANIM_WAIT_IDLE							(30)		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
-#define ANIM_WAIT_RUN							(5)		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
-#define ANIM_WAIT_DASH							(1)		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
-#define ANIM_WAIT_ATTACK						(5)		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
-#define ANIM_WAIT_JUMP							(7)		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
+// ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌØ‚è‘Ö‚í‚éWait’l
+#define ANIM_WAIT_WALK							(10)
+#define ANIM_WAIT_IDLE							(30)
+#define ANIM_WAIT_RUN							(5)
+#define ANIM_WAIT_DASH							(1)
+#define ANIM_WAIT_ATTACK						(5)
+#define ANIM_WAIT_JUMP							(7)
+#define ANIM_WAIT_HARDLAND						(6)
+#define ANIM_WAIT_HIT							(6)
+#define ANIM_WAIT_KNOCKDOWN						(6)
+#define ANIM_WAIT_REBOUND						(6)
 #define ANIM_DASH_FRAME							(10)
+#define ANIM_HARDLANDING_FRAME					(4)
+#define ANIM_HIT_FRAME							(4)
+#define ANIM_KNOCKDOWN_FRAME					(4)
+#define ANIM_REBOUND_FRAME						(4)
 #define ANIM_NORMAL_ATTACK1_FRAME				(7)
 #define ANIM_NORMAL_ATTACK2_FRAME				(9)
 #define ANIM_NORMAL_ATTACK3_FRAME				(8)
 #define ANIM_NORMAL_ATTACK4_FRAME				(13)
+#define	ANIM_DASH_ATTACK_FRAME					(8)
 
+#define	NORMAL_ATTACK4_DROP_FRAME				(6)
 
 #define TEXTURE_NORMAL_ATTACK1_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, 0.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(10.0f, -10.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK4_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
+#define TEXTURE_DASH_ATTACK_OFFSET				XMFLOAT3(10.0f, -5.0f, 0.0f)
 
 // ƒvƒŒƒCƒ„[‚Ì‰æ–Ê“à”z’uÀ•W
 #define PLAYER_DISP_X				(SCREEN_WIDTH/2)
@@ -69,7 +89,6 @@
 // ƒWƒƒƒ“ƒvˆ—
 #define	PLAYER_JUMP_CNT_MAX			(60)		// 60ƒtƒŒ[ƒ€‚Å’…’n‚·‚é
 #define	PLAYER_JUMP_Y_MAX			(7.5f)	// ƒWƒƒƒ“ƒv‚Ì‚‚³
-
 
 //*****************************************************************************
 // ƒvƒƒgƒ^ƒCƒvéŒ¾
@@ -85,6 +104,7 @@ static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ƒeƒNƒXƒ`ƒ
 
 #ifdef _DEBUG	
 static ID3D11Buffer* g_AABBVertexBuffer = NULL;
+static ID3D11Buffer* g_attackAABBVertexBuffer = NULL;
 #endif
 
 static char *g_TexturName[TEXTURE_MAX] = {
@@ -96,7 +116,12 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/char/char_attack2.png",
 	"data/TEXTURE/char/char_attack3.png",
 	"data/TEXTURE/char/char_attack4.png",
+	"data/TEXTURE/char/char_dashattack.png",
 	"data/TEXTURE/char/char_jump.png",
+	"data/TEXTURE/char/char_hardlanding.png",
+	"data/TEXTURE/char/char_hit.png",
+	"data/TEXTURE/char/char_knockdown.png",
+	"data/TEXTURE/char/char_rebound.png",
 	"data/TEXTURE/shadow000.jpg",
 };
 
@@ -110,6 +135,151 @@ static int		g_jump[PLAYER_JUMP_CNT_MAX] =
 {
 	-15, -14, -13, -12, -11, -10, -9, -8, -7, -6, -5,-4,-3,-2,-1,
 	  1,   2,   3,   4,   5,   6,  7,  8,  9, 10, 11,12,13,14,15
+};
+
+static BOOL		noGravity = FALSE;
+static BOOL		allowAirJump = FALSE;
+
+static AttackAABBTBL normalAttack1Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK1_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-45.0f, 0.0f, 0.0f), 60.0f, 100.0f},
+	{XMFLOAT3(-20.0f, -60.0f, 0.0f), 100.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-45.0f, 0.0f, 0.0f), 60.0f, 100.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-45.0f, 0.0f, 0.0f), 60.0f, 100.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
+static AttackAABBTBL normalAttack2Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK2_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 77.0f, 100.0f},
+	{XMFLOAT3(-20.0f, -35.0f, 0.0f), 50.0f, 45.0f},
+	{XMFLOAT3(0.0f, 50.0f, 0.0f), 90.0f, 35.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 77.0f, 100.0f},
+	{XMFLOAT3(-20.0f, -35.0f, 0.0f), 50.0f, 45.0f},
+	{XMFLOAT3(0.0f, 50.0f, 0.0f), 90.0f, 35.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 77.0f, 100.0f},
+	{XMFLOAT3(-20.0f, -35.0f, 0.0f), 50.0f, 45.0f},
+	{XMFLOAT3(0.0f, 50.0f, 0.0f), 90.0f, 35.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
+static AttackAABBTBL normalAttack3Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK3_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 70.0f, 100.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 70.0f, 100.0f},
+	{XMFLOAT3(0.0f, 50.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 100.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 50.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 70.0f, 100.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
+static AttackAABBTBL normalAttack4Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK4_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+	{XMFLOAT3(0.0f, -55.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+	{XMFLOAT3(0.0f, 30.0f, 0.0f), 80.0f, 30.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+	{XMFLOAT3(0.0f, -50.0f, 0.0f), 80.0f, 45.0f},
+	{XMFLOAT3(-15.0f, 30.0f, 0.0f), 80.0f, 30.0f},
+
+	{XMFLOAT3(-35.0f, -5.0f, 0.0f), 60.0f, 90.0f},
+	{XMFLOAT3(0.0f, -50.0f, 0.0f), 80.0f, 45.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+
+	{XMFLOAT3(-35.0f, -5.0f, 0.0f), 60.0f, 90.0f},
+	{XMFLOAT3(-15.0f, -50.0f, 0.0f), 80.0f, 30.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 90.0f, 90.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 90.0f, 90.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
+static AttackAABBTBL dashAttackTbl[MAX_ATTACK_AABB * ANIM_DASH_ATTACK_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+	{XMFLOAT3(0.0f, -55.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+	{XMFLOAT3(0.0f, 30.0f, 0.0f), 80.0f, 30.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 };
 
 //=============================================================================
@@ -208,8 +378,9 @@ HRESULT InitPlayer(void)
 
 #ifdef _DEBUG	
 	{
-		int aabbCount = MAP01_GROUND_MAX;
-		const int maxVertices = MAP01_GROUND_MAX * 4;
+		int aabbCount = PLAYER_MAX;
+		int maxVertices = PLAYER_MAX * 4;
+		int maxAttackVertices = maxVertices * MAX_ATTACK_AABB;
 
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
@@ -219,6 +390,9 @@ HRESULT InitPlayer(void)
 		bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 		GetDevice()->CreateBuffer(&bd, NULL, &g_AABBVertexBuffer);
+
+		bd.ByteWidth = sizeof(VERTEX_3D) * maxAttackVertices;
+		GetDevice()->CreateBuffer(&bd, NULL, &g_attackAABBVertexBuffer);
 	}
 #endif
 
@@ -282,196 +456,78 @@ void UpdatePlayer(void)
 			UpdateActionQueue();
 			g_Player[i].dashCD++;
 
+			
+			
 			// Œ»İ‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‚ªI—¹‚µ‚½‚©‚Ç‚¤‚©‚ğŠm”F
 			if (g_Player[i].playAnim == FALSE)
 			{
 				if (g_Player[i].actionQueueStart != g_Player[i].actionQueueEnd)
 				{
-					// ƒLƒ…[“à‚ÌŸ‚ÌƒAƒNƒVƒ‡ƒ“‚ğÀs
-					int action = g_Player[i].actionQueue[g_Player[i].actionQueueStart];
-
-					BOOL canExecuteAction = FALSE;
-					switch (action)
-					{
-					case JUMP:
-						if (g_Player->onAirCnt > 0)
-						{
-							if (g_Player->jumpOnAirCnt == 1)
-								canExecuteAction = FALSE;
-							else
-							{
-								canExecuteAction = TRUE;
-								g_Player->jumpOnAirCnt = 1;
-							}
-						}
-						else
-							canExecuteAction = TRUE;
-						break;
-					case DASH:
-						if (g_Player[i].dashCD > DASH_CD_TIME || g_Player[i].dashCount < g_Player[i].maxDashCount)
-						{
-							g_Player[i].dashCD = 0;
-							g_Player[i].dashCount++;
-							canExecuteAction = TRUE;
-						}
-						else
-							canExecuteAction = FALSE;
-						break;
-					default:
-						canExecuteAction = TRUE;
-						break;
-					}
-
-					if (canExecuteAction)
-					{
-							
-						g_Player[i].actionQueueStart = (g_Player[i].actionQueueStart + 1) % ACTION_QUEUE_SIZE;
-						g_Player[i].patternAnim = 0;
-						g_Player[i].state = action;
-						g_Player->animFrameCount = 0;
-						g_Player->playAnim = TRUE;
-					}
-
+					HandleActionQueue();
 				}
-				// —‚¿‚éó‘Ô‚É–ß‚éH
-				//else if (g_Player[i].jumpCnt > 0)
-				//{
-				//	g_Player[i].state = JUMP;
-				//	g_Player[i].patternAnim = g_Player[i].patternAnimOld;
-				//}
 				else
 				{
+					// ƒAƒNƒVƒ‡ƒ“ƒLƒ…[‚ª‹ó‚Ìê‡AƒvƒŒƒCƒ„[‚ğƒAƒCƒhƒ‹ó‘Ô‚Éİ’è
 					g_Player[i].state = IDLE;
+					// UŒ‚ƒpƒ^[ƒ“‚ğ‚È‚µ‚Éİ’è
 					g_Player[i].attackPattern = NONE;
 				}
+			}			
 
-			}
+			UpdateGroundCollision();
+			UpdateKeyboardInput();
+			UpdateGamepadInput();
 
-				
 
+			if (g_Player[i].dashCD >= DASH_CD_TIME)
 			{
-
-				UpdateGroundCollision();
-				UpdateKeyboardInput();
-				UpdateGamepadInput();
-
-				
-				if (g_Player[i].dashCD >= DASH_CD_TIME)
-				{
-					g_Player[i].dashCount = 0;
-				}
-				if (g_Player[i].move.y >= g_Player->jumpYMax * 0.5f && g_Player[i].state == IDLE)
-					g_Player[i].state = FALL;
-
-				// MAPŠOƒ`ƒFƒbƒN
-				BG* bg = GetBG();
-
-				if (g_Player[i].bodyAABB.pos.x < 0.0f)
-				{
-					SET_PLAYER_POS_X(0.0f);
-				}
-
-				if (g_Player[i].bodyAABB.pos.x > bg->w)
-				{
-					SET_PLAYER_POS_X(bg->w);
-				}
-
-				if (g_Player[i].bodyAABB.pos.y < 0.0f)
-				{
-					SET_PLAYER_POS_Y(0.0f);
-				}
-
-				if (g_Player[i].bodyAABB.pos.y > bg->h)
-				{
-					SET_PLAYER_POS_Y(bg->h);
-				}
-
-				// ¶‰E‚Ì§ŒÀ‹——£i‰æ–Ê‚ÌO•ª‚Ìˆêj
-				float leftLimitX = SCREEN_WIDTH / 3;
-				float rightLimitX = SCREEN_WIDTH * 2 / 3;
-
-				// ƒvƒŒƒCƒ„[‚ª‰æ–Ê“à‚ÌˆÚ“®”ÍˆÍ“à‚©‚Ç‚¤‚©‚ğŠm”F
-				if (g_Player[i].pos.x < bg->pos.x + leftLimitX) {
-					// ƒvƒŒƒCƒ„[‚ª¶‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğ¶‚ÉƒXƒNƒ[ƒ‹
-					bg->pos.x = g_Player[i].pos.x - leftLimitX;
-				}
-				else if (g_Player[i].pos.x > bg->pos.x + rightLimitX) {
-					// ƒvƒŒƒCƒ„[‚ª‰E‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğ‰E‚ÉƒXƒNƒ[ƒ‹
-					bg->pos.x = g_Player[i].pos.x - rightLimitX;
-				}
-
-				// ”wŒi‚ÌXÀ•W‚ğ‰æ–Ê’[‚Å§ŒÀ
-				if (bg->pos.x < 0) bg->pos.x = 0;
-				if (bg->pos.x > bg->w - SCREEN_WIDTH) bg->pos.x = bg->w - SCREEN_WIDTH;
-
-				// ã‰º‚Ì§ŒÀ‹——£i‰æ–Ê‚ÌO•ª‚Ìˆêj
-				float topLimitY = SCREEN_HEIGHT / 3;
-				float bottomLimitY = SCREEN_HEIGHT * 2 / 3;
-
-				// ƒvƒŒƒCƒ„[‚ª‰æ–Ê“à‚ÌˆÚ“®”ÍˆÍ“à‚©‚Ç‚¤‚©‚ğŠm”F
-				if (g_Player[i].pos.y < bg->pos.y + topLimitY) {
-					// ƒvƒŒƒCƒ„[‚ªã‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğã‚ÉƒXƒNƒ[ƒ‹
-					bg->pos.y = g_Player[i].pos.y - topLimitY;
-				}
-				else if (g_Player[i].pos.y > bg->pos.y + bottomLimitY) {
-					// ƒvƒŒƒCƒ„[‚ª‰º‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğ‰º‚ÉƒXƒNƒ[ƒ‹
-					bg->pos.y = g_Player[i].pos.y - bottomLimitY;
-				}
-
-				// ”wŒi‚ÌYÀ•W‚ğ‰æ–Ê’[‚Å§ŒÀ
-				if (bg->pos.y < 0) bg->pos.y = 0;
-				if (bg->pos.y > bg->h - SCREEN_HEIGHT) bg->pos.y = bg->h - SCREEN_HEIGHT;
-
-				//// ƒvƒŒƒCƒ„[‚Ì—§‚¿ˆÊ’u‚©‚çMAP‚ÌƒXƒNƒ[ƒ‹À•W‚ğŒvZ‚·‚é
-				//bg->pos.x = g_Player[i].pos.x - PLAYER_DISP_X;
-				//if (bg->pos.x < 0) bg->pos.x = 0;
-				//if (bg->pos.x > bg->w - SCREEN_WIDTH) bg->pos.x = bg->w - SCREEN_WIDTH;
-
-				//bg->pos.y = g_Player[i].pos.y - PLAYER_DISP_Y;
-				//if (bg->pos.y < 0) bg->pos.y = 0;
-				//if (bg->pos.y > bg->h - SCREEN_HEIGHT) bg->pos.y = bg->h - SCREEN_HEIGHT;
-
-				// ˆÚ“®‚ªI‚í‚Á‚½‚çƒGƒlƒ~[‚Æ‚Ì“–‚½‚è”»’è
-				//{
-				//	ENEMY* enemy = GetEnemy();
-
-				//	// ƒGƒlƒ~[‚Ì”•ª“–‚½‚è”»’è‚ğs‚¤
-				//	for (int j = 0; j < ENEMY_MAX; j++)
-				//	{
-				//		// ¶‚«‚Ä‚éƒGƒlƒ~[‚Æ“–‚½‚è”»’è‚ğ‚·‚é
-				//		if (enemy[j].use == TRUE)
-				//		{
-				//			BOOL ans = CollisionBB(g_Player[i].pos, g_Player[i].w, g_Player[i].h,
-				//				enemy[j].pos, enemy[j].w, enemy[j].h);
-				//			// “–‚½‚Á‚Ä‚¢‚éH
-				//			if (ans == TRUE)
-				//			{
-				//				// “–‚½‚Á‚½‚Ìˆ—
-				//				enemy[j].use = FALSE;
-				//				AddScore(10);
-				//			}
-				//		}
-				//	}
-				//}
-
-
-
-				// ƒoƒŒƒbƒgˆ—
-				//if (GetKeyboardTrigger(DIK_SPACE))
-				//{
-				//	XMFLOAT3 pos = g_Player[i].pos;
-				//	pos.y += g_Player[i].jumpY;
-				//	SetBullet(pos);
-				//}
-
-				//if (IsButtonTriggered(0, BUTTON_B))
-				//{
-				//	XMFLOAT3 pos = g_Player[i].pos;
-				//	pos.y += g_Player[i].jumpY;
-				//	SetBullet(pos);
-				//}
-
+				g_Player[i].dashCount = 0;
 			}
+			if (g_Player[i].move.y >= g_Player->jumpYMax * 0.5f && g_Player[i].state == IDLE)
+				g_Player[i].state = FALL;
+
+			UpdateBackGroundScroll();
+
+
+			// ˆÚ“®‚ªI‚í‚Á‚½‚çƒGƒlƒ~[‚Æ‚Ì“–‚½‚è”»’è
+			//{
+			//	ENEMY* enemy = GetEnemy();
+
+			//	// ƒGƒlƒ~[‚Ì”•ª“–‚½‚è”»’è‚ğs‚¤
+			//	for (int j = 0; j < ENEMY_MAX; j++)
+			//	{
+			//		// ¶‚«‚Ä‚éƒGƒlƒ~[‚Æ“–‚½‚è”»’è‚ğ‚·‚é
+			//		if (enemy[j].use == TRUE)
+			//		{
+			//			BOOL ans = CollisionBB(g_Player[i].pos, g_Player[i].w, g_Player[i].h,
+			//				enemy[j].pos, enemy[j].w, enemy[j].h);
+			//			// “–‚½‚Á‚Ä‚¢‚éH
+			//			if (ans == TRUE)
+			//			{
+			//				// “–‚½‚Á‚½‚Ìˆ—
+			//				enemy[j].use = FALSE;
+			//				AddScore(10);
+			//			}
+			//		}
+			//	}
+			//}
+
+
+
+			// ƒoƒŒƒbƒgˆ—
+			//if (GetKeyboardTrigger(DIK_SPACE))
+			//{
+			//	XMFLOAT3 pos = g_Player[i].pos;
+			//	pos.y += g_Player[i].jumpY;
+			//	SetBullet(pos);
+			//}
+
+			//if (IsButtonTriggered(0, BUTTON_B))
+			//{
+			//	XMFLOAT3 pos = g_Player[i].pos;
+			//	pos.y += g_Player[i].jumpY;
+			//	SetBullet(pos);
+			//}
 
 			// ƒAƒjƒ[ƒVƒ‡ƒ“  
 			switch (g_Player[i].state)
@@ -497,6 +553,9 @@ void UpdatePlayer(void)
 			case FALL:
 				PlayFallAnim();
 				break;
+			case HARD_LANDING:
+				PlayHardLandingAnim();
+				break;
 			default:
 				break;
 			}
@@ -516,6 +575,526 @@ void UpdatePlayer(void)
 
 #endif
 
+}
+
+void HandleActionQueue(void)
+{
+	// ƒLƒ…[“à‚ÌŸ‚ÌƒAƒNƒVƒ‡ƒ“‚ğÀs
+	int action = g_Player->actionQueue[g_Player->actionQueueStart];
+
+	BOOL canExecuteAction = FALSE;
+	switch (action)
+	{
+	case JUMP:
+		// ƒvƒŒƒCƒ„[‚ª‹ó’†‚É‚¢‚éê‡
+		if (g_Player->onAirCnt > 0)
+		{
+			// ‹ó’†ƒWƒƒƒ“ƒv‚Ì‰ñ”§ŒÀ‚É’B‚µ‚Ä‚¢‚é‚©Šm”F
+			if (g_Player->jumpOnAirCnt == 1)
+				canExecuteAction = FALSE;	// Šù‚É‹ó’†ƒWƒƒƒ“ƒv‚ğs‚Á‚Ä‚¢‚éê‡‚ÍÀs•s‰Â
+			else
+			{
+				// ‹ó’†ƒWƒƒƒ“ƒv‚ª‰Â”\‚Å‚ ‚ê‚ÎÀs
+				canExecuteAction = TRUE;
+				g_Player->jumpOnAirCnt = 1;	 // ‹ó’†ƒWƒƒƒ“ƒv‰ñ”‚ğXV
+			}
+		}
+		else
+			canExecuteAction = TRUE;	// ’nã‚É‚¢‚éê‡‚ÍƒWƒƒƒ“ƒv‰Â”\
+		break;
+
+	case DASH:
+		// ƒN[ƒ‹ƒ_ƒEƒ“ŠÔ‚ªŒo‰ß‚µ‚Ä‚¢‚éA‚Ü‚½‚Íƒ_ƒbƒVƒ…‰ñ”‚ªc‚Á‚Ä‚¢‚éê‡‚ÉÀs‰Â”\
+		if (g_Player->dashCD > DASH_CD_TIME || g_Player->dashCount < g_Player->maxDashCount)
+		{
+			g_Player->dashCD = 0;
+			g_Player->dashCount++;
+			canExecuteAction = TRUE;
+		}
+		else
+			canExecuteAction = FALSE;
+		break;
+
+	default:
+		// ‚»‚Ì‘¼‚ÌƒAƒNƒVƒ‡ƒ“‚Í“Á•Ê‚ÈğŒ‚È‚­Às‰Â”\
+		canExecuteAction = TRUE;
+		break;
+	}
+
+	if (canExecuteAction)
+	{
+		// ƒAƒNƒVƒ‡ƒ“ƒLƒ…[‚ÌƒXƒ^[ƒgˆÊ’u‚ğXViŸ‚ÌƒAƒNƒVƒ‡ƒ“‚Éi‚Şj
+		g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE;
+		g_Player->patternAnim = 0;
+		g_Player->state = action;
+		g_Player->animFrameCount = 0;
+		g_Player->playAnim = TRUE;
+	}
+}
+
+void HandlePlayerMove(float speed, int direction)
+{
+	g_Player->dir = direction; // ƒvƒŒƒCƒ„[‚ÌŒü‚«‚ğİ’è
+
+	// ƒvƒŒƒCƒ„[‚ª’n–Ê‚É‚¢‚éê‡‚Ìˆ—
+	if (g_Player->move.y == 0)
+	{
+		g_Player->state = WALK;
+
+		// Õ“Ë”»’è‚ğs‚¢AˆÚ“®‰Â”\‚Å‚ ‚ê‚ÎƒvƒŒƒCƒ„[‚ÌXÀ•W‚ğXV
+		if (CheckMoveCollision(speed, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speed);
+
+		// ‘–‚é
+		if (GetKeyboardPress(DIK_LSHIFT))
+		{
+			// ƒvƒŒƒCƒ„[‚ğu‘–svó‘Ô‚É‚µAó‘Ô‚ğu‘–‚év‚É•ÏX
+			g_Player->running = TRUE;
+			g_Player->state = RUN;
+
+			// Õ“Ë”»’è‚ğs‚¢AˆÚ“®‰Â”\‚Å‚ ‚ê‚ÎƒvƒŒƒCƒ„[‚ÌXÀ•W‚ğXViƒ_ƒbƒVƒ…‘¬“xj
+			if (CheckMoveCollision(speed * 0.5f, g_Player->dir))
+				CHANGE_PLAYER_POS_X(speed * 0.5f);
+		}
+	}
+	// ƒvƒŒƒCƒ„[‚ª‹ó’†‚É‚¢‚éê‡AˆÚ“®”»’è‚ğs‚¢A‹ó’†ˆÚ“®‚ğˆ—
+	else if (CheckMoveCollision(speed * 0.8f, g_Player->dir))
+		CHANGE_PLAYER_POS_X(speed * 0.8f);
+
+	std::cout << g_Player->pos.x << " ";
+	std::cout << g_Player->pos.y << std::endl;
+
+}
+
+void HandlePlayerDash(void)
+{
+	// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
+	if (g_Player->playAnim == FALSE)
+	{
+		if (g_Player->onAirCnt == 0 || (g_Player->onAirCnt > 0 && g_Player->dashOnAir == FALSE))
+		{
+			g_Player->patternAnim = 0;
+			g_Player->state = DASH;
+			g_Player->animFrameCount = 0;
+			g_Player->dashCD = 0;
+			g_Player->playAnim = TRUE;
+			g_Player->dashCount++;
+
+			if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
+			{
+				g_Player->dashOnAir = TRUE;
+				g_Player->airDashCount++;
+			}
+
+		}
+	}
+	// ‹ó’†‚Ìó‘Ô
+	else if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
+	{
+		g_Player->patternAnimOld = g_Player->patternAnim;
+		g_Player->patternAnim = 0;
+		g_Player->state = DASH;
+		g_Player->dashOnAir = TRUE;
+		g_Player->dashCD = 0;
+		g_Player->animFrameCount = 0;
+		g_Player->dashCount++;
+		g_Player->airDashCount++;
+	}
+	// ‚»‚Ì‘¼‚Ìó‘Ô‚Ìê‡AƒAƒNƒVƒ‡ƒ“‚ğƒLƒ…[‚É’Ç‰Á
+	else if (!(g_Player->dashOnAir == TRUE && g_Player->onAirCnt > 0))
+	{
+		g_Player->actionQueue[g_Player->actionQueueEnd] = DASH;
+		g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+		// ƒLƒ…[‚ÌƒI[ƒo[ƒtƒ[‚ğ–h~
+		if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
+		{
+			g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // Å‚àŒÃ‚¢ƒAƒNƒVƒ‡ƒ“‚ğ”jŠü
+		}
+	}
+
+}
+
+void HandlePlayerJump(void)
+{
+	// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
+	if (g_Player->playAnim == FALSE)
+	{
+		if (g_Player->onAirCnt == 0 || (g_Player->jumpOnAir && g_Player->jumpOnAirCnt == 0))
+		{
+			g_Player->patternAnim = 0;
+			g_Player->state = JUMP;
+			g_Player->animFrameCount = 0;
+			g_Player->playAnim = TRUE;
+
+			g_Player->state = JUMP;
+			g_Player->jumpCnt = 0;
+
+			if (g_Player->onAirCnt > 0)
+			{
+				g_Player->jumpOnAirCnt = 1;
+			}
+
+		}
+
+	}
+	// ‹ó’†‚Ìó‘Ô
+	else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->jumpOnAir && g_Player->jumpOnAirCnt == 0)
+	{
+		g_Player->patternAnim = 0;
+		g_Player->state = JUMP;
+		g_Player->animFrameCount = 0;
+		g_Player->playAnim = TRUE;
+		g_Player->jumpCnt = 0;
+		g_Player->jumpOnAirCnt = 1;
+
+	}
+	// ‚»‚Ì‘¼‚Ìó‘Ô‚Ìê‡AƒAƒNƒVƒ‡ƒ“‚ğƒLƒ…[‚É’Ç‰Á
+	else
+	{
+		std::cout << g_Player->jumpOnAirCnt << std::endl;
+		g_Player->actionQueue[g_Player->actionQueueEnd] = JUMP;
+		g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+		// ƒLƒ…[‚ÌƒI[ƒo[ƒtƒ[‚ğ–h~
+		if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
+		{
+			g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // Å‚àŒÃ‚¢ƒAƒNƒVƒ‡ƒ“‚ğ”jŠü
+		}
+	}
+}
+
+void HandlePlayerAttack(void)
+{
+	switch (g_Player->state)
+	{
+		// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
+	case IDLE:
+	case WALK:
+		g_Player->patternAnim = 0;
+		g_Player->state = ATTACK;
+		g_Player->animFrameCount = 0;
+		g_Player->playAnim = TRUE;
+		g_Player->attackPattern = NORMAL_ATTACK1;
+		break;
+
+		// ‘–‚é‚Ìó‘Ô
+	case RUN:
+		g_Player->patternAnim = 0;
+		g_Player->animFrameCount = 0;
+		g_Player->playAnim = TRUE;
+		g_Player->state = ATTACK;
+		g_Player->attackPattern = DASH_ATTACK;
+		break;
+
+	case DASH:
+	case ATTACK:
+	case JUMP:
+	case FALL:
+		// ƒAƒjƒ[ƒVƒ‡ƒ“Ä¶‚µ‚Ä‚¢‚È‚¢‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
+		if (g_Player->playAnim == FALSE)
+		{
+			g_Player->patternAnim = 0;
+			g_Player->animFrameCount = 0;
+			g_Player->playAnim = TRUE;
+			g_Player->attackPattern++;
+		}
+		// ‹ó’†‚Ìó‘Ô
+		else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->state != ATTACK)
+		{
+			g_Player->patternAnimOld = g_Player->patternAnim;
+			g_Player->patternAnim = 0;
+			g_Player->state = ATTACK;
+			g_Player->animFrameCount = 0;
+		}
+		// ‚»‚Ì‘¼‚Ìó‘Ô‚Ìê‡AƒAƒNƒVƒ‡ƒ“‚ğƒLƒ…[‚É’Ç‰Á
+		else
+		{
+			g_Player->actionQueue[g_Player->actionQueueEnd] = ATTACK;
+			g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
+
+			// ƒLƒ…[‚ÌƒI[ƒo[ƒtƒ[‚ğ–h~
+			if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
+			{
+				g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // Å‚àŒÃ‚¢ƒAƒNƒVƒ‡ƒ“‚ğ”jŠü
+			}
+		}
+
+		break;
+	default:
+		break;
+	}
+
+}
+
+void UpdateKeyboardInput(void)
+{
+	float speed = g_Player->move.x;
+	noGravity = FALSE;
+
+#ifdef _DEBUG
+	if (GetKeyboardPress(DIK_LCONTROL))
+		noGravity = TRUE;
+
+	if (GetKeyboardPress(DIK_UP) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_Y(-speed * 5);
+		g_Player->dir = CHAR_DIR_RIGHT;
+		g_Player->state = WALK;
+	}
+	else if (GetKeyboardPress(DIK_DOWN) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_Y(speed * 5);
+		g_Player->dir = CHAR_DIR_LEFT;
+		g_Player->state = WALK;
+	}
+
+	if (GetKeyboardPress(DIK_LEFT) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_X(-speed * 5);
+		g_Player->dir = CHAR_DIR_RIGHT;
+		g_Player->state = WALK;
+	}
+	else if (GetKeyboardPress(DIK_RIGHT) && GetKeyboardPress(DIK_LCONTROL))
+	{
+		CHANGE_PLAYER_POS_X(speed * 5);
+		g_Player->dir = CHAR_DIR_LEFT;
+		g_Player->state = WALK;
+	}
+#endif
+
+	g_Player->running = FALSE;
+
+	if (GetKeyboardPress(DIK_RIGHT) && g_Player->playAnim == FALSE)
+	{
+		// ‰EˆÚ“®ˆ—
+		HandlePlayerMove(speed, CHAR_DIR_RIGHT);
+	}
+	else if (GetKeyboardPress(DIK_LEFT) && g_Player->playAnim == FALSE)
+	{
+		// ¶ˆÚ“®ˆ—
+		HandlePlayerMove(-speed, CHAR_DIR_LEFT);
+	}
+
+	if (GetKeyboardTrigger(DIK_C) && g_Player->dashCount < g_Player->maxDashCount)
+	{
+		// ƒ_ƒbƒVƒ…ˆ—
+		HandlePlayerDash();
+	}
+	else if (GetKeyboardTrigger(DIK_SPACE) && g_Player->jumpOnAirCnt == 0)
+	{
+		// ƒWƒƒƒ“ƒvˆ—
+		HandlePlayerJump();
+	}
+	else if (GetKeyboardTrigger(DIK_X))
+	{
+		// UŒ‚ˆ—
+		HandlePlayerAttack();
+	}
+}
+
+void UpdateGamepadInput(void)
+{
+	//float speed = g_Player->move.x;
+
+	//if (IsButtonPressed(0, BUTTON_RIGHT))
+	//{
+	//	g_Player->pos.x += speed;
+	//	g_Player->dir = CHAR_IDLE_RIGHT;
+	//}
+	//else if (IsButtonPressed(0, BUTTON_LEFT))
+	//{
+	//	g_Player->pos.x -= speed;
+	//	g_Player->dir = CHAR_IDLE_LEFT;
+	//}
+}
+
+void UpdateBackGroundScroll(void)
+{
+	// MAPŠOƒ`ƒFƒbƒN
+	BG* bg = GetBG();
+
+	if (g_Player->bodyAABB.pos.x < 0.0f)
+	{
+		SET_PLAYER_POS_X(0.0f);
+	}
+
+	if (g_Player->bodyAABB.pos.x > bg->w)
+	{
+		SET_PLAYER_POS_X(bg->w);
+	}
+
+	if (g_Player->bodyAABB.pos.y < 0.0f)
+	{
+		SET_PLAYER_POS_Y(0.0f);
+	}
+
+	if (g_Player->bodyAABB.pos.y > bg->h)
+	{
+		SET_PLAYER_POS_Y(bg->h);
+	}
+
+	// ¶‰E‚Ì§ŒÀ‹——£i‰æ–Ê‚ÌO•ª‚Ìˆêj
+	float leftLimitX = SCREEN_WIDTH / 3;
+	float rightLimitX = SCREEN_WIDTH * 2 / 3;
+
+	// ƒvƒŒƒCƒ„[‚ª‰æ–Ê“à‚ÌˆÚ“®”ÍˆÍ“à‚©‚Ç‚¤‚©‚ğŠm”F
+	if (g_Player->pos.x < bg->pos.x + leftLimitX) {
+		// ƒvƒŒƒCƒ„[‚ª¶‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğ¶‚ÉƒXƒNƒ[ƒ‹
+		bg->pos.x = g_Player->pos.x - leftLimitX;
+	}
+	else if (g_Player->pos.x > bg->pos.x + rightLimitX) {
+		// ƒvƒŒƒCƒ„[‚ª‰E‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğ‰E‚ÉƒXƒNƒ[ƒ‹
+		bg->pos.x = g_Player->pos.x - rightLimitX;
+	}
+
+	// ”wŒi‚ÌXÀ•W‚ğ‰æ–Ê’[‚Å§ŒÀ
+	if (bg->pos.x < 0) bg->pos.x = 0;
+	if (bg->pos.x > bg->w - SCREEN_WIDTH) bg->pos.x = bg->w - SCREEN_WIDTH;
+
+	// ã‰º‚Ì§ŒÀ‹——£i‰æ–Ê‚ÌO•ª‚Ìˆêj
+	float topLimitY = SCREEN_HEIGHT / 3;
+	float bottomLimitY = SCREEN_HEIGHT * 2 / 3;
+
+	// ƒvƒŒƒCƒ„[‚ª‰æ–Ê“à‚ÌˆÚ“®”ÍˆÍ“à‚©‚Ç‚¤‚©‚ğŠm”F
+	if (g_Player->pos.y < bg->pos.y + topLimitY) {
+		// ƒvƒŒƒCƒ„[‚ªã‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğã‚ÉƒXƒNƒ[ƒ‹
+		bg->pos.y = g_Player->pos.y - topLimitY;
+	}
+	else if (g_Player->pos.y > bg->pos.y + bottomLimitY) {
+		// ƒvƒŒƒCƒ„[‚ª‰º‚Ì§ŒÀ”ÍˆÍ‚ğ‰z‚¦‚½ê‡‚ÍA”wŒi‚ğ‰º‚ÉƒXƒNƒ[ƒ‹
+		bg->pos.y = g_Player->pos.y - bottomLimitY;
+	}
+
+	// ”wŒi‚ÌYÀ•W‚ğ‰æ–Ê’[‚Å§ŒÀ
+	if (bg->pos.y < 0) bg->pos.y = 0;
+	if (bg->pos.y > bg->h - SCREEN_HEIGHT) bg->pos.y = bg->h - SCREEN_HEIGHT;
+}
+
+void UpdateGroundCollision(void)
+{
+	// ƒvƒŒƒCƒ„[‚ÌˆÊ’u‚ğXV‚·‚é‘O‚ÉÚ’n‚ğŠm”F
+	AABB* grounds = GetMap01AABB();
+	BOOL onGround = false;
+
+	if (g_Player->jumpCnt == 0)
+	{
+		if (g_Player->onAirCnt < PLAYER_JUMP_CNT_MAX * 0.5f && g_Player->onAirCnt != 0)
+		{
+			// sinŠÖ”‚ğg—p‚µ‚Ä‰º—‘¬“x‚ğŒvZ
+			float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->onAirCnt;
+
+			g_Player->move.y = g_Player->jumpYMax * sinf(angle);
+		}
+		else
+		{
+			// ‘Ø‹óŠÔ‚ªÅ‘å‚É’B‚µ‚½‚çA‰º—‘¬“x‚ğÅ‘å’l‚É•Û‚Â
+			g_Player->move.y = g_Player->jumpYMax;
+		}
+		// ‘Ø‹óŠÔ‚ğ‘‰Á‚³‚¹‚é
+		g_Player->onAirCnt++;
+
+		CHANGE_PLAYER_POS_Y(g_Player->move.y);
+		for (int j = 0; j < MAP01_GROUND_MAX; j++)
+		{
+			if (CheckGroundCollision(g_Player, &grounds[j]))
+				onGround = TRUE;
+		}
+
+		// ’n–Ê‚ÉÚG‚µ‚½ê‡‚Ìˆ—
+		if (onGround)
+		{
+			// ‘Ø‹óŠÔ‚ªˆê’èˆÈã‚Å‚ ‚ê‚Îƒn[ƒhƒ‰ƒ“ƒfƒBƒ“ƒOó‘Ô‚ÉˆÚs
+			if (g_Player->onAirCnt > HARDLANDING_HEIGHT && g_Player->state != ATTACK)
+			{
+				// ƒn[ƒhƒ‰ƒ“ƒfƒBƒ“ƒO‚Ìó‘Ô‚É‘JˆÚ‚µAƒAƒjƒ[ƒVƒ‡ƒ“‚ğ‰Šú‰»
+				g_Player->state = HARD_LANDING;
+				g_Player->playAnim = TRUE;
+				g_Player->animFrameCount = 0;
+				g_Player->patternAnim = 0;
+			}
+
+			// ƒvƒŒƒCƒ„[‚Ì‘Ø‹óŠÔ‚ğƒŠƒZƒbƒg‚·‚é
+			g_Player->onAirCnt = 0;
+		}
+
+		// ƒvƒŒƒCƒ„[‚ªƒAƒjƒ[ƒVƒ‡ƒ“Ä¶’†‚Ü‚½‚Í’n–Ê‚É‚¢‚éê‡AˆÚ“®‚ğƒLƒƒƒ“ƒZƒ‹
+		if (g_Player->playAnim == TRUE || onGround)
+		{
+			// YÀ•W‚ÌˆÚ“®‚ğŒ³‚É–ß‚·
+			CHANGE_PLAYER_POS_Y(-g_Player->move.y);
+		}
+
+	}
+	else
+	{
+		for (int j = 0; j < MAP01_GROUND_MAX; j++)
+		{
+			CheckGroundCollision(g_Player, &grounds[j]);
+		}
+	}
+	//if (GetKeyboardPress(DIK_Z))
+	//{
+
+	//}
+}
+
+void UpdatePlayerAttackAABB()
+{
+	AttackAABBTBL* attackTable = nullptr;
+
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+		attackTable = normalAttack1Tbl;
+		break;
+	case NORMAL_ATTACK2:
+		attackTable = normalAttack2Tbl;
+		break;
+	case NORMAL_ATTACK3:
+		attackTable = normalAttack3Tbl;
+		break;
+	case NORMAL_ATTACK4:
+		attackTable = normalAttack4Tbl;
+		break;
+	case DASH_ATTACK:
+		attackTable = dashAttackTbl;
+		break;
+	default:
+		break;
+	}
+
+
+	if (attackTable != nullptr)
+	{
+		for (int i = 0; i < MAX_ATTACK_AABB; i++)
+		{
+			int tableIdx = g_Player->patternAnim * MAX_ATTACK_AABB + i;
+
+			// “G‚ÌŒü‚«‚ğ”»’è‚·‚é: ¶Œü‚«‚Ìê‡‚Ídir‚ª1A‰EŒü‚«‚Ìê‡‚Ídir‚ª-1
+			int dir = g_Player->dir == CHAR_DIR_LEFT ? 1 : -1;
+
+			// Œü‚«‚É‰‚¶‚ÄX•ûŒü‚ÌƒIƒtƒZƒbƒg‚ğ’²®
+			XMFLOAT3 offset = attackTable[tableIdx].posOffset;
+			offset.x *= dir;
+
+			// attackAABB‚ÌˆÊ’u‚ğXV
+			g_Player->attackAABB[i].pos = XMFLOAT3_ADD(g_Player->bodyAABB.pos, offset);
+			g_Player->attackAABB[i].h = attackTable[tableIdx].h;
+			g_Player->attackAABB[i].w = attackTable[tableIdx].w;
+		}
+	}
+}
+
+void UpdateActionQueue(void)
+{
+	g_Player->actionQueueClearTime++;
+	if (g_Player->actionQueueClearTime == ACTION_QUEUE_CLEAR_WAIT)
+	{
+		g_Player->actionQueueStart = 0;
+		g_Player->actionQueueEnd = 0;
+		g_Player->actionQueueClearTime = 0;
+	}
 }
 
 //=============================================================================
@@ -565,7 +1144,7 @@ void DrawPlayer(void)
 			float pw = g_Player[i].w;		// ƒvƒŒƒCƒ„[‚Ì•\¦•
 			float ph = g_Player[i].h;		// ƒvƒŒƒCƒ„[‚Ì•\¦‚‚³
 
-			AdjustAttackTexturePosition(px, py);
+			AdjustAttackTexturePos(px, py);
 
 			// ƒAƒjƒ[ƒVƒ‡ƒ“—p
 			float tw, th, tx, ty;
@@ -598,7 +1177,7 @@ void DrawPlayer(void)
 
 				SetMaterial(materialAABB);
 				GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
-				for (int i = 0; i < MAP01_GROUND_MAX; ++i)
+				for (int i = 0; i < PLAYER_MAX; ++i)
 				{
 					SetSpriteColorRotation(g_AABBVertexBuffer, g_Player[i].bodyAABB.pos.x - bg->pos.x, 
 						g_Player[i].bodyAABB.pos.y - bg->pos.y, g_Player[i].bodyAABB.w, g_Player[i].bodyAABB.h,
@@ -608,311 +1187,381 @@ void DrawPlayer(void)
 
 					GetDeviceContext()->Draw(4, i * 4);
 				}
+
+				GetDeviceContext()->IASetVertexBuffers(0, 1, &g_attackAABBVertexBuffer, &stride, &offset);
+				for (int i = 0; i < PLAYER_MAX; ++i)
+				{
+					int vertexOffset = i * 4;
+
+					for (int j = 0; j < MAX_ATTACK_AABB; j++)
+					{
+						SetSpriteColorRotation(g_attackAABBVertexBuffer, g_Player[i].attackAABB[j].pos.x - bg->pos.x,
+							g_Player[i].attackAABB[j].pos.y - bg->pos.y, g_Player[i].attackAABB[j].w, g_Player[i].attackAABB[j].h,
+							0.0f, 0.0f, 0.0f, 0.0f,
+							XMFLOAT4(1.0f, 0.0f, 0.0f, 0.2f),
+							0.0f,
+							vertexOffset);
+
+						GetDeviceContext()->Draw(4, vertexOffset);
+					}
+
+				}
 			}
 #endif
 		}
 	}
 }
 
-void UpdateKeyboardInput(void)
+void PlayRunningAnim(void)
 {
+	g_Player->w = TEXTURE_RUN_WIDTH;
+	g_Player->h = TEXTURE_RUN_HEIGHT;
+
+	g_Player->texNo = CHAR_RUN;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_RUN)
+	{
+		g_Player->countAnim = 0.0f;
+		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+	}
+}
+
+void PlayIdleAnim(void)
+{
+	g_Player->w = TEXTURE_IDLE_WIDTH;
+	g_Player->h = TEXTURE_IDLE_HEIGHT;
+
+	g_Player->countAnim += 1.0f;
+	g_Player->texNo = CHAR_IDLE;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_IDLE)
+	{
+		g_Player->countAnim = 0.0f;
+		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+	}
+}
+
+void PlayDashAnim(void)
+{
+	g_Player->w = TEXTURE_RUN_WIDTH;
+	g_Player->h = TEXTURE_RUN_HEIGHT;
+
 	float speed = g_Player->move.x;
 
-#ifdef _DEBUG
-	if (GetKeyboardPress(DIK_UP) && GetKeyboardPress(DIK_LCONTROL))
-	{
-		CHANGE_PLAYER_POS_Y(-speed * 5);
-		g_Player->dir = CHAR_DIR_RIGHT;
-		g_Player->state = WALK;
-	}
-	else if (GetKeyboardPress(DIK_DOWN) && GetKeyboardPress(DIK_LCONTROL))
-	{
-		CHANGE_PLAYER_POS_Y(speed * 5);
-		g_Player->dir = CHAR_DIR_LEFT;
-		g_Player->state = WALK;
-	}
+	g_Player->texNo = CHAR_DASH;
 
-	if (GetKeyboardPress(DIK_LEFT) && GetKeyboardPress(DIK_LCONTROL))
-	{
-		CHANGE_PLAYER_POS_X(-speed * 5);
-		g_Player->dir = CHAR_DIR_RIGHT;
-		g_Player->state = WALK;
-	}
-	else if (GetKeyboardPress(DIK_RIGHT) && GetKeyboardPress(DIK_LCONTROL))
-	{
-		CHANGE_PLAYER_POS_X(speed * 5);
-		g_Player->dir = CHAR_DIR_LEFT;
-		g_Player->state = WALK;
-	}
-#endif
+	// ƒLƒƒƒ‰ƒNƒ^[‚ÌŒü‚«‚É‰‚¶‚ÄƒeƒNƒXƒ`ƒƒ‚Ì”½“]İ’è
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 
-	g_Player->running = FALSE;
-
-	if (GetKeyboardPress(DIK_RIGHT) && g_Player->playAnim == FALSE)
+	// ˆÚ“®Õ“Ë”»’è‚ğs‚¢‚È‚ª‚çˆÊ’u‚ğ•ÏX
+	switch (g_Player->dir)
 	{
-		g_Player->dir = CHAR_DIR_RIGHT;
-		if (g_Player->move.y == 0)
-		{
-			g_Player->state = WALK;
-			if (CheckMoveCollision(speed, g_Player->dir))
-				CHANGE_PLAYER_POS_X(speed);
-			if (GetKeyboardPress(DIK_LSHIFT))
-			{
-				g_Player->running = TRUE;
-				g_Player->state = RUN;
-				if (CheckMoveCollision(speed * 0.5f, g_Player->dir))
-					CHANGE_PLAYER_POS_X(speed * 0.5f);
-			}
-		}
-		else if (CheckMoveCollision(speed * 0.8f, g_Player->dir))
-			CHANGE_PLAYER_POS_X(speed * 0.8f);
+	case CHAR_DIR_LEFT:
+		if (CheckMoveCollision(-speed * 2, g_Player->dir))
+			CHANGE_PLAYER_POS_X(-speed * 2);
 
-		std::cout << g_Player->pos.x << " ";
-		std::cout << g_Player->pos.y << std::endl;
-	}
-	else if (GetKeyboardPress(DIK_LEFT) && g_Player->playAnim == FALSE)
-	{
-		g_Player->dir = CHAR_DIR_LEFT;
-		if (g_Player->move.y == 0)
-		{
-			g_Player->state = WALK;
-			if (CheckMoveCollision(-speed, g_Player->dir))
-				CHANGE_PLAYER_POS_X(-speed);
-			if (GetKeyboardPress(DIK_LSHIFT))
-			{
-				if (CheckMoveCollision(-speed * 0.5f, g_Player->dir))
-					CHANGE_PLAYER_POS_X(-speed * 0.5f);
-				g_Player->running = TRUE;
-				g_Player->state = RUN;
-			}
-		}
-		else if (CheckMoveCollision(-speed * 0.8f, g_Player->dir))
-			CHANGE_PLAYER_POS_X(-speed * 0.8f);
-
-		std::cout << g_Player->pos.x << " ";
-		std::cout << g_Player->pos.y << std::endl;
+		break;
+	case CHAR_DIR_RIGHT:
+		if (CheckMoveCollision(speed * 2, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speed * 2);
+		break;
+	default:
+		break;
 	}
 
-	if (GetKeyboardTrigger(DIK_C) && g_Player->dashCount < g_Player->maxDashCount)
+	g_Player->countAnim += 1.0f;
+	// ˆê’è‚ÌƒJƒEƒ“ƒg‚É’B‚µ‚½‚çƒAƒjƒ[ƒVƒ‡ƒ“‚ğXV
+	if (g_Player->countAnim > ANIM_WAIT_DASH)
 	{
-		// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
-		if (g_Player->playAnim == FALSE)
-		{
-			if (g_Player->onAirCnt == 0 || (g_Player->onAirCnt > 0 && g_Player->dashOnAir == FALSE))
-			{
-				g_Player->patternAnim = 0;
-				g_Player->state = DASH;
-				g_Player->animFrameCount = 0;
-				g_Player->dashCD = 0;
-				g_Player->playAnim = TRUE;
-				g_Player->dashCount++;
-
-				if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
-				{
-					g_Player->dashOnAir = TRUE;
-					g_Player->airDashCount++;
-				}
-					
-			}
-		}
-		// ‹ó’†‚Ìó‘Ô
-		else if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
-		{
-			g_Player->patternAnimOld = g_Player->patternAnim;
-			g_Player->patternAnim = 0;
-			g_Player->state = DASH;
-			g_Player->dashOnAir = TRUE;
-			g_Player->dashCD = 0;
-			g_Player->animFrameCount = 0;
-			g_Player->dashCount++;
-			g_Player->airDashCount++;
-		}
-		// ‚»‚Ì‘¼‚Ìó‘Ô‚Ìê‡AƒAƒNƒVƒ‡ƒ“‚ğƒLƒ…[‚É’Ç‰Á
-		else if (!(g_Player->dashOnAir == TRUE && g_Player->onAirCnt > 0))
-		{
-			g_Player->actionQueue[g_Player->actionQueueEnd] = DASH;
-			g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
-
-			// ƒLƒ…[‚ÌƒI[ƒo[ƒtƒ[‚ğ–h~
-			if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
-			{
-				g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // Å‚àŒÃ‚¢ƒAƒNƒVƒ‡ƒ“‚ğ”jŠü
-			}
-		}
-
+		g_Player->countAnim = 0.0f;
+		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+		g_Player->animFrameCount++;
 	}
-	else if (GetKeyboardTrigger(DIK_SPACE) && g_Player->jumpOnAirCnt == 0)
+
+	// ƒAƒjƒ[ƒVƒ‡ƒ“ƒtƒŒ[ƒ€‚ªƒ_ƒbƒVƒ…ƒtƒŒ[ƒ€”‚É’B‚µ‚½ê‡‚Ìˆ—
+	if (g_Player->animFrameCount == ANIM_DASH_FRAME)
 	{
-		//if (g_Player->state == FALL || g_Player->jumpOnAir == 1)
-		//std::cout << g_Player->state << std::endl;
-		//std::cout << "g_Player->jumpCnt " << g_Player->jumpCnt << std::endl;
-		//std::cout << "g_Player->jumpOnAir " << g_Player->jumpOnAir << std::endl;
-		//std::cout << "g_Player->jumpOnAir " << g_Player->jumpOnAir << std::endl;
-		// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
-		if (g_Player->playAnim == FALSE)
-		{
-			if (g_Player->onAirCnt == 0 || (g_Player->jumpOnAir && g_Player->jumpOnAirCnt == 0))
-			{
-				g_Player->patternAnim = 0;
-				g_Player->state = JUMP;
-				g_Player->animFrameCount = 0;
-				g_Player->playAnim = TRUE;
+		g_Player->animFrameCount = 0;
 
-				g_Player->state = JUMP;
-				g_Player->jumpCnt = 0;
-
-				if (g_Player->onAirCnt > 0)
-					g_Player->jumpOnAirCnt = 1;
-			}
-			
-		}
-		// ‹ó’†‚Ìó‘Ô
-		else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->jumpOnAir && g_Player->jumpOnAirCnt == 0)
-		{
-			g_Player->patternAnim = 0;
+		// ƒWƒƒƒ“ƒvƒJƒEƒ“ƒg‚ªˆê’èˆÈã‚Å‚ ‚ê‚ÎƒWƒƒƒ“ƒvó‘Ô‚ÉˆÚs
+		if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX * 0.5f)
 			g_Player->state = JUMP;
-			g_Player->animFrameCount = 0;
-			g_Player->playAnim = TRUE;
-
-			g_Player->state = JUMP;
+		else
+		{
+			// ‚»‚¤‚Å‚È‚¯‚ê‚ÎƒAƒCƒhƒ‹ó‘Ô‚ÉˆÚs‚µAƒAƒjƒ[ƒVƒ‡ƒ“‚ğ’â~
+			g_Player->state = IDLE;
+			g_Player->playAnim = FALSE;
 			g_Player->jumpCnt = 0;
-
-			g_Player->jumpOnAirCnt = 1;
-				
-		}
-		// ‚»‚Ì‘¼‚Ìó‘Ô‚Ìê‡AƒAƒNƒVƒ‡ƒ“‚ğƒLƒ…[‚É’Ç‰Á
-		else
-		{
-			g_Player->actionQueue[g_Player->actionQueueEnd] = JUMP;
-			g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
-
-			// ƒLƒ…[‚ÌƒI[ƒo[ƒtƒ[‚ğ–h~
-			if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
-			{
-				g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // Å‚àŒÃ‚¢ƒAƒNƒVƒ‡ƒ“‚ğ”jŠü
-			}
-		}
-	}
-	else if (GetKeyboardTrigger(DIK_X))
-	{
-		switch (g_Player->state)
-		{
-			// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
-		case IDLE:
-		case WALK:
-		case RUN:
-			g_Player->patternAnim = 0;
-			g_Player->state = ATTACK;
-			g_Player->animFrameCount = 0;
-			g_Player->playAnim = TRUE;
-			g_Player->attackPattern = NORMAL_ATTACK1;
-			break;
-
-		case DASH:
-		case ATTACK:
-		case JUMP:
-		case FALL:
-			// ‚à‚µƒAƒCƒhƒ‹ó‘Ô‚È‚çA‚·‚®‚ÉƒAƒNƒVƒ‡ƒ“‚ğÀs
-			if (g_Player->playAnim == FALSE)
-			{
-				g_Player->patternAnim = 0;
-				g_Player->animFrameCount = 0;
-				g_Player->playAnim = TRUE;
-				g_Player->attackPattern++;
-			}
-			// ‹ó’†‚Ìó‘Ô
-			else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->state != ATTACK)
-			{
-				g_Player->patternAnimOld = g_Player->patternAnim;
-				g_Player->patternAnim = 0;
-				g_Player->state = ATTACK;
-				g_Player->animFrameCount = 0;
-			}
-			// ‚»‚Ì‘¼‚Ìó‘Ô‚Ìê‡AƒAƒNƒVƒ‡ƒ“‚ğƒLƒ…[‚É’Ç‰Á
-			else
-			{
-				g_Player->actionQueue[g_Player->actionQueueEnd] = ATTACK;
-				g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
-
-				// ƒLƒ…[‚ÌƒI[ƒo[ƒtƒ[‚ğ–h~
-				if (g_Player->actionQueueEnd == g_Player->actionQueueStart)
-				{
-					g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE; // Å‚àŒÃ‚¢ƒAƒNƒVƒ‡ƒ“‚ğ”jŠü
-				}
-			}
-
-			break;
-		default:
-			break;
 		}
 
 	}
 }
 
-void UpdateGamepadInput(void)
+void PlayAttackAnim(void)
 {
-	//float speed = g_Player->move.x;
+	// ƒAƒ^ƒbƒNƒpƒ^[ƒ“‚ªÅ‘å‚Ü‚½‚Í–¢İ’è‚Ìê‡AÅ‰‚ÌUŒ‚ƒpƒ^[ƒ“‚ğİ’è
+	if (g_Player->attackPattern == ATTACK_PATTERN_MAX ||
+		g_Player->attackPattern == NONE)
+		g_Player->attackPattern = NORMAL_ATTACK1;
 
-	//if (IsButtonPressed(0, BUTTON_RIGHT))
-	//{
-	//	g_Player->pos.x += speed;
-	//	g_Player->dir = CHAR_IDLE_RIGHT;
-	//}
-	//else if (IsButtonPressed(0, BUTTON_LEFT))
-	//{
-	//	g_Player->pos.x -= speed;
-	//	g_Player->dir = CHAR_IDLE_LEFT;
-	//}
-}
+	// UŒ‚‚ÌƒeƒNƒXƒ`ƒƒƒTƒCƒY‚ğ’²®
+	AdjustAttackTextureSize();
 
-void UpdateGroundCollision(void)
-{
-	// ƒvƒŒƒCƒ„[‚ÌˆÊ’u‚ğXV‚·‚é‘O‚ÉÚ’n‚ğŠm”F
-	AABB* grounds = GetMap01AABB();
-	BOOL onGround = false;
+	int attackFrame = 0;
 
-	if (g_Player->jumpCnt == 0)
+	float speed = g_Player->move.x;
+	switch (g_Player->attackPattern)
 	{
-		if (g_Player->onAirCnt < PLAYER_JUMP_CNT_MAX * 0.5f && g_Player->onAirCnt != 0)
+	case NORMAL_ATTACK1:
+		g_Player->texNo = CHAR_NORMAL_ATTACK1;
+		attackFrame = ANIM_NORMAL_ATTACK1_FRAME;
+		break;
+	case NORMAL_ATTACK2:
+		g_Player->texNo = CHAR_NORMAL_ATTACK2;
+		attackFrame = ANIM_NORMAL_ATTACK2_FRAME;
+		break;
+	case NORMAL_ATTACK3:
+		g_Player->texNo = CHAR_NORMAL_ATTACK3;
+		attackFrame = ANIM_NORMAL_ATTACK3_FRAME;
+		break;
+	case NORMAL_ATTACK4:
+		//if (g_Player->patternAnim == 0)
+		//	g_Player->move.y = 10;
+		g_Player->texNo = CHAR_NORMAL_ATTACK4;
+		attackFrame = ANIM_NORMAL_ATTACK4_FRAME;
+		break;
+	case DASH_ATTACK:
+		g_Player->texNo = CHAR_DASH_ATTACK;
+		attackFrame = ANIM_DASH_ATTACK_FRAME;
+		break;
+	default:
+		break;
+	}
+
+
+	BOOL attackTouchGround = TRUE;
+	if (g_Player->attackPattern == NORMAL_ATTACK4 && (g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME
+		|| g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME + 1))
+	{
+		if (CheckMoveCollision(DIVE_ATTACK_SPEED, CHAR_DIR_DOWN, TRUE))
 		{
-			// sinŠÖ”‚ğg—p‚µ‚Ä‰º—‘¬“x‚ğŒvZ
-			float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->onAirCnt;
-
-			g_Player->move.y = g_Player->jumpYMax * sinf(angle);
-
-			// ‘Ø‹óŠÔ‚ğ‘‰Á‚³‚¹‚é
-			g_Player->onAirCnt++;
+			CHANGE_PLAYER_POS_Y(DIVE_ATTACK_SPEED);
+			attackTouchGround = FALSE;
 		}
 		else
-		{
-			// ‘Ø‹óŠÔ‚ªÅ‘å‚É’B‚µ‚½‚çA‰º—‘¬“x‚ğÅ‘å’l‚É•Û‚Â
-			g_Player->move.y = g_Player->jumpYMax;
-		}
-
-
-		CHANGE_PLAYER_POS_Y(g_Player->move.y);
-		for (int j = 0; j < MAP01_GROUND_MAX; j++)
-		{
-			if (CheckGroundCollision(g_Player, &grounds[j]))
-				onGround = TRUE;
-		}
-		if (g_Player->playAnim == TRUE || onGround)
-			CHANGE_PLAYER_POS_Y(-g_Player->move.y);
+			attackTouchGround = TRUE;
 	}
+
+
+	// ƒAƒjƒ[ƒVƒ‡ƒ“‚ğXV
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_ATTACK)
+	{
+		g_Player->countAnim = 0.0f;
+		if (attackTouchGround == FALSE)
+		{
+			g_Player->patternAnim = g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME ? NORMAL_ATTACK4_DROP_FRAME + 1 : NORMAL_ATTACK4_DROP_FRAME;
+		}
+
+		else
+		{
+			g_Player->patternAnim++;
+			// ƒAƒjƒ[ƒVƒ‡ƒ“ƒpƒ^[ƒ“‚ÌãŒÀ‚É’B‚µ‚½ê‡AãŒÀ’l‚ÉŒÅ’è
+			if (g_Player->patternAnim > GetTexturePatternDivideX() - 2)
+				g_Player->patternAnim = GetTexturePatternDivideX() - 2;
+			g_Player->animFrameCount++;
+		}
+
+	}
+
+	// ATTACKƒtƒŒ[ƒ€‚É‚æ‚èƒvƒŒƒCƒ„[‚ÌˆÊ’u‚ğ’²®
+	AdjustAttackPlayerPos();
+
+	// UŒ‚”»’è‚ÌXV
+	UpdatePlayerAttackAABB();
+
+	if (g_Player->animFrameCount >= attackFrame)
+	{
+		g_Player->animFrameCount = 0;
+
+		// ƒWƒƒƒ“ƒv’†‚©‚Ç‚¤‚©‚ğ”»’è‚µAƒWƒƒƒ“ƒvó‘Ô‚ÉˆÚs
+		if (g_Player->jumpCnt > 0)
+			g_Player->state = JUMP;
+		else
+		{
+			// ƒWƒƒƒ“ƒv‚µ‚Ä‚¢‚È‚¢ê‡‚ÍƒAƒCƒhƒ‹ó‘Ô‚É–ß‚é
+			g_Player->state = IDLE;
+			g_Player->playAnim = FALSE;
+		}
+
+		g_Player->attackPattern++;
+	}
+}
+
+void PlayWalkAnim(void)
+{
+	g_Player->w = TEXTURE_IDLE_WIDTH;
+	g_Player->h = TEXTURE_IDLE_HEIGHT;
+
+	g_Player->texNo = CHAR_WALK;
+	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
+	g_Player->countAnim++;
+	if (g_Player->countAnim > ANIM_WAIT_WALK)
+	{
+		g_Player->countAnim = 0.0f;
+		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
+		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
+	}
+}
+
+void PlayJumpAnim()
+{
+	if (GetKeyboardPress(DIK_RIGHT))
+	{
+		// ƒvƒŒƒCƒ„[‚ÌŒü‚«‚ğ‰E‚Éİ’è‚µAƒeƒNƒXƒ`ƒƒ‚Ì”½“]‚ğ‰ğœ
+		g_Player->dir = CHAR_DIR_RIGHT;
+		g_Player->invertTex = FALSE;
+
+		// ‰E•ûŒü‚Ö‚ÌˆÚ“®‚ª‰Â”\‚©”»’è‚µAˆÚ“®‰Â”\‚Å‚ ‚ê‚ÎˆÊ’u‚ğ•ÏX
+		if (CheckMoveCollision(g_Player->move.x * 0.8f, CHAR_DIR_RIGHT))
+			CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8f);
+	}
+	else if (GetKeyboardPress(DIK_LEFT))
+	{
+		// ƒvƒŒƒCƒ„[‚ÌŒü‚«‚ğ¶‚Éİ’è‚µAƒeƒNƒXƒ`ƒƒ‚ğ”½“]
+		g_Player->dir = CHAR_DIR_LEFT;
+		g_Player->invertTex = TRUE;
+
+		// ¶•ûŒü‚Ö‚ÌˆÚ“®‚ª‰Â”\‚©”»’è‚µAˆÚ“®‰Â”\‚Å‚ ‚ê‚ÎˆÊ’u‚ğ•ÏX
+		if (CheckMoveCollision(-g_Player->move.x * 0.8f, CHAR_DIR_LEFT))
+			CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8f);
+	}
+
+
+	g_Player->w = TEXTURE_JUMP_WIDTH;
+	g_Player->h = TEXTURE_JUMP_HEIGHT;
+
+	g_Player->texNo = CHAR_JUMP;
+
+	float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->jumpCnt;
+	g_Player->move.y = -1.0f * g_Player->jumpYMax * cosf(angle);
+	if (g_Player->move.y > 0)
+		allowAirJump = TRUE;
 	else
+		allowAirJump = FALSE;
+	// ã•ûŒü‚©‰º•ûŒü‚©‚ğ”»’f‚µ‚Äˆê“x‚Éˆ—
+	int direction = (g_Player->move.y < 0) ? CHAR_DIR_UP : CHAR_DIR_DOWN;
+	if (CheckMoveCollision(g_Player->move.y, direction))
 	{
-		for (int j = 0; j < MAP01_GROUND_MAX; j++)
-		{
-			CheckGroundCollision(g_Player, &grounds[j]);
-		}
+		// ˆÚ“®‰Â”\‚Å‚ ‚ê‚ÎY²•ûŒü‚ÌˆÊ’u‚ğ•ÏX
+		CHANGE_PLAYER_POS_Y(g_Player->move.y);
+	}
+	else if (direction == CHAR_DIR_DOWN)
+	{
+		// ‰º•ûŒü‚ÉˆÚ“®‚Å‚«‚È‚¢ê‡AƒWƒƒƒ“ƒvƒJƒEƒ“ƒg‚ğÅ‘å‚Éİ’è
+		g_Player->jumpCnt = PLAYER_JUMP_CNT_MAX;
 	}
 
-	//if (GetKeyboardPress(DIK_Z))
-	//{
 
-	//}
+	g_Player->countAnim += 1.0f;
+	// ˆê’è‚ÌƒJƒEƒ“ƒg‚É’B‚µ‚½‚çƒAƒjƒ[ƒVƒ‡ƒ“‚ğXV
+	if (g_Player->countAnim > ANIM_WAIT_JUMP)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		// ƒpƒ^[ƒ“‚Ì”ÍˆÍ‚ğ’´‚¦‚½ê‡AãŒÀ‚Ì”ÍˆÍ“à‚É’²®
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 3)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 4;
+		g_Player->animFrameCount++;
+	}
+
+	g_Player->jumpCnt++;
+	// ‹ó’†‚É‚¢‚éƒJƒEƒ“ƒg‚ğİ’è
+	g_Player->onAirCnt = g_Player->jumpCnt * 0.5f;
+
+	// ƒWƒƒƒ“ƒvƒJƒEƒ“ƒg‚ªƒWƒƒƒ“ƒv‚ÌÅ‚“_‚É’B‚µ‚½‚©ƒ`ƒFƒbƒN
+	bool isAtJumpPeak = (g_Player->jumpCnt == PLAYER_JUMP_CNT_MAX * 0.5f);
+
+	// ƒAƒNƒVƒ‡ƒ“ƒLƒ…[‚ª‹ó‚Å‚Í‚È‚­AŸ‚ÌƒAƒNƒVƒ‡ƒ“‚ªƒWƒƒƒ“ƒv‚©ƒ`ƒFƒbƒN
+	bool hasJumpInQueue = (g_Player->actionQueueStart != g_Player->actionQueueEnd &&
+		g_Player->actionQueue[g_Player->actionQueueStart] == JUMP);
+
+	// ã‹L‚ÌğŒ‚ª—¼•û‚Æ‚à–‚½‚³‚ê‚½ê‡A‹ó’†ƒWƒƒƒ“ƒv‚ğÀs
+	if (isAtJumpPeak && hasJumpInQueue)
+	{
+		// ƒAƒNƒVƒ‡ƒ“ƒLƒ…[‚ÌƒXƒ^[ƒg‚ğŸ‚Éi‚ß‚é
+		g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE;
+
+		// ƒAƒjƒ[ƒVƒ‡ƒ“ƒpƒ^[ƒ“‚ğƒŠƒZƒbƒg
+		g_Player->patternAnim = 0;
+		g_Player->animFrameCount = 0;
+
+		// ƒWƒƒƒ“ƒvƒJƒEƒ“ƒg‚Æ‹ó’†ƒWƒƒƒ“ƒv‰ñ”‚ğƒŠƒZƒbƒg
+		g_Player->jumpCnt = 0;
+		g_Player->jumpOnAirCnt = 1;
+	}
+	// ƒWƒƒƒ“ƒvƒJƒEƒ“ƒg‚ªÅ‘å‚É’B‚µ‚½ê‡‚Ìˆ—
+	if (g_Player->jumpCnt >= PLAYER_JUMP_CNT_MAX)
+	{
+		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ğ’â~‚µAƒvƒŒƒCƒ„[‚Ìó‘Ô‚ğƒAƒCƒhƒ‹‚É•ÏX
+		g_Player->playAnim = FALSE;
+		g_Player->state = IDLE;
+		g_Player->jumpCnt = 0;
+	}
 }
 
+void PlayFallAnim()
+{
+	g_Player->w = TEXTURE_JUMP_WIDTH;
+	g_Player->h = TEXTURE_JUMP_HEIGHT;
+
+	g_Player->texNo = CHAR_JUMP;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_JUMP)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		// ƒpƒ^[ƒ“‚Ì”ÍˆÍ‚ğ’´‚¦‚½ê‡AãŒÀ‚Ì”ÍˆÍ“à‚É’²®
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 3)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 4;
+		g_Player->animFrameCount++;
+	}
+}
+
+void PlayHardLandingAnim(void)
+{
+	g_Player->w = TEXTURE_HARDLAND_WIDTH;
+	g_Player->h = TEXTURE_HARDLAND_HEIGHT;
+
+	g_Player->texNo = CHAR_HARD_LANDING;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_HARDLAND)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		// ƒpƒ^[ƒ“‚Ì”ÍˆÍ‚ğ’´‚¦‚½ê‡AãŒÀ‚Ì”ÍˆÍ“à‚É’²®
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 2)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 2;
+		g_Player->animFrameCount++;
+	}
+
+	if (g_Player->animFrameCount >= ANIM_HARDLANDING_FRAME)
+	{
+		// ƒAƒjƒ[ƒVƒ‡ƒ“‚ğ’â~‚µAƒvƒŒƒCƒ„[‚Ìó‘Ô‚ğƒAƒCƒhƒ‹‚É•ÏX
+		g_Player->playAnim = FALSE;
+		g_Player->state = IDLE;
+	}
+}
 
 //=============================================================================
 // Player\‘¢‘Ì‚Ìæ“ªƒAƒhƒŒƒX‚ğæ“¾
@@ -960,6 +1609,8 @@ void DrawPlayerShadow(void)
 		float groundY = ground[j].pos.y;
 		float groundW = ground[j].w;
 		float groundH = ground[j].h;
+
+		if (groundY < g_Player->pos.y) continue;
 
 		// ƒvƒŒƒCƒ„[‚ÌxÀ•W‚ª’n–Ê‚Ì•‚Ì”ÍˆÍ‚É“ü‚Á‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ğŠm”F
 		if (g_Player->pos.x >= groundX - groundW / 2 && g_Player->pos.x <= groundX + groundW / 2)
@@ -1036,240 +1687,6 @@ void DrawPlayerOffset(int no)
 	}
 }
 
-void PlayRunningAnim(void)
-{
-	g_Player->w = TEXTURE_RUN_WIDTH;
-	g_Player->h = TEXTURE_RUN_HEIGHT;
-
-	g_Player->texNo = CHAR_RUN;
-	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
-
-	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_RUN)
-	{
-		g_Player->countAnim = 0.0f;
-		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
-		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
-	}
-}
-
-void PlayIdleAnim(void)
-{
-	g_Player->w = TEXTURE_IDLE_WIDTH;
-	g_Player->h = TEXTURE_IDLE_HEIGHT;
-
-	g_Player->countAnim += 1.0f;
-	g_Player->texNo = CHAR_IDLE;
-	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
-
-	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_IDLE)
-	{
-		g_Player->countAnim = 0.0f;
-		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
-		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
-	}
-}
-
-void PlayDashAnim(void)
-{
-	g_Player->w = TEXTURE_RUN_WIDTH;
-	g_Player->h = TEXTURE_RUN_HEIGHT;
-
-	float speed = g_Player->move.x;
-
-	g_Player->texNo = CHAR_DASH;
-	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
-
-	switch (g_Player->dir)
-	{
-	case CHAR_DIR_LEFT:
-		if (CheckMoveCollision(-speed * 2, g_Player->dir))
-			CHANGE_PLAYER_POS_X(-speed * 2);
-			
-		break;
-	case CHAR_DIR_RIGHT:
-		if (CheckMoveCollision(speed * 2, g_Player->dir))
-			CHANGE_PLAYER_POS_X(speed * 2);
-		break;
-	default:
-		break;
-	}
-	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_DASH)
-	{
-		g_Player->countAnim = 0.0f;
-		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
-		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
-		g_Player->animFrameCount++;
-	}
-	if (g_Player->animFrameCount == ANIM_DASH_FRAME)
-	{
-		g_Player->animFrameCount = 0;
-
-		if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX * 0.5f)	
-			g_Player->state = JUMP;
-		else
-		{
-			g_Player->state = IDLE;
-			g_Player->playAnim = FALSE;
-			g_Player->jumpCnt = 0;
-		}
-
-	}
-}
-
-void PlayAttackAnim(void)
-{
-	if (g_Player->attackPattern == ATTACK_PATTERN_MAX ||
-		g_Player->attackPattern == NONE)
-		g_Player->attackPattern = NORMAL_ATTACK1;
-
-
-	AdjustAttackTextureSize();
-
-	//std::cout << g_Player->attackPattern << std::endl;
-
-	int attackFrame = 0;
-
-	float speed = g_Player->move.x;
-	switch (g_Player->attackPattern)
-	{
-	case NORMAL_ATTACK1:
-		g_Player->texNo = CHAR_NORMAL_ATTACK1;
-		attackFrame = ANIM_NORMAL_ATTACK1_FRAME;
-		break;
-	case NORMAL_ATTACK2:
-		g_Player->texNo = CHAR_NORMAL_ATTACK2;
-		attackFrame = ANIM_NORMAL_ATTACK2_FRAME;
-		break;
-	case NORMAL_ATTACK3:
-		g_Player->texNo = CHAR_NORMAL_ATTACK3;
-		attackFrame = ANIM_NORMAL_ATTACK3_FRAME;
-		break;
-	case NORMAL_ATTACK4:
-		g_Player->texNo = CHAR_NORMAL_ATTACK4;
-		attackFrame = ANIM_NORMAL_ATTACK4_FRAME;
-		break;
-	default:
-		break;
-	}
-	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_ATTACK)
-	{
-		g_Player->countAnim = 0.0f;
-		g_Player->patternAnim++;
-		if (g_Player->patternAnim > GetTexturePatternDivideX() - 2)
-			g_Player->patternAnim = GetTexturePatternDivideX() - 2;
-		g_Player->animFrameCount++;
-	}
-	if (g_Player->animFrameCount == attackFrame)
-	{
-		g_Player->animFrameCount = 0;
-
-		if (g_Player->jumpCnt > 0)
-			g_Player->state = JUMP;
-		else
-		{
-			g_Player->state = IDLE;
-			g_Player->playAnim = FALSE;
-		}
-
-		g_Player->attackPattern++;
-	}
-}
-
-void PlayWalkAnim(void)
-{
-	g_Player->w = TEXTURE_IDLE_WIDTH;
-	g_Player->h = TEXTURE_IDLE_HEIGHT;
-
-	g_Player->texNo = CHAR_WALK;
-	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
-
-	g_Player->countAnim++;
-	if (g_Player->countAnim > ANIM_WAIT_WALK)
-	{
-		g_Player->countAnim = 0.0f;
-		// ƒpƒ^[ƒ“‚ÌØ‚è‘Ö‚¦
-		g_Player->patternAnim = (g_Player->patternAnim + 1) % GetTexturePatternDivideX();
-	}
-}
-
-void PlayJumpAnim()
-{
-	if (GetKeyboardPress(DIK_RIGHT))
-	{
-		g_Player->dir = CHAR_DIR_RIGHT;
-		g_Player->invertTex = FALSE;
-		if (CheckMoveCollision(g_Player->move.x * 0.8f, CHAR_DIR_RIGHT))
-			CHANGE_PLAYER_POS_X(g_Player->move.x * 0.8f);
-	}
-	else if (GetKeyboardPress(DIK_LEFT))
-	{
-		g_Player->dir = CHAR_DIR_LEFT;
-		g_Player->invertTex = TRUE;
-		if (CheckMoveCollision(-g_Player->move.x * 0.8f, CHAR_DIR_LEFT))
-			CHANGE_PLAYER_POS_X(-g_Player->move.x * 0.8f);
-	}
-		
-
-	g_Player->w = TEXTURE_JUMP_WIDTH;
-	g_Player->h = TEXTURE_JUMP_HEIGHT;
-
-	g_Player->texNo = CHAR_JUMP;
-
-	float angle = (XM_PI / PLAYER_JUMP_CNT_MAX) * g_Player->jumpCnt;
-	g_Player->move.y = -1.0f * g_Player->jumpYMax * cosf(angle);
-
-	// ã•ûŒü‚©‰º•ûŒü‚©‚ğ”»’f‚µ‚Äˆê“x‚Éˆ—
-	int direction = (g_Player->move.y < 0) ? CHAR_DIR_UP : CHAR_DIR_DOWN;
-	if (CheckMoveCollision(g_Player->move.y, direction))
-	{
-		CHANGE_PLAYER_POS_Y(g_Player->move.y);
-	}
-	else if (direction == CHAR_DIR_DOWN)
-	{
-		g_Player->jumpCnt = PLAYER_JUMP_CNT_MAX;
-	}
-
-	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_JUMP)
-	{
-		g_Player->countAnim = 0.0f;
-		g_Player->patternAnim++;
-		if (g_Player->patternAnim > GetTexturePatternDivideX() - 3)
-			g_Player->patternAnim = GetTexturePatternDivideX() - 4;
-		g_Player->animFrameCount++;
-	}
-
-	g_Player->jumpCnt++;
-	g_Player->onAirCnt = g_Player->jumpCnt * 0.5f;
-	if (g_Player->jumpCnt >= PLAYER_JUMP_CNT_MAX)
-	{
-		g_Player->playAnim = FALSE;
-		g_Player->state = IDLE;
-		g_Player->jumpCnt = 0;
-	}
-}
-
-void PlayFallAnim()
-{
-	g_Player->w = TEXTURE_JUMP_WIDTH;
-	g_Player->h = TEXTURE_JUMP_HEIGHT;
-
-	g_Player->texNo = CHAR_JUMP;
-
-	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_JUMP)
-	{
-		g_Player->countAnim = 0.0f;
-		g_Player->patternAnim++;
-		if (g_Player->patternAnim > GetTexturePatternDivideX() - 3)
-			g_Player->patternAnim = GetTexturePatternDivideX() - 4;
-		g_Player->animFrameCount++;
-	}
-}
 
 int GetTexturePatternDivideX()
 {
@@ -1285,6 +1702,8 @@ int GetTexturePatternDivideX()
 		return TEXTURE_DASH_PATTERN_DIVIDE_X;
 	case CHAR_JUMP:
 		return TEXTURE_JUMP_PATTERN_DIVIDE_X;
+	case CHAR_HARD_LANDING:
+		return TEXTURE_HARD_LANDING_PATTERN_DIVIDE_X;
 	case CHAR_NORMAL_ATTACK1:
 		return TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X;
 	case CHAR_NORMAL_ATTACK2:
@@ -1293,29 +1712,20 @@ int GetTexturePatternDivideX()
 		return TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X;
 	case CHAR_NORMAL_ATTACK4:
 		return TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X;
+	case CHAR_DASH_ATTACK:
+		return TEXTURE_DASH_ATTACK_PATTERN_DIVIDE_X;
 	default:
 		return -1;
 	}
 }
 
-void UpdateActionQueue(void)
-{
-	g_Player->actionQueueClearTime++;
-	if (g_Player->actionQueueClearTime == ACTION_QUEUE_CLEAR_WAIT)
-	{
-		g_Player->actionQueueStart = 0;
-		g_Player->actionQueueEnd = 0;
-		g_Player->actionQueueClearTime = 0;
-	}
-}
-
-BOOL CheckMoveCollision(float move, int dir)
+BOOL CheckMoveCollision(float move, int dir, BOOL checkGround)
 {
 	// •Ç‚ÌAABBî•ñ‚ğæ“¾
 	AABB* walls = GetMap01AABB();
 	for (int i = 0; i < MAP01_GROUND_MAX; i++)
 	{
-		if (walls[i].tag == GROUND_AABB) continue;
+		if (walls[i].tag == GROUND_AABB && checkGround == FALSE) continue;
 
 		XMFLOAT3 wallPos = walls[i].pos;
 		float wallW = walls[i].w;
@@ -1384,6 +1794,9 @@ BOOL CheckMoveCollision(float move, int dir)
 
 BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground)
 {
+	if (noGravity)
+		return true;
+
 	// ƒvƒŒƒCƒ„[‚ÌAABBî•ñ‚ğæ“¾
 	XMFLOAT3 playerPos = g_Player->bodyAABB.pos;
 	float playerW = g_Player->bodyAABB.w;
@@ -1412,8 +1825,6 @@ BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground)
 		// ƒvƒŒƒCƒ„[‚ª—‰º’†‚Å‚©‚Â’n–Ê‚É\•ªÚG‚µ‚Ä‚¢‚éA—‰º‚ğ~‚ß
 		g_Player->move.y = 0.0f;
 
-		// ƒvƒŒƒCƒ„[‚Ì‘Ø‹óŠÔ‚ğƒŠƒZƒbƒg‚·‚é
-		g_Player->onAirCnt = 0;
 		// ƒWƒƒƒ“ƒv‚Ìó‘Ô‚©‚çidleó‘Ô‚É–ß‚é
 		if (g_Player->jumpCnt > 0)
 		{
@@ -1474,12 +1885,16 @@ void AdjustAttackTextureSize()
 		g_Player->w = TEXTURE_NORMAL_ATTACK4_WIDTH;
 		g_Player->h = TEXTURE_NORMAL_ATTACK4_HEIGHT;
 		break;
+	case DASH_ATTACK:
+		g_Player->w = TEXTURE_DASH_ATTACK_WIDTH;
+		g_Player->h = TEXTURE_DASH_ATTACK_HEIGHT;
+		break;
 	default:
 		break;
 	}
 }
 
-void AdjustAttackTexturePosition(float& px, float& py)
+void AdjustAttackTexturePos(float& px, float& py)
 {
 	switch (g_Player->attackPattern)
 	{
@@ -1499,6 +1914,60 @@ void AdjustAttackTexturePosition(float& px, float& py)
 		px += TEXTURE_NORMAL_ATTACK4_OFFSET.x;
 		py += TEXTURE_NORMAL_ATTACK4_OFFSET.y;
 		break;
+	case DASH_ATTACK:
+		px += TEXTURE_DASH_ATTACK_OFFSET.x;
+		py += TEXTURE_DASH_ATTACK_OFFSET.y;
+		break;
+	default:
+		break;
+	}
+}
+
+void AdjustAttackPlayerPos(void)
+{
+	float speedX = g_Player->move.x;
+	float speedY = g_Player->move.y;
+
+	speedX *= g_Player->dir == CHAR_DIR_RIGHT ? 1.0f : -1.0f;
+
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+	{
+		BOOL isMoveFrame = g_Player->patternAnim >= 2 && g_Player->patternAnim <= 4;
+		if (isMoveFrame && CheckMoveCollision(speedX * 0.6f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speedX * 0.6f);
+		break;
+	}
+	case NORMAL_ATTACK2:
+	{
+		BOOL isMoveFrame = g_Player->patternAnim >= 1 && g_Player->patternAnim <= 6;
+		if (isMoveFrame && CheckMoveCollision(-speedX * 0.2f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(-speedX * 0.2f);
+		break;
+	}	
+	case NORMAL_ATTACK3:
+	{
+		BOOL isMoveFrame = g_Player->patternAnim >= 1 && g_Player->patternAnim <= 5;
+		if (isMoveFrame && CheckMoveCollision(speedX * 0.4f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speedX * 0.4f);
+		break;
+	}
+	case NORMAL_ATTACK4:
+	{
+		BOOL isMoveFrame = g_Player->patternAnim >= 2 && g_Player->patternAnim <= 4;
+		if (isMoveFrame && CheckMoveCollision(speedX * 0.1f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speedX * 0.1f);
+		break;
+	}
+	case DASH_ATTACK:
+	{
+		BOOL isMoveFrame = g_Player->patternAnim >= 0 && g_Player->patternAnim <= 5;
+		float speedAdjust = 1.5f - g_Player->patternAnim * 0.2f;
+		if (isMoveFrame && CheckMoveCollision(speedX * speedAdjust, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speedX * speedAdjust);
+		break;
+	}
 	default:
 		break;
 	}
