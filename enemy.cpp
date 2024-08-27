@@ -305,6 +305,8 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].canFly = FALSE;
 		g_Enemy[i].stepBack = FALSE;
 
+		g_Enemy[i].damage = 16;
+
 		g_Enemy[i].time = 0.0f;			// 線形補間用のタイマーをクリア
 		g_Enemy[i].tblNo = 0;			// 再生する行動データテーブルNoをセット
 		g_Enemy[i].tblMax = 0;			// 再生する行動データテーブルのレコード数をセット
@@ -624,15 +626,8 @@ void UpdateEnemy(void)
 
 
 							// 計算して求めた移動量を現在の移動テーブルXYZに足している＝表示座標を求めている
-							XMVECTOR vec2Vector = XMLoadFloat3(&g_Enemy[i].pos);
 							XMStoreFloat3(&g_Enemy[i].pos, nowPos + Pos);
 							XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, nowPos + Pos);
-
-
-							if (XMVectorGetX(XMVector3Length(vec2Vector -(nowPos + Pos))) > 10.0f)
-							{
-								std::cout << "daf";
-							}
 
 							// 計算して求めた回転量を現在の移動テーブルに足している
 							XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);

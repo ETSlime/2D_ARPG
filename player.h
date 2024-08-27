@@ -10,6 +10,7 @@
 #include "renderer.h"
 #include "debugproc.h"
 #include "sprite.h"
+#include "enemy.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -19,16 +20,20 @@
 
 #define	PLAYER_OFFSET_CNT		(8)	// 8分身
 #define ACTION_QUEUE_SIZE		(4)
-#define ACTION_QUEUE_CLEAR_WAIT	(150)
+#define ACTION_QUEUE_CLEAR_WAIT	(120)
+#define ATTACK_COMBO_WINDOW		(80)
 #define DASH_CD_TIME			(40)
 #define MAX_DASH_COUNT			(2)
-#define ATTACK_PATTERN_MAX		(4)		// キューをクリアするまでの待機時間
+#define ATTACK_PATTERN_MAX		(5)		// キューをクリアするまでの待機時間
 
 #define PLAYER_INIT_POS_X		(938.0f)
 #define PLAYER_INIT_POS_Y		(1306.5f)
+#define PLAYER_WALK_SPEED		(3.75f)
 #define FALLING_THRESHOLD		(3.0f)
+#define	KNOCKDOWN_THRESHOLD		(15)
 #define HARDLANDING_HEIGHT		(60)
 #define	DIVE_ATTACK_SPEED		(10.0f)
+#define INVINCIBILITY_TIME		(100)
 
 #define SET_PLAYER_POS_Y(y_value) \
     do { \
@@ -102,11 +107,12 @@ enum
 // attack pattern
 enum
 {
+	NONE,
 	NORMAL_ATTACK1,
 	NORMAL_ATTACK2,
 	NORMAL_ATTACK3,
 	NORMAL_ATTACK4,
-	NONE,
+	PLACEHOLDER,
 	DASH_ATTACK,
 };
 
@@ -147,6 +153,8 @@ struct PLAYER
 	float		jumpYMax;		// 
 	int			jumpOnAirCnt;
 	int			onAirCnt;
+	int			attackInterval;
+	int			invincibilityTime;
 
 	XMFLOAT3	move;			// 移動速度
 	XMFLOAT3	offset[PLAYER_OFFSET_CNT];		// 残像ポリゴンの座標
@@ -187,6 +195,9 @@ void PlayDashAnim(void);
 void PlayAttackAnim(void);
 void PlayJumpAnim(void);
 void PlayFallAnim(void);
+void PlayHitAnim(void);
+void PlayKnockDownAnim(void);
+void PlayReboundAnim(void);
 void PlayHardLandingAnim(void);
 void AdjustAttackTexturePos(float& px, float& py);
 void AdjustAttackTextureSize(void);
@@ -206,6 +217,8 @@ void UpdateGamepadInput(void);
 void UpdateGroundCollision(void);
 void UpdateActionQueue(void);
 void UpdatePlayerAttackAABB(void);
+void UpdatePlayerStates(void);
+void PlayerTakeDamage(ENEMY* enemy);
 
 // プレイヤーと地面の衝突判定関数
 BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground);

@@ -77,6 +77,8 @@ struct ENEMY
 	BOOL		canFly;
 	BOOL		stepBack;
 
+	int			damage;
+
 	float		time;			// 線形補間用
 	int			tblNo;			// 行動データのテーブル番号
 	int			tblMax;			// そのテーブルのデータ数

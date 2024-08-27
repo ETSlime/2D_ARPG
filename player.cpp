@@ -21,8 +21,10 @@
 #define TEXTURE_IDLE_HEIGHT					(160/2) 
 #define TEXTURE_NORMAL_ATTACK1_WIDTH		(285/2)
 #define TEXTURE_NORMAL_ATTACK1_HEIGHT		(240/2)
-#define TEXTURE_NORMAL_ATTACK3_WIDTH		(281/2)
-#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(217/2)
+#define TEXTURE_NORMAL_ATTACK2_WIDTH		(315/2)
+#define TEXTURE_NORMAL_ATTACK2_HEIGHT		(260/2)
+#define TEXTURE_NORMAL_ATTACK3_WIDTH		(312/2)
+#define TEXTURE_NORMAL_ATTACK3_HEIGHT		(247/2)
 #define TEXTURE_NORMAL_ATTACK4_WIDTH		(230/2)
 #define TEXTURE_NORMAL_ATTACK4_HEIGHT		(245/2)
 #define TEXTURE_DASH_ATTACK_WIDTH			(290/2)
@@ -33,6 +35,12 @@
 #define TEXTURE_JUMP_HEIGHT					(210/2)
 #define TEXTURE_HARDLAND_WIDTH				(200/2)
 #define TEXTURE_HARDLAND_HEIGHT				(160/2)
+#define TEXTURE_HIT_WIDTH					(200/2)
+#define TEXTURE_HIT_HEIGHT					(160/2)
+#define TEXTURE_KNOCKDOWN_WIDTH				(200/2)
+#define TEXTURE_KNOCKDOWN_HEIGHT			(160/2)
+#define TEXTURE_REBOUND_WIDTH				(200/2)
+#define TEXTURE_REBOUND_HEIGHT				(160/2)
 #define TEXTURE_MAX							(20)	// テクスチャの数
 
 // アニメパターンのテクスチャ内分割数（X)
@@ -61,24 +69,25 @@
 #define ANIM_WAIT_JUMP							(7)
 #define ANIM_WAIT_HARDLAND						(6)
 #define ANIM_WAIT_HIT							(6)
-#define ANIM_WAIT_KNOCKDOWN						(6)
+#define ANIM_WAIT_KNOCKDOWN						(20)
 #define ANIM_WAIT_REBOUND						(6)
 #define ANIM_DASH_FRAME							(10)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
-#define ANIM_KNOCKDOWN_FRAME					(4)
-#define ANIM_REBOUND_FRAME						(4)
+#define ANIM_KNOCKDOWN_FRAME					(5)
+#define ANIM_REBOUND_FRAME						(5)
 #define ANIM_NORMAL_ATTACK1_FRAME				(7)
 #define ANIM_NORMAL_ATTACK2_FRAME				(9)
 #define ANIM_NORMAL_ATTACK3_FRAME				(8)
 #define ANIM_NORMAL_ATTACK4_FRAME				(13)
 #define	ANIM_DASH_ATTACK_FRAME					(8)
 
+
 #define	NORMAL_ATTACK4_DROP_FRAME				(6)
 
 #define TEXTURE_NORMAL_ATTACK1_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
-#define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, 0.0f, 0.0f)
-#define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(10.0f, -10.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, -9.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(8.0f, -12.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK4_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
 #define TEXTURE_DASH_ATTACK_OFFSET				XMFLOAT3(10.0f, -5.0f, 0.0f)
 
@@ -336,7 +345,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].airDashCount = 0;
 		g_Player[i].maxDashCount = MAX_DASH_COUNT;
 
-		g_Player[i].move = XMFLOAT3(3.75f, 0.0f, 0.0f);		// 移動量
+		g_Player[i].move = XMFLOAT3(PLAYER_WALK_SPEED, 0.0f, 0.0f);		// 移動量
 
 		g_Player[i].dir = CHAR_DIR_RIGHT;					// 右向きにしとくか
 		g_Player[i].running = FALSE;
@@ -357,6 +366,8 @@ HRESULT InitPlayer(void)
 		g_Player[i].jumpYMax = PLAYER_JUMP_Y_MAX;
 
 		g_Player[i].onAirCnt = 0;
+		g_Player[i].attackInterval = 0;
+		g_Player[i].invincibilityTime = 0;
 
 		for (int j = 0; j < ACTION_QUEUE_SIZE; j++)
 		{
@@ -454,9 +465,6 @@ void UpdatePlayer(void)
 			g_Player[i].offset[0] = pos_old;
 
 			UpdateActionQueue();
-			g_Player[i].dashCD++;
-
-			
 			
 			// 現在のアニメーションが終了したかどうかを確認
 			if (g_Player[i].playAnim == FALSE)
@@ -469,27 +477,54 @@ void UpdatePlayer(void)
 				{
 					// アクションキューが空の場合、プレイヤーをアイドル状態に設定
 					g_Player[i].state = IDLE;
-					// 攻撃パターンをなしに設定
-					g_Player[i].attackPattern = NONE;
+					//// 攻撃パターンをなしに設定
+					//g_Player[i].attackPattern = NONE;
 				}
 			}			
 
 			UpdateGroundCollision();
 			UpdateKeyboardInput();
 			UpdateGamepadInput();
-
-
-			if (g_Player[i].dashCD >= DASH_CD_TIME)
-			{
-				g_Player[i].dashCount = 0;
-			}
-			if (g_Player[i].move.y >= g_Player->jumpYMax * 0.5f && g_Player[i].state == IDLE)
-				g_Player[i].state = FALL;
-
+			UpdatePlayerStates();
 			UpdateBackGroundScroll();
 
 
 			// 移動が終わったらエネミーとの当たり判定
+			ENEMY* enemy = GetEnemy();
+			for (int j = 0; j < ENEMY_MAX; j++)
+			{
+				// 生きてるエネミーと当たり判定をする
+				if (enemy[j].use == TRUE && enemy[j].state == ENEMY_ATTACK && g_Player->invincibilityTime <= 0)
+				{
+					// 攻撃用の包囲ボックスを取得
+					for (int k = 0; k < MAX_ATTACK_AABB; k++)
+					{
+						AABB attackBox = enemy[j].attackAABB[k];
+
+						// プレイヤーのAABB情報を取得
+						XMFLOAT3 playerPos = g_Player->bodyAABB.pos;
+						float playerW = g_Player->bodyAABB.w;
+						float playerH = g_Player->bodyAABB.h;
+
+						// 攻撃のAABB情報を取得
+						XMFLOAT3 attackPos = attackBox.pos;
+						float attackW = attackBox.w;
+						float attackH = attackBox.h;
+
+						// プレイヤーの包囲ボックスとエネミーの攻撃範囲が重なっているかを確認
+						BOOL isColliding = CollisionBB(playerPos, playerW, playerH, attackPos, attackW, attackH);
+
+						if (isColliding)
+						{
+							// 当たり判定があった場合、プレイヤーにダメージを与える
+							PlayerTakeDamage(enemy);
+
+							// プレイヤーの無敵時間を設定
+							g_Player->invincibilityTime = INVINCIBILITY_TIME;
+						}
+					}
+				}
+			}
 			//{
 			//	ENEMY* enemy = GetEnemy();
 
@@ -556,6 +591,15 @@ void UpdatePlayer(void)
 			case HARD_LANDING:
 				PlayHardLandingAnim();
 				break;
+			case HIT:
+				PlayHitAnim();
+				break;
+			case KNOCKDOWN:
+				PlayKnockDownAnim();
+				break;
+			case REBOUND:
+				PlayReboundAnim();
+				break;
 			default:
 				break;
 			}
@@ -568,12 +612,6 @@ void UpdatePlayer(void)
 	{
 		SaveData();
 	}
-
-
-#ifdef _DEBUG	// デバッグ情報を表示する
-
-
-#endif
 
 }
 
@@ -734,9 +772,7 @@ void HandlePlayerJump(void)
 			{
 				g_Player->jumpOnAirCnt = 1;
 			}
-
 		}
-
 	}
 	// 空中の状態
 	else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->jumpOnAir && g_Player->jumpOnAirCnt == 0)
@@ -775,7 +811,10 @@ void HandlePlayerAttack(void)
 		g_Player->state = ATTACK;
 		g_Player->animFrameCount = 0;
 		g_Player->playAnim = TRUE;
-		g_Player->attackPattern = NORMAL_ATTACK1;
+		if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+			g_Player->attackPattern = NORMAL_ATTACK1;
+
+		g_Player->attackInterval = 0;
 		break;
 
 		// 走るの状態
@@ -797,7 +836,10 @@ void HandlePlayerAttack(void)
 			g_Player->patternAnim = 0;
 			g_Player->animFrameCount = 0;
 			g_Player->playAnim = TRUE;
-			g_Player->attackPattern++;
+			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+				g_Player->attackPattern = NORMAL_ATTACK1;
+			g_Player->attackInterval = 0;
+			break;
 		}
 		// 空中の状態
 		else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->state != ATTACK)
@@ -806,6 +848,9 @@ void HandlePlayerAttack(void)
 			g_Player->patternAnim = 0;
 			g_Player->state = ATTACK;
 			g_Player->animFrameCount = 0;
+			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+				g_Player->attackPattern = NORMAL_ATTACK1;
+			g_Player->attackInterval = 0;
 		}
 		// その他の状態の場合、アクションをキューに追加
 		else
@@ -907,6 +952,28 @@ void UpdateGamepadInput(void)
 	//	g_Player->pos.x -= speed;
 	//	g_Player->dir = CHAR_IDLE_LEFT;
 	//}
+}
+
+void UpdatePlayerStates(void)
+{
+	g_Player->dashCD++;
+	if (g_Player->dashCD >= DASH_CD_TIME)
+	{
+		g_Player->dashCount = 0;
+	}
+
+	if (g_Player->move.y >= g_Player->jumpYMax * 0.5f && g_Player->state == IDLE)
+	{
+		g_Player->state = FALL;
+	}
+
+	g_Player->attackInterval++;
+
+	// プレイヤーの無敵時間を減少させる
+	if (g_Player->invincibilityTime > 0)
+	{
+		g_Player->invincibilityTime--;
+	}
 }
 
 void UpdateBackGroundScroll(void)
@@ -1097,6 +1164,22 @@ void UpdateActionQueue(void)
 	}
 }
 
+void PlayerTakeDamage(ENEMY* enemy)
+{
+	int dir = g_Player->pos.x - enemy->pos.x >= 0 ? 1 : -1;
+	g_Player->move.x = dir * enemy->damage;
+	if (g_Player->onAirCnt > 0 || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
+		g_Player->state = KNOCKDOWN;
+	else
+		g_Player->state = HIT;
+
+	g_Player->animFrameCount = 0;
+	g_Player->patternAnim = 0;
+	g_Player->playAnim = TRUE;
+
+	
+}
+
 //=============================================================================
 // 描画処理
 //=============================================================================
@@ -1144,7 +1227,8 @@ void DrawPlayer(void)
 			float pw = g_Player[i].w;		// プレイヤーの表示幅
 			float ph = g_Player[i].h;		// プレイヤーの表示高さ
 
-			AdjustAttackTexturePos(px, py);
+			if (g_Player->state == ATTACK)
+				AdjustAttackTexturePos(px, py);
 
 			// アニメーション用
 			float tw, th, tx, ty;
@@ -1401,7 +1485,10 @@ void PlayAttackAnim(void)
 			g_Player->playAnim = FALSE;
 		}
 
-		g_Player->attackPattern++;
+		if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+			g_Player->attackPattern = NORMAL_ATTACK1;
+		else
+			g_Player->attackPattern++;
 	}
 }
 
@@ -1563,6 +1650,95 @@ void PlayHardLandingAnim(void)
 	}
 }
 
+void PlayHitAnim(void)
+{
+	g_Player->w = TEXTURE_HIT_WIDTH;
+	g_Player->h = TEXTURE_HIT_HEIGHT;
+
+	g_Player->texNo = CHAR_HIT;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_HIT)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		g_Player->patternAnim = g_Player->patternAnim == 0 ? 1 : 0;
+		g_Player->animFrameCount++;
+	}
+
+	float speed = (ANIM_HIT_FRAME - g_Player->animFrameCount) * g_Player->move.x * 0.2f;
+	if (CheckMoveCollision(speed, g_Player->dir))
+	{
+		CHANGE_PLAYER_POS_X(speed);
+	}
+
+	if (g_Player->animFrameCount >= ANIM_HIT_FRAME)
+	{
+		// アニメーションを停止し、プレイヤーの状態をアイドルに変更
+		g_Player->playAnim = FALSE;
+		g_Player->state = IDLE;
+		g_Player->move.x = PLAYER_WALK_SPEED;
+	}
+}
+
+void PlayKnockDownAnim(void)
+{
+	g_Player->w = TEXTURE_KNOCKDOWN_WIDTH;
+	g_Player->h = TEXTURE_KNOCKDOWN_HEIGHT;
+
+	g_Player->texNo = CHAR_KNOCKDOWN;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_KNOCKDOWN)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 1)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 1;
+		g_Player->animFrameCount++;
+	}
+
+	float speed = (GetTexturePatternDivideX() - 1 - g_Player->patternAnim) * g_Player->move.x * 0.35f;
+	int dir = speed > 0 ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
+	if (CheckMoveCollision(speed, dir))
+	{
+		CHANGE_PLAYER_POS_X(speed);
+	}
+
+	if (g_Player->animFrameCount >= ANIM_KNOCKDOWN_FRAME)
+	{
+		g_Player->state = REBOUND;
+		g_Player->move.x = PLAYER_WALK_SPEED;
+		g_Player->animFrameCount = 0;
+		g_Player->patternAnim = 0;
+	}
+}
+void PlayReboundAnim(void)
+{
+	g_Player->w = TEXTURE_REBOUND_WIDTH;
+	g_Player->h = TEXTURE_REBOUND_HEIGHT;
+
+	g_Player->texNo = CHAR_REBOUND;
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_REBOUND)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 1)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 1;
+		g_Player->animFrameCount++;
+	}
+
+	if (g_Player->animFrameCount >= ANIM_REBOUND_FRAME)
+	{
+		g_Player->state = IDLE;
+		g_Player->playAnim = FALSE;
+		g_Player->animFrameCount = 0;
+		g_Player->patternAnim = 0;
+	}
+}
+
 //=============================================================================
 // Player構造体の先頭アドレスを取得
 //=============================================================================
@@ -1714,6 +1890,12 @@ int GetTexturePatternDivideX()
 		return TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X;
 	case CHAR_DASH_ATTACK:
 		return TEXTURE_DASH_ATTACK_PATTERN_DIVIDE_X;
+	case CHAR_HIT:
+		return TEXTURE_HIT_PATTERN_DIVIDE_X;
+	case CHAR_KNOCKDOWN:
+		return TEXTURE_KNOCKDOWN_PATTERN_DIVIDE_X;
+	case CHAR_REBOUND:
+		return TEXTURE_REBOUND_PATTERN_DIVIDE_X;
 	default:
 		return -1;
 	}
@@ -1874,8 +2056,8 @@ void AdjustAttackTextureSize()
 		g_Player->h = TEXTURE_NORMAL_ATTACK1_HEIGHT;
 		break;
 	case NORMAL_ATTACK2:
-		g_Player->w = TEXTURE_NORMAL_ATTACK1_WIDTH;
-		g_Player->h = TEXTURE_NORMAL_ATTACK1_HEIGHT;
+		g_Player->w = TEXTURE_NORMAL_ATTACK2_WIDTH;
+		g_Player->h = TEXTURE_NORMAL_ATTACK2_HEIGHT;
 		break;
 	case NORMAL_ATTACK3:
 		g_Player->w = TEXTURE_NORMAL_ATTACK3_WIDTH;
@@ -1935,8 +2117,8 @@ void AdjustAttackPlayerPos(void)
 	case NORMAL_ATTACK1:
 	{
 		BOOL isMoveFrame = g_Player->patternAnim >= 2 && g_Player->patternAnim <= 4;
-		if (isMoveFrame && CheckMoveCollision(speedX * 0.6f, g_Player->dir))
-			CHANGE_PLAYER_POS_X(speedX * 0.6f);
+		if (isMoveFrame && CheckMoveCollision(speedX * 0.2f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speedX * 0.2f);
 		break;
 	}
 	case NORMAL_ATTACK2:
@@ -1949,8 +2131,8 @@ void AdjustAttackPlayerPos(void)
 	case NORMAL_ATTACK3:
 	{
 		BOOL isMoveFrame = g_Player->patternAnim >= 1 && g_Player->patternAnim <= 5;
-		if (isMoveFrame && CheckMoveCollision(speedX * 0.4f, g_Player->dir))
-			CHANGE_PLAYER_POS_X(speedX * 0.4f);
+		if (isMoveFrame && CheckMoveCollision(speedX * 0.15f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speedX * 0.15f);
 		break;
 	}
 	case NORMAL_ATTACK4:
