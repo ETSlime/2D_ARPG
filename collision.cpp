@@ -81,5 +81,3 @@ BOOL CollisionBC(XMFLOAT3 pos1, XMFLOAT3 pos2, float r1, float r2)
 	return ans;
 }
 
-
-

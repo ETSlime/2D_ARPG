@@ -34,23 +34,46 @@
 #define TEXTURE_HEIGHT_SKELL		(297/2)
 #define TEXTURE_MAX					(20)		// テクスチャの数
 
+#define	ENEMY_HP_GAUGE_TEXTURE		(9)
+
 #define TEXTURE_PATTERN_DIVIDE_X	(2)		// アニメパターンのテクスチャ内分割数（X)
 #define TEXTURE_PATTERN_DIVIDE_Y	(5)		// アニメパターンのテクスチャ内分割数（Y)
 #define ANIM_IDLE_PATTERN_NUM		(1)
 #define ANIM_WALK_PATTERN_NUM		(4)
 #define ANIM_ATTACK_PATTERN_NUM		(3)
 #define ANIM_ATTACK_OFFSET			(6)
-#define ANIM_IDLE_OFFSET			(9)
+#define ANIM_DIE_OFFSET				(4)
+#define	ANIM_HIT_OFFSET				(9)
 #define ANIM_PATTERN_NUM			(TEXTURE_PATTERN_DIVIDE_X*TEXTURE_PATTERN_DIVIDE_Y)	// アニメーションパターン数
 
 // アニメーションの切り替わるWait値
 #define ANIM_WAIT_WALK				(20)
 #define ANIM_WAIT_ATTACK			(15)
 #define ANIM_WAIT_IDLE				(25)
+#define ANIM_WAIT_DIE				(150)
 #define IDLE_WAIT					(50)
 
+// battle
+#define ENEMY_VISION_RADIUS			(500.0f)
+#define CYCLOPS_ATTACK_RADIUS		(100.0f)
+#define GARGOYLE_ATTACK_RADIUS		(100.0f)
+#define GNOLL_ATTACK_RADIUS			(100.0f)
+#define GOBLIN_ATTACK_RADIUS		(100.0f)
+#define GOLEM_ATTACK_RADIUS			(100.0f)
+#define IMP_ATTACK_RADIUS			(100.0f)
+#define MUMMY_ATTACK_RADIUS			(100.0f)
+#define OGRE_ATTACK_RADIUS			(100.0f)
+#define SKELL_ATTACK_RADIUS			(100.0f)
+#define	ENEMY_HIT_TIMER				(5.0f)
+#define	ENEMY_HIT_CD				(35.0f)
+#define ENEMY_STAGGER_RECOVERY_TIME (80)
+#define MAX_CHASE_DISTANCE			(800.0f)	// 最大追跡距離
+#define MIN_RETURN_DISTANCE			(600.0f)	// 最小の戻り距離（バッファゾーン）
+#define RETREAT_SPEED_RATE			(0.5f)		// 倒退時の速度
+#define ENEMY_STUN_TIME				(35)
 #define ATTACK_COOLDOWN_TIME		(100)
-
+#define ENEMY_FALL_SPEED			(6.5f)
+#define ENEMY_FALL_CNT_MAX			(30)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -78,7 +101,8 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/monster/M_mummy.png",
 	"data/TEXTURE/monster/M_ogre.png",
 	"data/TEXTURE/monster/M_skell_warrior.png",
-	"data/TEXTURE/bar_white.png",
+	"data/TEXTURE/monster/EnemyHPGauge.png",
+	"data/TEXTURE/monster/EnemyHPGauge_bg.png",
 };
 
 
@@ -89,7 +113,7 @@ static int		g_EnemyCount = ENEMY_MAX;
 
 static XMFLOAT3		g_EnemyInitPos[ENEMY_MAX] = {
 	XMFLOAT3(787.0f,  1314.0f, 0.0f),/*
-	XMFLOAT3(1087.0f,  1314.0f, 0.0f),
+	XMFLOAT3(1800.0f,  534.0f, 0.0f),
 	XMFLOAT3(1462.0f,  1314.0f, 0.0f),
 	XMFLOAT3(1837.0f,  1314.0f, 0.0f),
 	XMFLOAT3(2212.0f,  1314.0f, 0.0f),
@@ -101,15 +125,15 @@ static XMFLOAT3		g_EnemyInitPos[ENEMY_MAX] = {
 
 static INTERPOLATION_DATA g_MoveTbl0[] = {
 	//座標									回転率							拡大率					時間
-	{ XMFLOAT3(1800.0f, 1314.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-	{ XMFLOAT3(1450.0f,  1314.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+	{ XMFLOAT3(900.0f, 1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+	{ XMFLOAT3(450.0f,  1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
 };
 
 
 static INTERPOLATION_DATA g_MoveTbl1[] = {
-	//座標									回転率							拡大率							時間
-	{ XMFLOAT3(1700.0f,   0.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
-	{ XMFLOAT3(1700.0f,  SCREEN_HEIGHT, 0.0f),XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(2.0f, 2.0f, 1.0f),	60 },
+	//座標									回転率							拡大率					時間
+	{ XMFLOAT3(1200.0f, 534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+	{ XMFLOAT3(850.0f,  534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
 };
 
 
@@ -300,18 +324,32 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].idleCount = 0;
 		g_Enemy[i].state = ENEMY_IDLE;
 		g_Enemy[i].dir = CHAR_DIR_LEFT;
+		g_Enemy[i].oldDir = CHAR_DIR_LEFT;
 		g_Enemy[i].attackCooldown = 0;
 		g_Enemy[i].returnPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].canFly = FALSE;
 		g_Enemy[i].stepBack = FALSE;
+		g_Enemy[i].onAirCnt = 0;
+		g_Enemy[i].isFalling = FALSE;
 
+		// battle
 		g_Enemy[i].damage = 16;
+		g_Enemy[i].isHit = FALSE;
+		g_Enemy[i].hitTimer = 0.0f;
+		g_Enemy[i].hitCD = 0.0f;
+		g_Enemy[i].hp = 1000;
+		g_Enemy[i].maxHp = 1000;
+		g_Enemy[i].staggerResistance = 20;
+		g_Enemy[i].staggerRecovery = 0;
+		g_Enemy[i].diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_Enemy[i].dieInitSpeedX = 0.0f;
+		g_Enemy[i].dieInitSpeedY = 0.0f;
 
 		g_Enemy[i].time = 0.0f;			// 線形補間用のタイマーをクリア
 		g_Enemy[i].tblNo = 0;			// 再生する行動データテーブルNoをセット
 		g_Enemy[i].tblMax = 0;			// 再生する行動データテーブルのレコード数をセット
 
-		g_Enemy[i].enemyType = GOLEM;
+		g_Enemy[i].enemyType = CYCLOPS;
 		g_Enemy[i].w = GetCurrentTextureSizeW(g_Enemy[i].enemyType);
 		g_Enemy[i].h = GetCurrentTextureSizeH(g_Enemy[i].enemyType);
 
@@ -328,6 +366,8 @@ HRESULT InitEnemy(void)
 			g_Enemy[i].attackAABB[j].h = 0;
 			g_Enemy[i].attackAABB[j].tag = ENEMY_ATTACK_AABB;
 		}
+
+		SetupEnemyStates(&g_Enemy[i]);
 	}
 
 	//// 0番だけ線形補間で動かしてみる
@@ -337,9 +377,10 @@ HRESULT InitEnemy(void)
 	g_Enemy[0].pos = g_MoveTbl0[0].pos;
 
 	//// 1番だけ線形補間で動かしてみる
-	//g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
-	//g_Enemy[1].tblNo = 1;		// 再生するアニメデータの先頭アドレスをセット
-	//g_Enemy[1].tblMax = sizeof(g_MoveTbl1) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
+	g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
+	g_Enemy[1].tblNo = 1;		// 再生するアニメデータの先頭アドレスをセット
+	g_Enemy[1].tblMax = sizeof(g_MoveTbl1) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
+	g_Enemy[1].pos = g_MoveTbl1[0].pos;
 
 	//// 2番だけ線形補間で動かしてみる
 	//g_Enemy[2].time = 0.0f;		// 線形補間用のタイマーをクリア
@@ -368,6 +409,42 @@ HRESULT InitEnemy(void)
 
 	g_Load = TRUE;
 	return S_OK;
+}
+
+void SetupEnemyStates(ENEMY* enemy)
+{
+	switch (enemy->enemyType)
+	{
+	case CYCLOPS:
+		enemy->attackRange = CYCLOPS_ATTACK_RADIUS;
+		break;
+	case GARGOYLE:
+		enemy->attackRange = GARGOYLE_ATTACK_RADIUS;
+		break;
+	case GNOLL:
+		enemy->attackRange = GNOLL_ATTACK_RADIUS;
+		break;
+	case GOBLIN:
+		enemy->attackRange = GOBLIN_ATTACK_RADIUS;
+		break;
+	case GOLEM:
+		enemy->attackRange = GOLEM_ATTACK_RADIUS;
+		break;
+	case IMP:
+		enemy->attackRange = IMP_ATTACK_RADIUS;
+		break;
+	case MUMMY:
+		enemy->attackRange = MUMMY_ATTACK_RADIUS;
+		break;
+	case OGRE:
+		enemy->attackRange = OGRE_ATTACK_RADIUS;
+		break;
+	case SKELL:
+		enemy->attackRange = SKELL_ATTACK_RADIUS;
+		break;
+	default:
+		return;
+	}
 }
 
 //=============================================================================
@@ -429,23 +506,23 @@ void UpdateEnemy(void)
 			case ENEMY_ATTACK:
 				PlayEnemyAttackAnim(&g_Enemy[i]);
 				break;
+			case ENEMY_HIT:
+				PlayEnemyHitAnim(&g_Enemy[i]);
+				break;
+			case ENEMY_DIE:
+				PlayEnemyDieAnim(&g_Enemy[i]);
+				break;
 			default:
 				break;
 			}
 
-			if (g_Enemy[i].state != ENEMY_ATTACK && g_Enemy[i].finishAttack == FALSE)
-			{
-				for (int j = 0; j < MAX_ATTACK_AABB; j++)
-				{
-					g_Enemy[i].attackAABB[j].w = 0;
-					g_Enemy[i].attackAABB[j].h = 0;
-				}
-				g_Enemy[i].finishAttack = TRUE;
-			}
-			
+			UpdateEnemyStates(&g_Enemy[i]);
 
+
+
+			BOOL isMoveable = g_Enemy[i].state != ENEMY_HIT && g_Enemy[i].state != ENEMY_DIE && g_Enemy[i].onAirCnt < 5;
 			// 移動処理
-			if (g_Enemy[i].tblMax > 0)	// 線形補間を実行する？
+			if (g_Enemy[i].tblMax > 0 && isMoveable)
 			{	
 				PLAYER* player = GetPlayer();
 				// 現在の座標を保存しておくための変数
@@ -465,17 +542,18 @@ void UpdateEnemy(void)
 				{
 				case ENEMY_CHASE:
 				{
-
-					//ChasePlayer(&g_Enemy[i]);
-
-					if (distanceToPlayer < ENEMY_ATTACK_RADIUS)
+					if (distanceToPlayer < g_Enemy[i].attackRange)
 					{
+						g_Enemy[i].stateOld = g_Enemy[i].state;
 						g_Enemy[i].state = ENEMY_ATTACK;
+						g_Enemy[i].dir = g_Enemy[i].pos.x - player->pos.x > 0.0f ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
+						g_Enemy[i].patternAnim = ANIM_ATTACK_OFFSET;
 					}
 					// 最大追跡距離を超えた場合、RETREAT状態に移行
 					else if (distanceToReturnPos > MAX_CHASE_DISTANCE) 
 					{
 						g_Enemy[i].state = ENEMY_RETREAT;  // 倒退状態に移行
+						g_Enemy[i].patternAnim = ANIM_WALK_PATTERN_NUM - 1;
 					}
 					else if (distanceToPlayer > ENEMY_VISION_RADIUS)
 					{
@@ -489,16 +567,18 @@ void UpdateEnemy(void)
 						float speed = g_Enemy[i].move.x;
 						XMVECTOR moveStep = direction * speed;
 						enemyPos += moveStep;
-						XMStoreFloat3(&g_Enemy[i].pos, enemyPos);
-						XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, enemyPos);
+
+						XMFLOAT3 newPos;
+						XMStoreFloat3(&newPos, enemyPos);
+						if (CheckEnemyMoveCollision(&g_Enemy[i], newPos, g_Enemy[i].dir))
+							SET_ENEMY_POS((&g_Enemy[i]), newPos);
+						
 					}
 					break;
 				}
 
 				case ENEMY_RETREAT:
 				{
-					
-
 					// プレイヤーが視野範囲外に出た場合、WALK_BACK状態に遷移
 					if (distanceToPlayer > ENEMY_VISION_RADIUS) 
 					{
@@ -518,8 +598,11 @@ void UpdateEnemy(void)
 						XMVECTOR moveStep = direction * g_Enemy[i].move.x * RETREAT_SPEED_RATE;
 						enemyPos += moveStep;
 
-						XMStoreFloat3(&g_Enemy[i].pos, enemyPos);
-						XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, enemyPos);
+						XMFLOAT3 newPos;
+						XMStoreFloat3(&newPos, enemyPos);
+						if (CheckEnemyMoveCollision(&g_Enemy[i], newPos, g_Enemy[i].dir))
+							SET_ENEMY_POS((&g_Enemy[i]), newPos);
+
 						// 倒退中でも向きはプレイヤーに向ける
 						g_Enemy[i].stepBack = TRUE;
 
@@ -542,8 +625,9 @@ void UpdateEnemy(void)
 					else if (distanceToReturnPos > MAX_CHASE_DISTANCE)	// 最大追跡距離を超えた場合
 					{
 						g_Enemy[i].state = ENEMY_RETREAT;  // 倒退状態に移行
+						g_Enemy[i].patternAnim = ANIM_WALK_PATTERN_NUM - 1;
 					}
-					else if (distanceToPlayer > ENEMY_ATTACK_RADIUS) 
+					else if (distanceToPlayer > g_Enemy[i].attackRange)
 					{
 						// 攻撃範囲外なら追跡を続ける
 						g_Enemy[i].stepBack = FALSE;
@@ -552,8 +636,10 @@ void UpdateEnemy(void)
 						XMVECTOR moveStep = direction * speed * 0.5f;
 						enemyPos += moveStep;
 
-						XMStoreFloat3(&g_Enemy[i].pos, enemyPos);
-						XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, enemyPos);
+						XMFLOAT3 newPos;
+						XMStoreFloat3(&newPos, enemyPos);
+						if (CheckEnemyMoveCollision(&g_Enemy[i], newPos, g_Enemy[i].dir))
+							SET_ENEMY_POS((&g_Enemy[i]), newPos);
 					}
 					
 					// 攻撃範囲内にいる場合は停止し、クールダウンを待つ
@@ -562,9 +648,12 @@ void UpdateEnemy(void)
 					if (g_Enemy[i].attackCooldown <= 0)
 					{
 						// クールダウン終了後、再び敵の行動を決定
-						if (distanceToPlayer < ENEMY_ATTACK_RADIUS)
+						if (distanceToPlayer < g_Enemy[i].attackRange)
 						{
+							g_Enemy[i].stateOld = g_Enemy[i].state;
 							g_Enemy[i].state = ENEMY_ATTACK;  // プレイヤーが攻撃範囲内にいる場合
+							g_Enemy[i].dir = g_Enemy[i].pos.x - player->pos.x > 0.0f ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
+							g_Enemy[i].patternAnim = ANIM_ATTACK_OFFSET;
 						}
 						else if (CheckChasingPlayer(&g_Enemy[i]))
 						{
@@ -578,6 +667,7 @@ void UpdateEnemy(void)
 					break;
 				}
 
+				// 線形補間を実行する
 				case ENEMY_IDLE:
 				case ENEMY_WALK:
 				{
@@ -624,25 +714,34 @@ void UpdateEnemy(void)
 							Scl *= nowTime;								// 現在の拡大率を計算している
 
 
+							enemyPos = nowPos + Pos;
+							XMFLOAT3 newPos;
+							XMStoreFloat3(&newPos, enemyPos);
 
-							// 計算して求めた移動量を現在の移動テーブルXYZに足している＝表示座標を求めている
-							XMStoreFloat3(&g_Enemy[i].pos, nowPos + Pos);
-							XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, nowPos + Pos);
+							// 敵が右に移動しているか、左に移動しているかを判断	
+							g_Enemy[i].dir = XMVectorGetX(Pos) < 0 ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 
-							// 計算して求めた回転量を現在の移動テーブルに足している
-							XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);
-
-							// 計算して求めた拡大率を現在の移動テーブルに足している
-							XMStoreFloat3(&g_Enemy[i].scl, nowScl + Scl);
-							g_Enemy[i].w = GetCurrentTextureSizeW(g_Enemy[i].enemyType) * g_Enemy[i].scl.x;
-							g_Enemy[i].h = GetCurrentTextureSizeH(g_Enemy[i].enemyType) * g_Enemy[i].scl.y;
-
-							// frameを使て時間経過処理をする
-							g_Enemy[i].time += 1.0f / tbl[nowNo].frame;	// 時間を進めている
-							if ((int)g_Enemy[i].time >= maxNo)			// 登録テーブル最後まで移動したか？
+							if (CheckEnemyMoveCollision(&g_Enemy[i], newPos, g_Enemy[i].dir))
 							{
-								g_Enemy[i].time -= maxNo;				// ０番目にリセットしつつも小数部分を引き継いでいる
+								// 計算して求めた移動量を現在の移動テーブルXYZに足している＝表示座標を求めている
+								SET_ENEMY_POS((&g_Enemy[i]), newPos);
+
+								// 計算して求めた回転量を現在の移動テーブルに足している
+								XMStoreFloat3(&g_Enemy[i].rot, nowRot + Rot);
+
+								// 計算して求めた拡大率を現在の移動テーブルに足している
+								XMStoreFloat3(&g_Enemy[i].scl, nowScl + Scl);
+								g_Enemy[i].w = GetCurrentTextureSizeW(g_Enemy[i].enemyType) * g_Enemy[i].scl.x;
+								g_Enemy[i].h = GetCurrentTextureSizeH(g_Enemy[i].enemyType) * g_Enemy[i].scl.y;
+
+								// frameを使て時間経過処理をする
+								g_Enemy[i].time += 1.0f / tbl[nowNo].frame;	// 時間を進めている
+								if ((int)g_Enemy[i].time >= maxNo)			// 登録テーブル最後まで移動したか？
+								{
+									g_Enemy[i].time -= maxNo;				// ０番目にリセットしつつも小数部分を引き継いでいる
+								}
 							}
+								
 
 							if (fabs(g_Enemy[i].time - nowNo) < EPSILON && g_Enemy[i].state == ENEMY_WALK)
 							{
@@ -675,8 +774,10 @@ void UpdateEnemy(void)
 						XMVECTOR moveStep = direction * speed;
 						enemyPos += moveStep;
 
-						XMStoreFloat3(&g_Enemy[i].pos, enemyPos);
-						XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, enemyPos);
+						XMFLOAT3 newPos;
+						XMStoreFloat3(&newPos, enemyPos);
+						if (CheckEnemyMoveCollision(&g_Enemy[i], newPos, g_Enemy[i].dir))
+							SET_ENEMY_POS((&g_Enemy[i]), newPos);
 
 						XMVECTOR delta = returnPos - enemyPos;
 						float deltaX = fabs(XMVectorGetX(delta));
@@ -685,8 +786,10 @@ void UpdateEnemy(void)
 						// 元の位置に近づいたかを確認する
 						if (deltaX <= g_Enemy[i].move.x && deltaY <= g_Enemy[i].move.y)
 						{
-							XMStoreFloat3(&g_Enemy[i].pos, returnPos);
-							XMStoreFloat3(&g_Enemy[i].bodyAABB.pos, returnPos);
+							XMFLOAT3 newPos;
+							XMStoreFloat3(&newPos, enemyPos);
+							if (CheckEnemyMoveCollision(&g_Enemy[i], newPos, g_Enemy[i].dir))
+								SET_ENEMY_POS((&g_Enemy[i]), newPos);
 							// 元の位置に戻ったら、元の行動パスに戻る
 							g_Enemy[i].state = ENEMY_WALK;  // 移動パスに戻る
 						}
@@ -707,27 +810,39 @@ void UpdateEnemy(void)
 					g_Enemy[i].dir = g_Enemy[i].stepBack == TRUE ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
 			}
 
-			// 移動が終わったらエネミーとの当たり判定
-			//{
-			//	PLAYER* player = GetPlayer();
+			UpdateEnemyGroundCollision(&g_Enemy[i]);
 
-			//	// エネミーの数分当たり判定を行う
-			//	for (int j = 0; j < ENEMY_MAX; j++)
-			//	{
-			//		// 生きてるエネミーと当たり判定をする
-			//		if (player[j].use == TRUE)
-			//		{
-			//			BOOL ans = CollisionBB(g_Enemy[i].pos, g_Enemy[i].w, g_Enemy[i].h,
-			//				player[j].pos, player[j].w, player[j].h);
-			//			// 当たっている？
-			//			if (ans == TRUE)
-			//			{
-			//				// 当たった時の処理
-			//				player[j].use = FALSE;	// デバッグで一時的に無敵にしておくか
-			//			}
-			//		}
-			//	}
-			//}
+			// 移動が終わったらエネミーとの当たり判定
+			PLAYER* player = GetPlayer();
+
+			if (g_Enemy[i].hitCD <= 0 && g_Enemy[i].state != ENEMY_DIE)
+			{
+				// 攻撃用の包囲ボックスを取得
+				for (int j = 0; j < MAX_ATTACK_AABB; j++)
+				{
+					AABB attackBox = player->attackAABB[j];
+
+					// 敵のAABB情報を取得
+					XMFLOAT3 enemyPos = g_Enemy[i].bodyAABB.pos;
+					float enemyW = g_Enemy[i].bodyAABB.w;
+					float enemyH = g_Enemy[i].bodyAABB.h;
+
+					// 攻撃のAABB情報を取得
+					XMFLOAT3 attackPos = attackBox.pos;
+					float attackW = attackBox.w;
+					float attackH = attackBox.h;
+
+					// プレイヤーの包囲ボックスとエネミーの攻撃範囲が重なっているかを確認
+					BOOL isColliding = CollisionBB(enemyPos, enemyW, enemyH, attackPos, attackW, attackH);
+
+					if (isColliding)
+					{
+						// 当たり判定があった場合、敵にダメージを与える
+						EnemyTakeDamage(&g_Enemy[i]);
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -742,6 +857,108 @@ void UpdateEnemy(void)
 
 
 #endif
+
+}
+
+void UpdateEnemyStates(ENEMY* enemy)
+{
+	// 敵が攻撃状態ではなく、かつ攻撃が終了していない場合
+	if (enemy->state != ENEMY_ATTACK && enemy->finishAttack == FALSE)
+	{
+		// 攻撃判定のAABBをリセット
+		for (int j = 0; j < MAX_ATTACK_AABB; j++)
+		{
+			enemy->attackAABB[j].w = 0;
+			enemy->attackAABB[j].h = 0;
+		}
+		enemy->finishAttack = TRUE;
+	}
+
+	if (enemy->hitCD > 0.0f) 
+	{
+		enemy->hitCD--;
+	}
+	// 敵が被弾した場合
+	if (enemy->isHit)
+	{
+		enemy->hitTimer--;
+		if (enemy->hitTimer <= 0.0f)
+		{
+			enemy->isHit = false;
+			enemy->hitTimer = 0.0f;
+		}
+	}
+
+	enemy->staggerRecovery--;
+	if (enemy->staggerRecovery <= 0)
+		enemy->staggerResistance = 20;
+}
+
+void UpdateEnemyGroundCollision(ENEMY* enemy)
+{
+	AABB* grounds = GetMap01AABB();
+
+	if (enemy->onAirCnt >= ENEMY_FALL_CNT_MAX)
+		enemy->move.y = ENEMY_FALL_SPEED;
+	else
+	{
+		// sin関数を使用して下落速度を計算
+		float angle = (XM_PI / ENEMY_FALL_CNT_MAX) * enemy->onAirCnt;
+		enemy->move.y = ENEMY_FALL_SPEED * sinf(angle);
+	}
+	if (enemy->move.y < 2.0f)
+		enemy->move.y = 2.0f;
+	// 滞空時間を増加させる
+	enemy->onAirCnt++;
+
+	XMVECTOR enemyPos = XMLoadFloat3(&enemy->pos);
+	XMVECTOR direction = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	enemyPos += direction * enemy->move.y;
+
+	XMFLOAT3 newPos;
+	XMStoreFloat3(&newPos, enemyPos);
+	if (CheckEnemyMoveCollision(enemy, newPos, CHAR_DIR_DOWN))
+	{
+		SET_ENEMY_POS(enemy, newPos);
+		enemy->isFalling = TRUE;
+		enemy->dir = CHAR_DIR_DOWN;
+	}
+	else
+	{
+		enemy->isFalling = FALSE;
+		enemy->onAirCnt = 0;
+	}
+		
+
+}
+
+void EnemyTakeDamage(ENEMY* enemy)
+{
+	PLAYER* player = GetPlayer();
+	enemy->dir = enemy->pos.x - player->pos.x > 0 ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
+	enemy->isHit = true;
+	enemy->hitTimer = ENEMY_HIT_TIMER;
+	enemy->hitCD = ENEMY_HIT_CD;
+	enemy->staggerRecovery = ENEMY_STAGGER_RECOVERY_TIME;
+	enemy->staggerResistance -= 10;
+	if (enemy->staggerResistance <= 0)
+	{
+		if (enemy->state != ENEMY_ATTACK)
+			enemy->stateOld = enemy->state;
+		enemy->attackCooldown = ATTACK_COOLDOWN_TIME;  // クールダウンタイムをリセット
+		enemy->state = ENEMY_HIT;
+	}
+
+	enemy->hp -= 30;
+	if (enemy->hp <= 0)
+	{
+		enemy->state = ENEMY_DIE;
+		enemy->countAnim = 0;
+		enemy->diePos = enemy->pos;
+		enemy->pos.y -= 70.0f;
+		enemy->dieInitSpeedX = 0.2f * (float)GetRand(-10, 10);
+		enemy->dieInitSpeedY = 0.1f * (float)GetRand(1, 5);
+	}
 
 }
 
@@ -768,42 +985,27 @@ void DrawEnemy(void)
 	SetMaterial(material);
 
 	BG* bg = GetBG();
-
 	for (int i = 0; i < ENEMY_MAX; i++)
 	{
 		if (g_Enemy[i].use == TRUE)			// このエネミーが使われている？
 		{									// Yes
+
 			// テクスチャ設定
 			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_Enemy[i].enemyType]);
+			DrawEnemySprite(&g_Enemy[i]);
 
-			//エネミーの位置やテクスチャー座標を反映
-			float px = g_Enemy[i].pos.x - bg->pos.x;	// エネミーの表示位置X
-			float py = g_Enemy[i].pos.y - bg->pos.y;	// エネミーの表示位置Y
-			float pw = g_Enemy[i].w;		// エネミーの表示幅
-			float ph = g_Enemy[i].h;		// エネミーの表示高さ
-
-			// アニメーション用
-			float tw, th, tx, ty;
-			tw = 1.0f / TEXTURE_PATTERN_DIVIDE_X; // テクスチャの幅
-			th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
-			ty = (float)(g_Enemy[i].patternAnim / TEXTURE_PATTERN_DIVIDE_X) * th;	// テクスチャの左上Y座標
-			if (g_Enemy[i].invertTex)
+			if (g_Enemy[i].state == ENEMY_DIE)
 			{
-				tw *= -1.0f;
-				tx = (float)(g_Enemy[i].patternAnim % TEXTURE_PATTERN_DIVIDE_X) * (-1 * tw) - tw;	// テクスチャの左上X座標
+				g_Enemy[i].patternAnim = ANIM_DIE_OFFSET + 1;
+				DrawEnemySprite(&g_Enemy[i], TRUE);
 			}
-			else
-				tx = (float)(g_Enemy[i].patternAnim % TEXTURE_PATTERN_DIVIDE_X) * tw;
 
-			// １枚のポリゴンの頂点とテクスチャ座標を設定
-			SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
-				XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-				g_Enemy[i].rot.z);
-
-			// ポリゴン描画
-			GetDeviceContext()->Draw(4, 0);
+			// 敵のHPゲージ
+			DrawEnemyHPGauge(&g_Enemy[i]);
 		}
 	}
+
+
 
 #ifdef _DEBUG
 	{
@@ -816,6 +1018,8 @@ void DrawEnemy(void)
 		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_bodyAABBVertexBuffer, &stride, &offset);
 		for (int i = 0; i < ENEMY_MAX; ++i)
 		{
+			if (g_Enemy[i].use == FALSE) continue;
+
 			int vertexOffset = i * 4;
 
 			SetSpriteColorRotation(g_bodyAABBVertexBuffer, g_Enemy[i].bodyAABB.pos.x - bg->pos.x,
@@ -831,6 +1035,8 @@ void DrawEnemy(void)
 		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_attackAABBVertexBuffer, &stride, &offset);
 		for (int i = 0; i < ENEMY_MAX; ++i)
 		{
+			if (g_Enemy[i].use == FALSE) continue;
+
 			int vertexOffset = i * 4;
 
 			for (int j = 0; j < MAX_ATTACK_AABB; j++)
@@ -848,58 +1054,174 @@ void DrawEnemy(void)
 		}
 	}
 #endif
+}
 
-	// ゲージのテスト
+void DrawEnemySprite(const ENEMY* enemy, BOOL die)
+{
+	BG* bg = GetBG();
+
+	float px, py, pw, ph;
+	if (die)
 	{
-		// 下敷きのゲージ（枠的な物）
-		// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
-
-		//ゲージの位置やテクスチャー座標を反映
-		float px = 600.0f;		// ゲージの表示位置X
-		float py =  10.0f;		// ゲージの表示位置Y
-		float pw = 300.0f;		// ゲージの表示幅
-		float ph =  30.0f;		// ゲージの表示高さ
-
-		float tw = 1.0f;	// テクスチャの幅
-		float th = 1.0f;	// テクスチャの高さ
-		float tx = 0.0f;	// テクスチャの左上X座標
-		float ty = 0.0f;	// テクスチャの左上Y座標
-
-		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLTColor(g_VertexBuffer,
-			px, py, pw, ph,
-			tx, ty, tw, th,
-			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
-
-		// ポリゴン描画
-		GetDeviceContext()->Draw(4, 0);
-
-
-		// エネミーの数に従ってゲージの長さを表示してみる
-		// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
-
-		//ゲージの位置やテクスチャー座標を反映
-		pw = pw * ((float)g_EnemyCount / ENEMY_MAX);
-
-		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLTColor(g_VertexBuffer,
-			px, py, pw, ph,
-			tx, ty, tw, th,
-			XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f));
-
-		// ポリゴン描画
-		GetDeviceContext()->Draw(4, 0);
-
-
+		px = enemy->diePos.x - bg->pos.x;	// エネミーの表示位置X
+		py = enemy->diePos.y - bg->pos.y;	// エネミーの表示位置Y
+		pw = enemy->w;		// エネミーの表示幅
+		ph = enemy->h;		// エネミーの表示高さ
+	}
+	else
+	{
+		px = enemy->pos.x - bg->pos.x;	// エネミーの表示位置X
+		py = enemy->pos.y - bg->pos.y;	// エネミーの表示位置Y
+		pw = enemy->w;		// エネミーの表示幅
+		ph = enemy->h;		// エネミーの表示高さ
 	}
 
 
+	// アニメーション用
+	float tw, th, tx, ty;
+	tw = 1.0f / TEXTURE_PATTERN_DIVIDE_X; // テクスチャの幅
+	th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
+	ty = (float)(enemy->patternAnim / TEXTURE_PATTERN_DIVIDE_X) * th;	// テクスチャの左上Y座標
+	if (enemy->invertTex)
+	{
+		tw *= -1.0f;
+		tx = (float)(enemy->patternAnim % TEXTURE_PATTERN_DIVIDE_X) * (-1 * tw) - tw;	// テクスチャの左上X座標
+	}
+	else
+		tx = (float)(enemy->patternAnim % TEXTURE_PATTERN_DIVIDE_X) * tw;
 
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (enemy->isHit)
+	{
+		color = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+		//if (fmod(enemy->hitTimer, 3.0f) < 1.5f) 
+		//{
+		//	color.w = 0.0f;
+		//}
+	}
+	if (enemy->state == ENEMY_DIE)
+	{
+		color.w = 1.0f - enemy->countAnim / ANIM_WAIT_DIE;
+	}
 
+	float rotation;
+	if (die)
+		rotation = 0.0f;
+	else
+		rotation = enemy->rot.z;
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
+		color,
+		rotation);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
 }
 
+void DrawEnemyHPGauge(const ENEMY* enemy)
+{
+	BG* bg = GetBG();
+
+	// HPバーの位置を計算
+	float px = enemy->bodyAABB.pos.x - enemy->bodyAABB.w * 0.5f - bg->pos.x;  // HPバーのX座標（敵の中央に表示）
+	float py = enemy->bodyAABB.pos.y - enemy->bodyAABB.h * 0.7f - bg->pos.y;  // HPバーのY座標
+	float pw = enemy->bodyAABB.w;   // HPバーの幅
+	float ph = 10.0f;    // HPバーの高さ
+
+	float tw = 1.0f;     // テクスチャの幅
+	float th = 1.0f;     // テクスチャの高さ
+	float tx = 0.0f;     // テクスチャのX座標
+	float ty = 0.0f;     // テクスチャのY座標
+
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);  // 背景を白色で表示
+	if (enemy->state == ENEMY_DIE)
+	{
+		color.w = 1.0f - enemy->countAnim / ANIM_WAIT_DIE;
+	}
+
+	// 1. HPバーの背景を描画（敵の総HPを表示、_bgテクスチャを使用）
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ENEMY_HP_GAUGE_TEXTURE + 1]);
+	SetSpriteLTColor(g_VertexBuffer,
+		px, py, pw, ph,
+		tx, ty, tw, th,
+		color);
+	GetDeviceContext()->Draw(4, 0);
+
+
+	// 2. HPバーの前景を描画（敵の現在のHPを表示、ENEMY_HP_GAUGE_TEXTUREテクスチャを使用）
+	float hpRatio = (float)enemy->hp / (float)enemy->maxHp;  // HP比率を計算
+	float hpWidth = pw * hpRatio;  // HP比率に基づいてHPバーの長さを計算
+
+	// 前景の色を設定（通常は緑色、現在のHPを表す）
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ENEMY_HP_GAUGE_TEXTURE]);
+	SetSpriteLTColor(g_VertexBuffer,
+		px, py, hpWidth, ph,         // 前景の幅をHPに基づいて縮小
+		tx, ty, tw * hpRatio, th,    // HP比率に応じてテクスチャの幅を縮小
+		color);
+	GetDeviceContext()->Draw(4, 0);
+}
+
+BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
+{
+	// 壁のAABB情報を取得
+	AABB* walls = GetMap01AABB();
+	for (int i = 0; i < MAP01_GROUND_MAX; i++)
+	{
+		XMFLOAT3 wallPos = walls[i].pos;
+		float wallW = walls[i].w;
+		float wallH = walls[i].h;
+
+
+		// 衝突確認
+		switch (dir)
+		{
+		case CHAR_DIR_LEFT:
+		{
+
+			if (CollisionBB(newPos, enemy->bodyAABB.w, enemy->bodyAABB.h, wallPos, wallW, wallH) &&
+				enemy->bodyAABB.pos.x > wallPos.x)
+			{
+				// 左に移動していて、壁が左側にある場合
+				//XMFLOAT3 enemyPos = enemy->pos;
+				//enemyPos.x = wallPos.x + wallW / 2 + enemy->bodyAABB.w / 2 + 0.01f;
+				//SET_ENEMY_POS(enemy, enemyPos); // 左への進行を停止
+				return false;
+			}
+			break;
+		}
+
+		case CHAR_DIR_RIGHT:
+		{
+			if (CollisionBB(newPos, enemy->bodyAABB.w, enemy->bodyAABB.h, wallPos, wallW, wallH) &&
+				enemy->bodyAABB.pos.x < wallPos.x)
+			{
+				// 右に移動していて、壁が右側にある場合
+				//XMFLOAT3 enemyPos = enemy->pos;
+				//enemyPos.x = wallPos.x - wallW / 2 - enemy->bodyAABB.w / 2 - 0.01f;
+				//SET_ENEMY_POS(enemy, enemyPos); // 右への進行を停止
+				return false;
+			}
+			break;
+		}
+		case CHAR_DIR_DOWN:
+		{
+			if (CollisionBB(newPos, enemy->bodyAABB.w, enemy->bodyAABB.h, wallPos, wallW, wallH))
+			{
+				// プレイヤーが上に移動していて、壁が下側にある場合
+				XMFLOAT3 enemyPos = enemy->pos;
+				enemyPos.y = wallPos.y - wallH / 2 - enemy->bodyAABB.h / 2 - 0.01f;
+				SET_ENEMY_POS(enemy, enemyPos); // 下への進行を停止
+				return false;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+
+	return true;
+}
 
 //=============================================================================
 // Enemy構造体の先頭アドレスを取得
@@ -950,27 +1272,15 @@ void PlayEnemyWalkAnim(ENEMY* enemy)
 void PlayEnemyAttackAnim(ENEMY* enemy)
 {
 	PLAYER* player = GetPlayer();
-	// プレイヤーの位置と敵の位置を比較して、向きを調整
-	if (player->pos.x > enemy->pos.x) 
-	{
-		// プレイヤーが右側にいる場合
-		enemy->dir = CHAR_DIR_RIGHT;
-	}
-	else {
-		// プレイヤーが左側にいる場合
-		enemy->dir = CHAR_DIR_LEFT;
-	}
 
 	enemy->invertTex = enemy->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 
-
 	enemy->countAnim++;
-	if (enemy->countAnim > ANIM_WAIT_ATTACK)
+	int attackInterval = enemy->patternAnim == ANIM_ATTACK_OFFSET ? ANIM_WAIT_ATTACK * 2 : ANIM_WAIT_ATTACK;
+	if (enemy->countAnim > attackInterval)
 	{
 		enemy->countAnim = 0.0f;
 		// パターンの切り替え
-		if (enemy->patternAnim == 0)
-			enemy->patternAnim = ANIM_ATTACK_OFFSET + ANIM_ATTACK_PATTERN_NUM - 1;
 		enemy->patternAnim = (enemy->patternAnim + 1) % ANIM_ATTACK_PATTERN_NUM + ANIM_ATTACK_OFFSET;
 	}
 
@@ -981,8 +1291,7 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 	if (enemy->patternAnim == ANIM_ATTACK_PATTERN_NUM + ANIM_ATTACK_OFFSET - 1 && enemy->countAnim == ANIM_WAIT_ATTACK)
 	{
 		// アニメーション終了後に攻撃を実行
-		//PlayerTakeDamage();  // プレイヤーがダメージを受ける処理
-		enemy->attackCooldown = ATTACK_COOLDOWN_TIME;  // クールダウンタイムをリセット
+		enemy->attackCooldown = ATTACK_COOLDOWN_TIME + GetRand(50, 150);  // クールダウンタイムをリセット
 		enemy->state = ENEMY_COOLDOWN;  // クールダウン状態に移行
 
 		for (int i = 0; i < MAX_ATTACK_AABB; i++)
@@ -991,6 +1300,20 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 			enemy->attackAABB[i].h = 0;
 			enemy->attackAABB[i].w = 0;
 		}
+	}
+}
+
+void PlayEnemyHitAnim(ENEMY* enemy)
+{
+	enemy->invertTex = enemy->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
+
+	enemy->patternAnim = ANIM_HIT_OFFSET;
+
+	enemy->countAnim++;
+	if (enemy->countAnim > ENEMY_STUN_TIME)
+	{
+		enemy->countAnim = 0.0f;
+		enemy->state = enemy->stateOld;
 	}
 }
 
@@ -1004,6 +1327,30 @@ void PlayEnemyIdleAnim(ENEMY* enemy)
 		enemy->countAnim = 0.0f;
 		// パターンの切り替え
 		enemy->patternAnim = (enemy->patternAnim == 0) ? 2 : 0;
+	}
+}
+
+void PlayEnemyDieAnim(ENEMY* enemy)
+{
+	enemy->patternAnim = ANIM_DIE_OFFSET;
+
+	float gravity = 0.1f;
+	float t = (float)enemy->countAnim * 0.05f;
+	float airResistance = 0.98f;
+	float currentSpeedX = enemy->dieInitSpeedX * pow(airResistance, t);
+
+	enemy->pos.x += currentSpeedX;
+	enemy->pos.y += enemy->dieInitSpeedY * t + 0.5f * gravity * t * t;
+
+	float relativeX = enemy->pos.x - enemy->diePos.x;
+	float rotationAngle = relativeX * 0.05f;
+	XMFLOAT3 rotation = XMFLOAT3(0.0f, 0.0f, rotationAngle);
+	XMStoreFloat3(&enemy->rot, XMLoadFloat3(&rotation));
+
+	enemy->countAnim++;
+	if (enemy->countAnim > ANIM_WAIT_DIE)
+	{
+		enemy->use = FALSE;
 	}
 }
 
@@ -1124,10 +1471,6 @@ BOOL CheckChasingPlayer(const ENEMY* enemy)
 		XMVECTOR returnPos = XMLoadFloat3(&enemy->returnPos);
 		XMVECTOR playerPos = XMLoadFloat3(&player->pos);
 		float distancePlayerToReturnPos = XMVectorGetX(XMVector3Length(returnPos - playerPos));
-		if (enemy->state == ENEMY_RETREAT)
-		{
-			std::cout << distancePlayerToReturnPos << std::endl;
-		}
 		if (distancePlayerToReturnPos > MAX_CHASE_DISTANCE)
 			return FALSE;
 	}

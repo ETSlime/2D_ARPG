@@ -25,7 +25,6 @@ struct BG
 	float		scrl2;		// スクロール
 };
 
-
 #define TEXTURE_WIDTH				(3770)//(3015)			// (SCREEN_WIDTH)	// 背景サイズ
 #define TEXTURE_HEIGHT				(1504)//(1360)			// (SCREEN_HEIGHT)	// 
 #define TEXTURE_MAX					(2)				// テクスチャの数

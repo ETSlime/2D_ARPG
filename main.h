@@ -7,6 +7,8 @@
 #pragma once
 
 #include <iostream>
+#include <random>
+#include <conio.h>
 
 #pragma warning(push)
 #pragma warning(disable:4005)
@@ -92,5 +94,8 @@ int GetMode(void);
 int CheckGameClear(void);
 
 void SetLoadGame(BOOL flg);
+
+// ƒ‰ƒ“ƒ_ƒ€Žæ“¾
+int GetRand(int min, int max);
 
 XMFLOAT3 AddXMFLOAT3(const XMFLOAT3& v1, const XMFLOAT3& v2);

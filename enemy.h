@@ -14,14 +14,15 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define ENEMY_MAX			(1)			// エネミーのMax人数
-#define MAX_ATTACK_AABB		(3)
-#define ENEMY_VISION_RADIUS (500.0f)
-#define ENEMY_ATTACK_RADIUS (100.0f)
-#define MAX_CHASE_DISTANCE	(800.0f)	// 最大追跡距離
-#define MIN_RETURN_DISTANCE	(600.0f)	// 最小の戻り距離（バッファゾーン）
-#define RETREAT_SPEED_RATE	(0.5f)		// 倒退時の速度
+#define ENEMY_MAX					(1)			// エネミーのMax人数
+#define MAX_ATTACK_AABB				(3)
 
+
+#define SET_ENEMY_POS(enemy, value) \
+    do { \
+        enemy->pos = value; \
+        enemy->bodyAABB.pos = value; \
+    } while (0)
 
 // 敵の種類
 enum
@@ -35,7 +36,6 @@ enum
 	MUMMY,
 	OGRE,
 	SKELL
-
 };
 
 // states
@@ -48,6 +48,8 @@ enum
 	ENEMY_COOLDOWN,	// 攻撃後のクールダウン状態
 	ENEMY_WALK_BACK,// 戻る状態
 	ENEMY_RETREAT,	// 倒退状態
+	ENEMY_HIT,		// 硬直状態
+	ENEMY_DIE,		// 死んだ状態
 };
 
 //*****************************************************************************
@@ -68,16 +70,32 @@ struct ENEMY
 
 	// state
 	int			dir;			// 向き
+	int			oldDir;
 	XMFLOAT3	move;			// 移動速度
 	int			idleCount;
 	int			state;
+	int			stateOld;
 	BOOL		finishAttack;
 	int			attackCooldown;
 	XMFLOAT3	returnPos;
 	BOOL		canFly;
 	BOOL		stepBack;
+	int			onAirCnt;
+	BOOL		isFalling;
 
+	// battle
 	int			damage;
+	BOOL		isHit;
+	float		hitTimer;
+	float		hitCD;
+	float		attackRange;
+	int			hp;
+	int			maxHp;
+	int			staggerResistance;
+	int			staggerRecovery;
+	XMFLOAT3	diePos;
+	float		dieInitSpeedX;
+	float		dieInitSpeedY;
 
 	float		time;			// 線形補間用
 	int			tblNo;			// 行動データのテーブル番号
@@ -105,8 +123,11 @@ struct AttackAABBTBL
 HRESULT InitEnemy(void);
 void UninitEnemy(void);
 void UpdateEnemy(void);
+void UpdateEnemyStates(ENEMY* enemy);
 void DrawEnemy(void);
-
+void DrawEnemySprite(const ENEMY* enemy, BOOL die = FALSE);
+void DrawEnemyHPGauge(const ENEMY* enemy);
+void EnemyTakeDamage(ENEMY* enemy);
 ENEMY* GetEnemy(void);
 
 int GetEnemyCount(void);
@@ -118,7 +139,13 @@ int GetCurrentTextureSizeH(int enemyType);
 void PlayEnemyWalkAnim(ENEMY* enemy);
 void PlayEnemyAttackAnim(ENEMY* enemy);
 void PlayEnemyIdleAnim(ENEMY* enemy);
-
+void PlayEnemyHitAnim(ENEMY* enemy);
+void PlayEnemyDieAnim(ENEMY* enemy);
 void UpdateEnemyAttackAABB(ENEMY* enemy);
 
 BOOL CheckChasingPlayer(const ENEMY* enemy);
+
+void UpdateEnemyGroundCollision(ENEMY* enemy);
+BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir);
+
+void SetupEnemyStates(ENEMY* enemy);

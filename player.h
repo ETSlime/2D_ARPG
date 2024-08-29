@@ -11,6 +11,7 @@
 #include "debugproc.h"
 #include "sprite.h"
 #include "enemy.h"
+#include "collision.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -18,10 +19,10 @@
 #define PLAYER_MAX				(1)		// プレイヤーのMax人数
 #define MAX_ATTACK_AABB			(3)
 
-#define	PLAYER_OFFSET_CNT		(8)	// 8分身
+#define	PLAYER_OFFSET_CNT		(12)	// 12分身
 #define ACTION_QUEUE_SIZE		(4)
 #define ACTION_QUEUE_CLEAR_WAIT	(120)
-#define ATTACK_COMBO_WINDOW		(80)
+#define ATTACK_COMBO_WINDOW		(70)
 #define DASH_CD_TIME			(40)
 #define MAX_DASH_COUNT			(2)
 #define ATTACK_PATTERN_MAX		(5)		// キューをクリアするまでの待機時間
@@ -33,7 +34,7 @@
 #define	KNOCKDOWN_THRESHOLD		(15)
 #define HARDLANDING_HEIGHT		(60)
 #define	DIVE_ATTACK_SPEED		(10.0f)
-#define INVINCIBILITY_TIME		(100)
+#define DASH_INTERVAL			(25)
 
 #define SET_PLAYER_POS_Y(y_value) \
     do { \
@@ -77,15 +78,6 @@ enum
 	CHAR_KNOCKDOWN,
 	CHAR_REBOUND,
 	CHAR_SHADOW,
-};
-
-// dir
-enum
-{
-	CHAR_DIR_LEFT,
-	CHAR_DIR_RIGHT,
-	CHAR_DIR_UP,
-	CHAR_DIR_DOWN,
 };
 
 // states
@@ -141,6 +133,7 @@ struct PLAYER
 	int			dashCD;
 	int			airDashCount;
 	int			maxDashCount;
+	int			dashInterval;
 
 	// state
 	int			dir;			// 向き（0:上 1:右 2:下 3:左）
@@ -149,12 +142,14 @@ struct PLAYER
 	BOOL		dashOnAir;
 	BOOL		jumpOnAir;
 	BOOL		jump;			// ジャンプフラグ
+	BOOL		knockDownFall;
 	int			jumpCnt;		// ジャンプ中のカウント
 	float		jumpYMax;		// 
 	int			jumpOnAirCnt;
 	int			onAirCnt;
+
+	BOOL		isInvincible;
 	int			attackInterval;
-	int			invincibilityTime;
 
 	XMFLOAT3	move;			// 移動速度
 	XMFLOAT3	offset[PLAYER_OFFSET_CNT];		// 残像ポリゴンの座標

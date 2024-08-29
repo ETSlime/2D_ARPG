@@ -538,3 +538,21 @@ XMFLOAT3 AddXMFLOAT3(const XMFLOAT3& v1, const XMFLOAT3& v2)
 {
 	return XMFLOAT3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
 }
+
+int GetRand(int min, int max)
+{
+	static int flagRand = 0;
+	static std::mt19937 g_mt;
+
+	if (flagRand == 0)
+	{
+		// ランダム生成準備
+		std::random_device rnd;	// 非決定的な乱数生成器
+		g_mt.seed(rnd());		// メルセンヌ・ツイスタ版　引数は初期SEED
+		flagRand = 1;
+	}
+
+	std::uniform_int_distribution<> random(min, max);	// 生成ランダムは0～100の範囲
+	int answer = random(g_mt);
+	return answer;
+}

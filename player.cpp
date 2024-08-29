@@ -35,12 +35,12 @@
 #define TEXTURE_JUMP_HEIGHT					(210/2)
 #define TEXTURE_HARDLAND_WIDTH				(200/2)
 #define TEXTURE_HARDLAND_HEIGHT				(160/2)
-#define TEXTURE_HIT_WIDTH					(200/2)
+#define TEXTURE_HIT_WIDTH					(160/2)
 #define TEXTURE_HIT_HEIGHT					(160/2)
 #define TEXTURE_KNOCKDOWN_WIDTH				(200/2)
 #define TEXTURE_KNOCKDOWN_HEIGHT			(160/2)
-#define TEXTURE_REBOUND_WIDTH				(200/2)
-#define TEXTURE_REBOUND_HEIGHT				(160/2)
+#define TEXTURE_REBOUND_WIDTH				(180/2)
+#define TEXTURE_REBOUND_HEIGHT				(150/2)
 #define TEXTURE_MAX							(20)	// テクスチャの数
 
 // アニメパターンのテクスチャ内分割数（X)
@@ -56,7 +56,7 @@
 #define TEXTURE_NORMAL_ATTACK1_PATTERN_DIVIDE_X	(7)
 #define TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X	(9)
 #define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)
-#define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(13)
+#define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(16)
 #define TEXTURE_DASH_ATTACK_PATTERN_DIVIDE_X	(8)
 #define TEXTURE_PATTERN_DIVIDE_Y				(1)
 
@@ -69,25 +69,25 @@
 #define ANIM_WAIT_JUMP							(7)
 #define ANIM_WAIT_HARDLAND						(6)
 #define ANIM_WAIT_HIT							(6)
-#define ANIM_WAIT_KNOCKDOWN						(20)
+#define ANIM_WAIT_KNOCKDOWN						(18)
 #define ANIM_WAIT_REBOUND						(6)
 #define ANIM_DASH_FRAME							(10)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
-#define ANIM_KNOCKDOWN_FRAME					(5)
+#define ANIM_KNOCKDOWN_FRAME					(4)
 #define ANIM_REBOUND_FRAME						(5)
 #define ANIM_NORMAL_ATTACK1_FRAME				(7)
 #define ANIM_NORMAL_ATTACK2_FRAME				(9)
 #define ANIM_NORMAL_ATTACK3_FRAME				(8)
-#define ANIM_NORMAL_ATTACK4_FRAME				(13)
+#define ANIM_NORMAL_ATTACK4_FRAME				(16)
 #define	ANIM_DASH_ATTACK_FRAME					(8)
 
 
-#define	NORMAL_ATTACK4_DROP_FRAME				(6)
+#define	NORMAL_ATTACK4_DROP_FRAME				(9)
 
-#define TEXTURE_NORMAL_ATTACK1_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
-#define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, -9.0f, 0.0f)
-#define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(8.0f, -12.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK1_OFFSET			XMFLOAT3(5.0f, -15.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, -4.0f, 0.0f)
+#define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(8.0f, -15.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK4_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
 #define TEXTURE_DASH_ATTACK_OFFSET				XMFLOAT3(10.0f, -5.0f, 0.0f)
 
@@ -240,6 +240,18 @@ static AttackAABBTBL normalAttack4Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK4_FRAM
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
 	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
 	{XMFLOAT3(0.0f, -55.0f, 0.0f), 80.0f, 40.0f},
 	{XMFLOAT3(35.0f, 0.0f, 0.0f), 40.0f, 90.0f},
@@ -344,6 +356,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].dashCD = 0;
 		g_Player[i].airDashCount = 0;
 		g_Player[i].maxDashCount = MAX_DASH_COUNT;
+		g_Player[i].dashInterval = 0;
 
 		g_Player[i].move = XMFLOAT3(PLAYER_WALK_SPEED, 0.0f, 0.0f);		// 移動量
 
@@ -351,10 +364,12 @@ HRESULT InitPlayer(void)
 		g_Player[i].running = FALSE;
 		g_Player[i].playAnim = FALSE;
 		g_Player[i].dashOnAir = FALSE;
+		g_Player[i].knockDownFall = FALSE;
 		g_Player[i].jumpOnAir = TRUE;
 		g_Player[i].jumpOnAirCnt = 0;
 		g_Player[i].patternAnim = CHAR_IDLE;
 
+		g_Player[i].isInvincible = FALSE;
 		g_Player[i].attackPattern = NONE;
 		g_Player[i].actionQueueStart = 0;
 		g_Player[i].actionQueueEnd = 0;
@@ -367,7 +382,6 @@ HRESULT InitPlayer(void)
 
 		g_Player[i].onAirCnt = 0;
 		g_Player[i].attackInterval = 0;
-		g_Player[i].invincibilityTime = 0;
 
 		for (int j = 0; j < ACTION_QUEUE_SIZE; j++)
 		{
@@ -488,13 +502,12 @@ void UpdatePlayer(void)
 			UpdatePlayerStates();
 			UpdateBackGroundScroll();
 
-
 			// 移動が終わったらエネミーとの当たり判定
 			ENEMY* enemy = GetEnemy();
 			for (int j = 0; j < ENEMY_MAX; j++)
 			{
 				// 生きてるエネミーと当たり判定をする
-				if (enemy[j].use == TRUE && enemy[j].state == ENEMY_ATTACK && g_Player->invincibilityTime <= 0)
+				if (enemy[j].use == TRUE && enemy[j].state == ENEMY_ATTACK && g_Player->isInvincible == FALSE)
 				{
 					// 攻撃用の包囲ボックスを取得
 					for (int k = 0; k < MAX_ATTACK_AABB; k++)
@@ -517,10 +530,7 @@ void UpdatePlayer(void)
 						if (isColliding)
 						{
 							// 当たり判定があった場合、プレイヤーにダメージを与える
-							PlayerTakeDamage(enemy);
-
-							// プレイヤーの無敵時間を設定
-							g_Player->invincibilityTime = INVINCIBILITY_TIME;
+							PlayerTakeDamage(&enemy[j]);
 						}
 					}
 				}
@@ -643,8 +653,10 @@ void HandleActionQueue(void)
 
 	case DASH:
 		// クールダウン時間が経過している、またはダッシュ回数が残っている場合に実行可能
-		if (g_Player->dashCD > DASH_CD_TIME || g_Player->dashCount < g_Player->maxDashCount)
+		if ((g_Player->dashCD > DASH_CD_TIME || g_Player->dashCount < g_Player->maxDashCount) 
+			&& g_Player->dashInterval <= 0)
 		{
+			g_Player->dashInterval = DASH_INTERVAL;
 			g_Player->dashCD = 0;
 			g_Player->dashCount++;
 			canExecuteAction = TRUE;
@@ -652,7 +664,12 @@ void HandleActionQueue(void)
 		else
 			canExecuteAction = FALSE;
 		break;
-
+	case ATTACK:
+		if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+			g_Player->attackPattern = NORMAL_ATTACK1;
+		g_Player->attackInterval = 0;
+		canExecuteAction = TRUE;
+		break;
 	default:
 		// その他のアクションは特別な条件なく実行可能
 		canExecuteAction = TRUE;
@@ -707,7 +724,7 @@ void HandlePlayerMove(float speed, int direction)
 void HandlePlayerDash(void)
 {
 	// もしアイドル状態なら、すぐにアクションを実行
-	if (g_Player->playAnim == FALSE)
+	if (g_Player->playAnim == FALSE && g_Player->dashInterval <= 0)
 	{
 		if (g_Player->onAirCnt == 0 || (g_Player->onAirCnt > 0 && g_Player->dashOnAir == FALSE))
 		{
@@ -717,6 +734,7 @@ void HandlePlayerDash(void)
 			g_Player->dashCD = 0;
 			g_Player->playAnim = TRUE;
 			g_Player->dashCount++;
+			g_Player->dashInterval = DASH_INTERVAL;
 
 			if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
 			{
@@ -724,10 +742,12 @@ void HandlePlayerDash(void)
 				g_Player->airDashCount++;
 			}
 
+			// 無敵状態を開始する
+			g_Player->isInvincible = TRUE;
 		}
 	}
 	// 空中の状態
-	else if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
+	else if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount && g_Player->dashInterval <= 0)
 	{
 		g_Player->patternAnimOld = g_Player->patternAnim;
 		g_Player->patternAnim = 0;
@@ -737,6 +757,10 @@ void HandlePlayerDash(void)
 		g_Player->animFrameCount = 0;
 		g_Player->dashCount++;
 		g_Player->airDashCount++;
+		g_Player->dashInterval = DASH_INTERVAL;
+
+		// 無敵状態を開始する
+		g_Player->isInvincible = TRUE;
 	}
 	// その他の状態の場合、アクションをキューに追加
 	else if (!(g_Player->dashOnAir == TRUE && g_Player->onAirCnt > 0))
@@ -788,7 +812,6 @@ void HandlePlayerJump(void)
 	// その他の状態の場合、アクションをキューに追加
 	else
 	{
-		std::cout << g_Player->jumpOnAirCnt << std::endl;
 		g_Player->actionQueue[g_Player->actionQueueEnd] = JUMP;
 		g_Player->actionQueueEnd = (g_Player->actionQueueEnd + 1) % ACTION_QUEUE_SIZE;
 
@@ -813,7 +836,6 @@ void HandlePlayerAttack(void)
 		g_Player->playAnim = TRUE;
 		if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
 			g_Player->attackPattern = NORMAL_ATTACK1;
-
 		g_Player->attackInterval = 0;
 		break;
 
@@ -956,23 +978,30 @@ void UpdateGamepadInput(void)
 
 void UpdatePlayerStates(void)
 {
+	// ダッシュクールダウンタイムを更新
 	g_Player->dashCD++;
+	g_Player->dashInterval--;
+
+	// クールダウンタイムが指定された時間を超えた場合、ダッシュ回数をリセット
 	if (g_Player->dashCD >= DASH_CD_TIME)
 	{
 		g_Player->dashCount = 0;
 	}
 
+	// プレイヤーがジャンプの半分以上落下し、かつ状態がIDLEの場合、落下状態に移行
 	if (g_Player->move.y >= g_Player->jumpYMax * 0.5f && g_Player->state == IDLE)
 	{
 		g_Player->state = FALL;
 	}
 
+	// 攻撃インターバルを更新
 	g_Player->attackInterval++;
 
-	// プレイヤーの無敵時間を減少させる
-	if (g_Player->invincibilityTime > 0)
+	// プレイヤーが攻撃状態でない場合、攻撃の当たり判定AABBをリセット
+	if (g_Player->state != ATTACK)
 	{
-		g_Player->invincibilityTime--;
+		for (int i = 0; i < MAX_ATTACK_AABB; i++)
+			g_Player->attackAABB[i] = {XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f};
 	}
 }
 
@@ -1053,7 +1082,7 @@ void UpdateGroundCollision(void)
 
 			g_Player->move.y = g_Player->jumpYMax * sinf(angle);
 		}
-		else
+		else if (g_Player->onAirCnt >= PLAYER_JUMP_CNT_MAX * 0.5f)
 		{
 			// 滞空時間が最大に達したら、下落速度を最大値に保つ
 			g_Player->move.y = g_Player->jumpYMax;
@@ -1072,7 +1101,7 @@ void UpdateGroundCollision(void)
 		if (onGround)
 		{
 			// 滞空時間が一定以上であればハードランディング状態に移行
-			if (g_Player->onAirCnt > HARDLANDING_HEIGHT && g_Player->state != ATTACK)
+			if (g_Player->onAirCnt > HARDLANDING_HEIGHT && g_Player->state != ATTACK && g_Player->state != KNOCKDOWN)
 			{
 				// ハードランディングの状態に遷移し、アニメーションを初期化
 				g_Player->state = HARD_LANDING;
@@ -1086,7 +1115,7 @@ void UpdateGroundCollision(void)
 		}
 
 		// プレイヤーがアニメーション再生中または地面にいる場合、移動をキャンセル
-		if (g_Player->playAnim == TRUE || onGround)
+		if ((g_Player->playAnim == TRUE && g_Player->state != KNOCKDOWN)|| onGround)
 		{
 			// Y座標の移動を元に戻す
 			CHANGE_PLAYER_POS_Y(-g_Player->move.y);
@@ -1166,18 +1195,26 @@ void UpdateActionQueue(void)
 
 void PlayerTakeDamage(ENEMY* enemy)
 {
+	std::cout << enemy->pos.x << std::endl;
 	int dir = g_Player->pos.x - enemy->pos.x >= 0 ? 1 : -1;
 	g_Player->move.x = dir * enemy->damage;
 	if (g_Player->onAirCnt > 0 || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
+	{
+		g_Player->jumpCnt = 0;
+		g_Player->onAirCnt = 0;
 		g_Player->state = KNOCKDOWN;
+	}
+		
 	else
 		g_Player->state = HIT;
 
 	g_Player->animFrameCount = 0;
 	g_Player->patternAnim = 0;
 	g_Player->playAnim = TRUE;
+	g_Player->countAnim = 0;
 
-	
+	// 無敵状態を開始する
+	g_Player->isInvincible = TRUE;
 }
 
 //=============================================================================
@@ -1369,7 +1406,7 @@ void PlayDashAnim(void)
 		g_Player->animFrameCount++;
 	}
 
-	// アニメーションフレームがダッシュフレーム数に達した場合の処理
+	// アニメーションフレームがダッシュフレーム数に達した場合
 	if (g_Player->animFrameCount == ANIM_DASH_FRAME)
 	{
 		g_Player->animFrameCount = 0;
@@ -1384,6 +1421,8 @@ void PlayDashAnim(void)
 			g_Player->playAnim = FALSE;
 			g_Player->jumpCnt = 0;
 		}
+
+		g_Player->isInvincible = FALSE; // 無敵状態を終了する
 
 	}
 }
@@ -1416,8 +1455,6 @@ void PlayAttackAnim(void)
 		attackFrame = ANIM_NORMAL_ATTACK3_FRAME;
 		break;
 	case NORMAL_ATTACK4:
-		//if (g_Player->patternAnim == 0)
-		//	g_Player->move.y = 10;
 		g_Player->texNo = CHAR_NORMAL_ATTACK4;
 		attackFrame = ANIM_NORMAL_ATTACK4_FRAME;
 		break;
@@ -1666,8 +1703,10 @@ void PlayHitAnim(void)
 		g_Player->animFrameCount++;
 	}
 
+	// ヒット後の移動速度を計算
 	float speed = (ANIM_HIT_FRAME - g_Player->animFrameCount) * g_Player->move.x * 0.2f;
-	if (CheckMoveCollision(speed, g_Player->dir))
+	int dir = speed > 0 ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
+	if (CheckMoveCollision(speed, dir))
 	{
 		CHANGE_PLAYER_POS_X(speed);
 	}
@@ -1677,7 +1716,8 @@ void PlayHitAnim(void)
 		// アニメーションを停止し、プレイヤーの状態をアイドルに変更
 		g_Player->playAnim = FALSE;
 		g_Player->state = IDLE;
-		g_Player->move.x = PLAYER_WALK_SPEED;
+		g_Player->move.x = PLAYER_WALK_SPEED; // 移動速度を通常に戻す
+		g_Player->isInvincible = FALSE; // 無敵状態を終了する
 	}
 }
 
@@ -1688,29 +1728,59 @@ void PlayKnockDownAnim(void)
 
 	g_Player->texNo = CHAR_KNOCKDOWN;
 
+	if (g_Player->knockDownFall && g_Player->onAirCnt == 0)
+	{
+		g_Player->knockDownFall = FALSE;
+		g_Player->animFrameCount++;
+		g_Player->patternAnim++;
+		g_Player->countAnim = 0.0f;
+	}
+
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > ANIM_WAIT_KNOCKDOWN)
 	{
 		g_Player->countAnim = 0.0f;
 		g_Player->patternAnim++;
+		// アニメーションパターンが最大を超えた場合、最大に固定
 		if (g_Player->patternAnim > GetTexturePatternDivideX() - 1)
 			g_Player->patternAnim = GetTexturePatternDivideX() - 1;
+
+		if (g_Player->onAirCnt > 0 && g_Player->patternAnim > 1)
+		{
+			g_Player->patternAnim = 1;
+		}
 		g_Player->animFrameCount++;
 	}
 
+
+	// ノックダウン時の移動速度を計算
 	float speed = (GetTexturePatternDivideX() - 1 - g_Player->patternAnim) * g_Player->move.x * 0.35f;
-	int dir = speed > 0 ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
-	if (CheckMoveCollision(speed, dir))
+	int dir = g_Player->move.x > 0 ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
+
+	if (g_Player->onAirCnt > ANIM_WAIT_KNOCKDOWN * 2)
 	{
-		CHANGE_PLAYER_POS_X(speed);
+		g_Player->knockDownFall = TRUE;
+		speed = speed > 0 ? 1.0f : -1.0f;
+		g_Player->animFrameCount = g_Player->patternAnim;
 	}
 
+	if (CheckMoveCollision(speed, dir))
+		CHANGE_PLAYER_POS_X(speed);
+	//if (g_Player->onAirCnt > HARDLANDING_HEIGHT)
+	//	g_Player->hardlanding = TRUE;
+	//
+	//if (g_Player->hardlanding == TRUE && g_Player->onAirCnt == 0)
+	//{
+	//	g_Player->hardlanding = FALSE;
+	//}
 	if (g_Player->animFrameCount >= ANIM_KNOCKDOWN_FRAME)
 	{
+		// 反動状態に変更
 		g_Player->state = REBOUND;
-		g_Player->move.x = PLAYER_WALK_SPEED;
+		g_Player->move.x = PLAYER_WALK_SPEED; // 移動速度を通常に戻す
 		g_Player->animFrameCount = 0;
 		g_Player->patternAnim = 0;
+
 	}
 }
 void PlayReboundAnim(void)
@@ -1725,6 +1795,7 @@ void PlayReboundAnim(void)
 	{
 		g_Player->countAnim = 0.0f;
 		g_Player->patternAnim++;
+		// アニメーションパターンが最大を超えた場合、最大に固定
 		if (g_Player->patternAnim > GetTexturePatternDivideX() - 1)
 			g_Player->patternAnim = GetTexturePatternDivideX() - 1;
 		g_Player->animFrameCount++;
@@ -1732,10 +1803,12 @@ void PlayReboundAnim(void)
 
 	if (g_Player->animFrameCount >= ANIM_REBOUND_FRAME)
 	{
+		// プレイヤーの状態をアイドルに戻し、アニメーションを停止
 		g_Player->state = IDLE;
 		g_Player->playAnim = FALSE;
 		g_Player->animFrameCount = 0;
 		g_Player->patternAnim = 0;
+		g_Player->isInvincible = FALSE; // 無敵状態を終了する
 	}
 }
 
@@ -2108,7 +2181,6 @@ void AdjustAttackTexturePos(float& px, float& py)
 void AdjustAttackPlayerPos(void)
 {
 	float speedX = g_Player->move.x;
-	float speedY = g_Player->move.y;
 
 	speedX *= g_Player->dir == CHAR_DIR_RIGHT ? 1.0f : -1.0f;
 
@@ -2137,9 +2209,11 @@ void AdjustAttackPlayerPos(void)
 	}
 	case NORMAL_ATTACK4:
 	{
-		BOOL isMoveFrame = g_Player->patternAnim >= 2 && g_Player->patternAnim <= 4;
-		if (isMoveFrame && CheckMoveCollision(speedX * 0.1f, g_Player->dir))
-			CHANGE_PLAYER_POS_X(speedX * 0.1f);
+		float speedY = -40.0f;
+		BOOL isMoveFrame = g_Player->patternAnim >= 1 && g_Player->patternAnim <= 3 && g_Player->onAirCnt == 0;
+		if (isMoveFrame && CheckMoveCollision(speedY, g_Player->dir))
+			CHANGE_PLAYER_POS_Y(speedY);
+			
 		break;
 	}
 	case DASH_ATTACK:
