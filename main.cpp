@@ -19,7 +19,7 @@
 #include "result.h"
 #include "sound.h"
 #include "fade.h"
-
+#include "UI.h"
 #include "file.h"
 
 #include "effect.h"
@@ -321,7 +321,8 @@ void Update(void)
 		UpdateEnemy();
 		UpdateBullet();
 		UpdateEffect();
-		UpdateScore();
+		UpdateUI();
+		//UpdateScore();
 
 		if(GetFade() == FADE_NONE)
 		{	// 全滅チェック
@@ -376,7 +377,8 @@ void Draw(void)
 		DrawEnemy();
 		DrawPlayer();
 		DrawEffect();
-		DrawScore();
+		DrawUI();
+		//DrawScore();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の描画
@@ -445,13 +447,15 @@ void SetMode(int mode)
 	UninitBullet();
 
 	// スコアの終了処理
-	UninitScore();
+	//UninitScore();
 
 	// リザルトの終了処理
 	UninitResult();
 
 	// エフェクトの終了処理
 	UninitEffect();
+
+	UninitUI();
 
 
 	g_Mode = mode;	// 次のモードをセットしている
@@ -471,7 +475,8 @@ void SetMode(int mode)
 		InitEnemy();
 		InitBullet();
 		InitEffect();
-		InitScore();
+		//InitScore();
+		InitUI();
 
 		// ロードゲームだったらすべての初期化が終わった後にセーブデータを読み込む
 		if (g_LoadGame == TRUE)

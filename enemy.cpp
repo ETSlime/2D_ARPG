@@ -71,7 +71,6 @@
 #define MIN_RETURN_DISTANCE			(600.0f)	// 最小の戻り距離（バッファゾーン）
 #define RETREAT_SPEED_RATE			(0.5f)		// 倒退時の速度
 #define ENEMY_STUN_TIME				(35)
-#define ATTACK_COOLDOWN_TIME		(100)
 #define ENEMY_FALL_SPEED			(6.5f)
 #define ENEMY_FALL_CNT_MAX			(30)
 
@@ -339,7 +338,7 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].hitCD = 0.0f;
 		g_Enemy[i].hp = 1000;
 		g_Enemy[i].maxHp = 1000;
-		g_Enemy[i].staggerResistance = 20;
+		g_Enemy[i].staggerResistance = 10;
 		g_Enemy[i].staggerRecovery = 0;
 		g_Enemy[i].diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].dieInitSpeedX = 0.0f;
@@ -548,6 +547,8 @@ void UpdateEnemy(void)
 						g_Enemy[i].state = ENEMY_ATTACK;
 						g_Enemy[i].dir = g_Enemy[i].pos.x - player->pos.x > 0.0f ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 						g_Enemy[i].patternAnim = ANIM_ATTACK_OFFSET;
+						g_Enemy[i].countAnim = 0.0f;
+						g_Enemy[i].finishAttack = FALSE;
 					}
 					// 最大追跡距離を超えた場合、RETREAT状態に移行
 					else if (distanceToReturnPos > MAX_CHASE_DISTANCE) 
@@ -654,6 +655,8 @@ void UpdateEnemy(void)
 							g_Enemy[i].state = ENEMY_ATTACK;  // プレイヤーが攻撃範囲内にいる場合
 							g_Enemy[i].dir = g_Enemy[i].pos.x - player->pos.x > 0.0f ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 							g_Enemy[i].patternAnim = ANIM_ATTACK_OFFSET;
+							g_Enemy[i].countAnim = 0.0f;
+							g_Enemy[i].finishAttack = FALSE;
 						}
 						else if (CheckChasingPlayer(&g_Enemy[i]))
 						{
@@ -868,8 +871,9 @@ void UpdateEnemyStates(ENEMY* enemy)
 		// 攻撃判定のAABBをリセット
 		for (int j = 0; j < MAX_ATTACK_AABB; j++)
 		{
-			enemy->attackAABB[j].w = 0;
-			enemy->attackAABB[j].h = 0;
+			enemy->attackAABB[j].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			enemy->attackAABB[j].w = 0.0f;
+			enemy->attackAABB[j].h = 0.0f;
 		}
 		enemy->finishAttack = TRUE;
 	}
@@ -892,6 +896,9 @@ void UpdateEnemyStates(ENEMY* enemy)
 	enemy->staggerRecovery--;
 	if (enemy->staggerRecovery <= 0)
 		enemy->staggerResistance = 20;
+
+	if (enemy->attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN)
+		enemy->state = ENEMY_COOLDOWN;
 }
 
 void UpdateEnemyGroundCollision(ENEMY* enemy)
@@ -947,9 +954,10 @@ void EnemyTakeDamage(ENEMY* enemy)
 			enemy->stateOld = enemy->state;
 		enemy->attackCooldown = ATTACK_COOLDOWN_TIME;  // クールダウンタイムをリセット
 		enemy->state = ENEMY_HIT;
+		enemy->countAnim = 0.0f;
 	}
 
-	enemy->hp -= 30;
+	enemy->hp -= player->ATK;
 	if (enemy->hp <= 0)
 	{
 		enemy->state = ENEMY_DIE;
@@ -1291,7 +1299,7 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 	if (enemy->patternAnim == ANIM_ATTACK_PATTERN_NUM + ANIM_ATTACK_OFFSET - 1 && enemy->countAnim == ANIM_WAIT_ATTACK)
 	{
 		// アニメーション終了後に攻撃を実行
-		enemy->attackCooldown = ATTACK_COOLDOWN_TIME + GetRand(50, 150);  // クールダウンタイムをリセット
+		enemy->attackCooldown = ATTACK_COOLDOWN_TIME + GetRand(10, 110);  // クールダウンタイムをリセット
 		enemy->state = ENEMY_COOLDOWN;  // クールダウン状態に移行
 
 		for (int i = 0; i < MAX_ATTACK_AABB; i++)

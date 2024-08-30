@@ -23,6 +23,7 @@
 #define ACTION_QUEUE_SIZE		(4)
 #define ACTION_QUEUE_CLEAR_WAIT	(120)
 #define ATTACK_COMBO_WINDOW		(70)
+#define	PARRY_WINDOW			(201)
 #define DASH_CD_TIME			(40)
 #define MAX_DASH_COUNT			(2)
 #define ATTACK_PATTERN_MAX		(5)		// キューをクリアするまでの待機時間
@@ -77,6 +78,7 @@ enum
 	CHAR_HIT,
 	CHAR_KNOCKDOWN,
 	CHAR_REBOUND,
+	CHAR_DEFEND,
 	CHAR_SHADOW,
 };
 
@@ -94,6 +96,7 @@ enum
 	HIT,
 	KNOCKDOWN,
 	REBOUND,
+	DEFEND,
 };
 
 // attack pattern
@@ -106,6 +109,7 @@ enum
 	NORMAL_ATTACK4,
 	PLACEHOLDER,
 	DASH_ATTACK,
+	PARRY,
 };
 
 //*****************************************************************************
@@ -124,7 +128,6 @@ struct PLAYER
 	int			patternAnim;	// アニメーションパターンナンバー
 	int			patternAnimOld;
 	int			texNo;			// テクスチャ番号
-	int			state;
 	int			animFrameCount;
 	BOOL		invertTex;
 
@@ -136,18 +139,32 @@ struct PLAYER
 	int			dashInterval;
 
 	// state
+	int			state;
 	int			dir;			// 向き（0:上 1:右 2:下 3:左）
-	BOOL		running;
+	int			defendDir;
 	BOOL		playAnim;
 	BOOL		dashOnAir;
 	BOOL		jumpOnAir;
 	BOOL		jump;			// ジャンプフラグ
 	BOOL		knockDownFall;
+	BOOL		isDefending;
+	BOOL		isRunning;
+	BOOL		isParrying;
 	int			jumpCnt;		// ジャンプ中のカウント
 	float		jumpYMax;		// 
 	int			jumpOnAirCnt;
 	int			onAirCnt;
+	int			defendCnt;
 
+	// battle
+	float		HP;
+	float		maxHP;
+	float		MP;
+	float		maxMP;
+	float		ST;
+	float		maxST;
+	float		ATK;
+	float		DEF;
 	BOOL		isInvincible;
 	int			attackInterval;
 
@@ -194,6 +211,7 @@ void PlayHitAnim(void);
 void PlayKnockDownAnim(void);
 void PlayReboundAnim(void);
 void PlayHardLandingAnim(void);
+void PlayDefendAnim(void);
 void AdjustAttackTexturePos(float& px, float& py);
 void AdjustAttackTextureSize(void);
 void AdjustAttackPlayerPos(void);
@@ -206,6 +224,7 @@ void HandlePlayerMove(float speed, int direction);
 void HandlePlayerDash(void);
 void HandlePlayerJump(void);
 void HandlePlayerAttack(void);
+void HandlePlayerDefend(void);
 // ゲームパッドでで移動
 void UpdateGamepadInput(void);
 // 当たり判定

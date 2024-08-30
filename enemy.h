@@ -16,7 +16,7 @@
 //*****************************************************************************
 #define ENEMY_MAX					(1)			// エネミーのMax人数
 #define MAX_ATTACK_AABB				(3)
-
+#define ATTACK_COOLDOWN_TIME		(100)
 
 #define SET_ENEMY_POS(enemy, value) \
     do { \
