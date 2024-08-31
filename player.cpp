@@ -27,8 +27,10 @@
 #define TEXTURE_NORMAL_ATTACK3_HEIGHT		(247/2)
 #define TEXTURE_NORMAL_ATTACK4_WIDTH		(230/2)
 #define TEXTURE_NORMAL_ATTACK4_HEIGHT		(245/2)
-#define TEXTURE_DASH_ATTACK_WIDTH			(290/2)
-#define TEXTURE_DASH_ATTACK_HEIGHT			(215/2)
+#define TEXTURE_DASH_ATTACK_WIDTH			(315/2)
+#define TEXTURE_DASH_ATTACK_HEIGHT			(235/2)
+#define TEXTURE_PARRY_WIDTH					(312/2)
+#define TEXTURE_PARRY_HEIGHT				(295/2)
 #define TEXTURE_RUN_WIDTH					(185/2)
 #define TEXTURE_RUN_HEIGHT					(185/2)
 #define TEXTURE_JUMP_WIDTH					(210/2)
@@ -61,6 +63,7 @@
 #define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)
 #define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(16)
 #define TEXTURE_DASH_ATTACK_PATTERN_DIVIDE_X	(8)
+#define TEXTURE_PARRY_PATTERN_DIVIDE_X			(8)
 #define TEXTURE_PATTERN_DIVIDE_Y				(1)
 
 // アニメーションの切り替わるWait値
@@ -69,11 +72,14 @@
 #define ANIM_WAIT_RUN							(5)
 #define ANIM_WAIT_DASH							(1)
 #define ANIM_WAIT_ATTACK						(5)
+#define ANIM_WAIT_DASH_ATTACK					(8)
+#define ANIM_WAIT_PARRY							(10)
 #define ANIM_WAIT_JUMP							(7)
 #define ANIM_WAIT_HARDLAND						(6)
 #define ANIM_WAIT_HIT							(6)
 #define ANIM_WAIT_KNOCKDOWN						(18)
 #define ANIM_WAIT_REBOUND						(6)
+#define ANIM_WAIT_DEFEND						(25)
 #define ANIM_DASH_FRAME							(10)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
@@ -83,6 +89,7 @@
 #define ANIM_NORMAL_ATTACK2_FRAME				(9)
 #define ANIM_NORMAL_ATTACK3_FRAME				(8)
 #define ANIM_NORMAL_ATTACK4_FRAME				(16)
+#define ANIM_PARRY_FRAME						(8)
 #define	ANIM_DASH_ATTACK_FRAME					(8)
 
 
@@ -93,6 +100,7 @@
 #define TEXTURE_NORMAL_ATTACK3_OFFSET			XMFLOAT3(8.0f, -15.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK4_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
 #define TEXTURE_DASH_ATTACK_OFFSET				XMFLOAT3(10.0f, -5.0f, 0.0f)
+#define TEXTURE_PARRY_OFFSET					XMFLOAT3(-5.0f, -15.0f, 0.0f)
 
 // プレイヤーの画面内配置座標
 #define PLAYER_DISP_X				(SCREEN_WIDTH/2)
@@ -102,9 +110,18 @@
 #define	PLAYER_JUMP_CNT_MAX			(60)		// 60フレームで着地する
 #define	PLAYER_JUMP_Y_MAX			(7.5f)	// ジャンプの高さ
 
-#define ST_COST_RUN					(3)
-#define	ST_COST_DEFEND				(2)
-#define	ST_COST_DASH				(10)
+#define ST_COST_RUN					(5.5f)
+#define	ST_COST_DEFEND				(4.5f)
+#define	ST_COST_DASH				(125.0f)
+#define	ST_COST_NORMAL_ATTACK1		(150.0f)
+#define	ST_COST_NORMAL_ATTACK2		(135.0f)
+#define	ST_COST_NORMAL_ATTACK3		(160.0f)
+#define	ST_COST_NORMAL_ATTACK4		(180.0f)
+#define ST_COST_DASH_ATTACK			(150.0f)
+#define ST_COST_JUMP				(100.0f)
+#define ST_RUN_THRESHOLD			(150.0f)
+#define	ST_DEFEND_THRESHOLD			(100.0f)
+#define ST_RECOVERY_RATE			(3.5f)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -133,6 +150,7 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/char/char_attack3.png",
 	"data/TEXTURE/char/char_attack4.png",
 	"data/TEXTURE/char/char_dashattack.png",
+	"data/TEXTURE/char/char_parry.png",
 	"data/TEXTURE/char/char_jump.png",
 	"data/TEXTURE/char/char_hardlanding.png",
 	"data/TEXTURE/char/char_hit.png",
@@ -311,6 +329,24 @@ static AttackAABBTBL dashAttackTbl[MAX_ATTACK_AABB * ANIM_DASH_ATTACK_FRAME] = {
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 };
 
+static AttackAABBTBL parryTbl[MAX_ATTACK_AABB * ANIM_PARRY_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 50.0f, 90.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 60.0f, 90.0f},
+	{XMFLOAT3(0.0f, -30.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, -30.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
 //=============================================================================
 // 初期化処理
 //=============================================================================
@@ -377,6 +413,8 @@ HRESULT InitPlayer(void)
 		g_Player[i].isRunning = FALSE;
 		g_Player[i].isDefending = FALSE;
 		g_Player[i].isParrying = FALSE;
+		g_Player[i].wasRunningExhausted = FALSE;
+		g_Player[i].wasDefendingExhausted = FALSE;
 		g_Player[i].jumpOnAirCnt = 0;
 		g_Player[i].defendCnt = 0;
 		g_Player[i].patternAnim = CHAR_IDLE;
@@ -513,8 +551,6 @@ void UpdatePlayer(void)
 				{
 					// アクションキューが空の場合、プレイヤーをアイドル状態に設定
 					g_Player[i].state = IDLE;
-					//// 攻撃パターンをなしに設定
-					//g_Player[i].attackPattern = NONE;
 				}
 			}			
 
@@ -553,33 +589,11 @@ void UpdatePlayer(void)
 						{
 							// 当たり判定があった場合、プレイヤーにダメージを与える
 							PlayerTakeDamage(&enemy[j]);
+							break;
 						}
 					}
 				}
 			}
-			//{
-			//	ENEMY* enemy = GetEnemy();
-
-			//	// エネミーの数分当たり判定を行う
-			//	for (int j = 0; j < ENEMY_MAX; j++)
-			//	{
-			//		// 生きてるエネミーと当たり判定をする
-			//		if (enemy[j].use == TRUE)
-			//		{
-			//			BOOL ans = CollisionBB(g_Player[i].pos, g_Player[i].w, g_Player[i].h,
-			//				enemy[j].pos, enemy[j].w, enemy[j].h);
-			//			// 当たっている？
-			//			if (ans == TRUE)
-			//			{
-			//				// 当たった時の処理
-			//				enemy[j].use = FALSE;
-			//				AddScore(10);
-			//			}
-			//		}
-			//	}
-			//}
-
-
 
 			// バレット処理
 			//if (GetKeyboardTrigger(DIK_SPACE))
@@ -654,8 +668,10 @@ void HandleActionQueue(void)
 {
 	// キュー内の次のアクションを実行
 	int action = g_Player->actionQueue[g_Player->actionQueueStart];
-
+	if (g_Player->ST < GetActionStaminaCost(action))
+		return;
 	BOOL canExecuteAction = FALSE;
+
 	switch (action)
 	{
 	case JUMP:
@@ -673,7 +689,10 @@ void HandleActionQueue(void)
 			}
 		}
 		else
+		{
 			canExecuteAction = TRUE;	// 地上にいる場合はジャンプ可能
+		}
+
 		break;
 
 	case DASH:
@@ -709,6 +728,7 @@ void HandleActionQueue(void)
 		g_Player->state = action;
 		g_Player->animFrameCount = 0;
 		g_Player->playAnim = TRUE;
+		g_Player->ST -= GetActionStaminaCost(action);
 	}
 }
 
@@ -719,38 +739,29 @@ void HandlePlayerMove(float speed, int direction)
 	// プレイヤーが地面にいる場合の処理
 	if (g_Player->move.y == 0)
 	{
-		// 防御キーが押されていて、かつ走行中でない場合
-		if (GetKeyboardPress(DIK_LCONTROL) && g_Player->isRunning == FALSE)
-		{
-			// 現在の方向を防御方向として保存
-			if (g_Player->isDefending == FALSE)
-			{
-				g_Player->defendDir = g_Player->dir;
-			}
-			
-			g_Player->state = DEFEND;
-			g_Player->isDefending = TRUE;
-			// 防御中の移動速度を半減
-			speed *= 0.5f;
-
-		}
-		else
-			g_Player->state = WALK;
-
+		g_Player->state = WALK;
+		if (g_Player->isDefending)
+			g_Player->isWalkingOnDefend = TRUE;
 		// 衝突判定を行い、移動可能であればプレイヤーのX座標を更新
 		if (CheckMoveCollision(speed, g_Player->dir))
 			CHANGE_PLAYER_POS_X(speed);
 
 		// 走る
-		if (GetKeyboardPress(DIK_LSHIFT) && g_Player->isDefending == FALSE && g_Player->ST - ST_COST_RUN > 0)
+		if (GetKeyboardTrigger(DIK_LSHIFT) && g_Player->ST - ST_COST_RUN >= 0 && g_Player->isDefending == FALSE)
 		{
-			// プレイヤーを「走行」状態にし、状態を「走る」に変更
-			g_Player->isRunning = TRUE;
-			g_Player->state = RUN;
-			g_Player->ST -= ST_COST_RUN;
-			// 衝突判定を行い、移動可能であればプレイヤーのX座標を更新（ダッシュ速度）
-			if (CheckMoveCollision(speed * 0.5f, g_Player->dir))
-				CHANGE_PLAYER_POS_X(speed * 0.5f);
+			HandlePlayerRun(speed);
+			g_Player->wasRunningExhausted = FALSE;
+		}
+		else if (GetKeyboardPress(DIK_LSHIFT) && g_Player->ST > ST_RUN_THRESHOLD && g_Player->wasRunningExhausted && g_Player->isDefending == FALSE)
+		{
+			HandlePlayerRun(speed);
+			g_Player->wasRunningExhausted = FALSE;
+		}
+		else if (GetKeyboardPress(DIK_LSHIFT) && g_Player->wasRunningExhausted == FALSE && g_Player->isDefending == FALSE)
+		{
+			HandlePlayerRun(speed);
+			if (g_Player->ST <= 0.0f)
+				g_Player->wasRunningExhausted = TRUE;
 		}
 	}
 	// プレイヤーが空中にいる場合、移動判定を行い、空中移動を処理
@@ -762,8 +773,21 @@ void HandlePlayerMove(float speed, int direction)
 
 }
 
+void HandlePlayerRun(float speed)
+{
+	// プレイヤーを「走行」状態にし、状態を「走る」に変更
+	g_Player->isRunning = TRUE;
+	g_Player->state = RUN;
+	g_Player->ST -= ST_COST_RUN;
+	// 衝突判定を行い、移動可能であればプレイヤーのX座標を更新（ダッシュ速度）
+	if (CheckMoveCollision(speed * 0.5f, g_Player->dir))
+		CHANGE_PLAYER_POS_X(speed * 0.5f);
+}
+
 void HandlePlayerDash(void)
 {
+	if (g_Player->ST < ST_COST_DASH)
+		return;
 	// もしアイドル状態なら、すぐにアクションを実行
 	if (g_Player->playAnim == FALSE && g_Player->dashInterval <= 0)
 	{
@@ -776,6 +800,7 @@ void HandlePlayerDash(void)
 			g_Player->playAnim = TRUE;
 			g_Player->dashCount++;
 			g_Player->dashInterval = DASH_INTERVAL;
+			g_Player->ST -= ST_COST_DASH;
 
 			if (g_Player->onAirCnt > 0 && g_Player->airDashCount < g_Player->maxDashCount)
 			{
@@ -799,6 +824,7 @@ void HandlePlayerDash(void)
 		g_Player->dashCount++;
 		g_Player->airDashCount++;
 		g_Player->dashInterval = DASH_INTERVAL;
+		g_Player->ST -= ST_COST_DASH;
 
 		// 無敵状態を開始する
 		g_Player->isInvincible = TRUE;
@@ -820,6 +846,9 @@ void HandlePlayerDash(void)
 
 void HandlePlayerJump(void)
 {
+	if (g_Player->ST < ST_COST_JUMP)
+		return;
+
 	// もしアイドル状態なら、すぐにアクションを実行
 	if (g_Player->playAnim == FALSE)
 	{
@@ -829,10 +858,9 @@ void HandlePlayerJump(void)
 			g_Player->state = JUMP;
 			g_Player->animFrameCount = 0;
 			g_Player->playAnim = TRUE;
-
+			g_Player->ST -= ST_COST_JUMP;
 			g_Player->state = JUMP;
 			g_Player->jumpCnt = 0;
-
 			if (g_Player->onAirCnt > 0)
 			{
 				g_Player->jumpOnAirCnt = 1;
@@ -842,12 +870,14 @@ void HandlePlayerJump(void)
 	// 空中の状態
 	else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->jumpOnAir && g_Player->jumpOnAirCnt == 0)
 	{
+
 		g_Player->patternAnim = 0;
 		g_Player->state = JUMP;
 		g_Player->animFrameCount = 0;
 		g_Player->playAnim = TRUE;
 		g_Player->jumpCnt = 0;
 		g_Player->jumpOnAirCnt = 1;
+		g_Player->ST -= ST_COST_JUMP;
 
 	}
 	// その他の状態の場合、アクションをキューに追加
@@ -866,6 +896,9 @@ void HandlePlayerJump(void)
 
 void HandlePlayerAttack(void)
 {
+	if (GetActionStaminaCost(ATTACK) > g_Player->ST)
+		return;
+
 	switch (g_Player->state)
 	{
 		// もしアイドル状態なら、すぐにアクションを実行
@@ -882,13 +915,14 @@ void HandlePlayerAttack(void)
 		}
 		else
 		{
+			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+				g_Player->attackPattern = NORMAL_ATTACK1;
 			g_Player->patternAnim = 0;
 			g_Player->state = ATTACK;
 			g_Player->animFrameCount = 0;
 			g_Player->playAnim = TRUE;
-			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-				g_Player->attackPattern = NORMAL_ATTACK1;
 			g_Player->attackInterval = 0;
+			g_Player->ST -= GetActionStaminaCost(ATTACK);
 		}
 		break;
 
@@ -899,6 +933,7 @@ void HandlePlayerAttack(void)
 		g_Player->playAnim = TRUE;
 		g_Player->state = ATTACK;
 		g_Player->attackPattern = DASH_ATTACK;
+		g_Player->ST -= GetActionStaminaCost(ATTACK);
 		break;
 
 	case DASH:
@@ -908,24 +943,26 @@ void HandlePlayerAttack(void)
 		// アニメーション再生していないなら、すぐにアクションを実行
 		if (g_Player->playAnim == FALSE)
 		{
+			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+				g_Player->attackPattern = NORMAL_ATTACK1;
 			g_Player->patternAnim = 0;
 			g_Player->animFrameCount = 0;
 			g_Player->playAnim = TRUE;
-			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-				g_Player->attackPattern = NORMAL_ATTACK1;
 			g_Player->attackInterval = 0;
+			g_Player->ST -= GetActionStaminaCost(ATTACK);
 			break;
 		}
 		// 空中の状態
 		else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->state != ATTACK)
 		{
+			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+				g_Player->attackPattern = NORMAL_ATTACK1;
 			g_Player->patternAnimOld = g_Player->patternAnim;
 			g_Player->patternAnim = 0;
 			g_Player->state = ATTACK;
 			g_Player->animFrameCount = 0;
-			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-				g_Player->attackPattern = NORMAL_ATTACK1;
 			g_Player->attackInterval = 0;
+			g_Player->ST -= GetActionStaminaCost(ATTACK);
 		}
 		// その他の状態の場合、アクションをキューに追加
 		else
@@ -948,15 +985,87 @@ void HandlePlayerAttack(void)
 
 void HandlePlayerDefend(void)
 {
-	if (g_Player->state != RUN)
+	if (g_Player->state != WALK)
+		g_Player->isWalkingOnDefend = FALSE;
+
+	if (GetKeyboardTrigger(DIK_LCONTROL) && g_Player->ST - ST_COST_DEFEND >= 0 && g_Player->isRunning == FALSE)
 	{
 		// 現在の方向を防御方向として保存
 		if (g_Player->isDefending == FALSE)
-		{
 			g_Player->defendDir = g_Player->dir;
-		}
-			
+
 		g_Player->state = DEFEND;
+		g_Player->isDefending = TRUE;
+		g_Player->ST -= ST_COST_DEFEND;
+		// 防御中の移動速度を半減
+		g_Player->move.x = PLAYER_WALK_SPEED * 0.5f;
+		g_Player->wasDefendingExhausted = FALSE;
+	}
+	else if (GetKeyboardPress(DIK_LCONTROL) && g_Player->ST > ST_DEFEND_THRESHOLD && g_Player->wasDefendingExhausted && g_Player->isRunning == FALSE)
+	{
+		// 現在の方向を防御方向として保存
+		if (g_Player->isDefending == FALSE)
+			g_Player->defendDir = g_Player->dir;
+
+		g_Player->state = DEFEND;
+		g_Player->isDefending = TRUE;
+		g_Player->ST -= ST_COST_DEFEND;
+		// 防御中の移動速度を半減
+		g_Player->move.x = PLAYER_WALK_SPEED * 0.5f;
+		g_Player->wasDefendingExhausted = FALSE;
+	}
+	else if (GetKeyboardPress(DIK_LCONTROL) && g_Player->wasDefendingExhausted == FALSE && g_Player->isRunning == FALSE)
+	{
+		// 現在の方向を防御方向として保存
+		if (g_Player->isDefending == FALSE)
+			g_Player->defendDir = g_Player->dir;
+
+		g_Player->state = DEFEND;
+		g_Player->isDefending = TRUE;
+		g_Player->ST -= ST_COST_DEFEND;
+		// 防御中の移動速度を半減
+		g_Player->move.x = PLAYER_WALK_SPEED * 0.5f;
+		if (g_Player->ST <= 0.0f)
+		{
+			g_Player->wasDefendingExhausted = TRUE;
+			g_Player->move.x = PLAYER_WALK_SPEED;	// 移動速度を通常に戻す
+		}
+	}
+}
+
+float GetActionStaminaCost(int action)
+{
+	switch (action)
+	{
+	case ATTACK:
+	{
+		int attackPattern = g_Player->attackPattern;
+		if (g_Player->state == RUN)
+			attackPattern = DASH_ATTACK;
+		else if (g_Player->attackInterval > ATTACK_COMBO_WINDOW && attackPattern < ATTACK_PATTERN_MAX)
+			attackPattern = NORMAL_ATTACK1;
+		switch (attackPattern)
+		{
+		case NORMAL_ATTACK1:
+			return ST_COST_NORMAL_ATTACK1;
+		case NORMAL_ATTACK2:
+			return ST_COST_NORMAL_ATTACK2;
+		case NORMAL_ATTACK3:
+			return ST_COST_NORMAL_ATTACK3;
+		case NORMAL_ATTACK4:
+			return ST_COST_NORMAL_ATTACK4;
+		case DASH_ATTACK:
+			return ST_COST_DASH_ATTACK;
+		default:
+			return 0.0f;
+		}
+	}
+	case JUMP:
+		return ST_COST_JUMP;
+	case DASH:
+		return ST_COST_DASH;
+	default:
+		return 0.0f;
 	}
 }
 
@@ -1047,9 +1156,13 @@ void UpdateGamepadInput(void)
 
 void UpdatePlayerStates(void)
 {
-	if (g_Player->ST < g_Player->maxST)
-		g_Player->ST++;
-	std::cout << (float)(g_Player->ST / g_Player->maxST) << std::endl;
+	// スタミナが負の値にならないように0に設定
+	if (g_Player->ST < 0.0f)
+		g_Player->ST = 0.0f;
+	// スタミナが最大値未満の場合、スタミナを回復
+	else if(g_Player->ST < g_Player->maxST && g_Player->playAnim == FALSE)
+		g_Player->ST += ST_RECOVERY_RATE;
+
 	// ダッシュクールダウンタイムを更新
 	g_Player->dashCD++;
 	g_Player->dashInterval--;
@@ -1081,23 +1194,33 @@ void UpdatePlayerStates(void)
 	{
 		g_Player->isDefending = TRUE;	// 防御中フラグを有効にする
 		g_Player->isRunning = FALSE;	// 走行中フラグを無効にする
-		g_Player->defendCnt++;
+		g_Player->defendCnt++;	// 防御カウントを増加
+		if (g_Player->isParrying == TRUE && g_Player->defendCnt >= PARRY_WINDOW * 2.5)
+		{
+			g_Player->isParrying = FALSE;
+			g_Player->defendCnt = 0; // 防御カウントをリセット
+			g_Player->isInvincible = FALSE; // 無敵状態を終了する
+		}
 	}
 	// 走行状態の場合
 	else if (g_Player->state == RUN)
 	{
 		g_Player->isRunning = TRUE;	// 走行中フラグを有効にする
 		g_Player->isDefending = FALSE;	// 防御中フラグを無効にする
-		g_Player->isParrying = FALSE;
+		g_Player->isParrying = FALSE; // パリィ状態フラグを無効にする
+		g_Player->isInvincible = FALSE; // 無敵状態を終了する
 
 	}
+	// パリィ状態の場合
 	else if (g_Player->isParrying == TRUE)
 	{
 		g_Player->defendCnt++;
-		if (g_Player->defendCnt >= PARRY_WINDOW * 2)
+		// 時間が一程度過ごしたら、パリィ状態フラグを無効にする
+		if (g_Player->defendCnt >= PARRY_WINDOW * 2.5)
 		{
 			g_Player->isParrying = FALSE;
-			g_Player->defendCnt = 0;
+			g_Player->defendCnt = 0; // 防御カウントをリセット
+			g_Player->isInvincible = FALSE; // 無敵状態を終了する
 		}
 	}
 	else
@@ -1110,6 +1233,7 @@ void UpdatePlayerStates(void)
 	if (GetKeyboardRelease(DIK_LCONTROL) && g_Player->playAnim == FALSE && g_Player->onAirCnt == 0)
 	{
 		g_Player->dir = g_Player->defendDir;
+		g_Player->move.x = PLAYER_WALK_SPEED;	// 移動速度を通常に戻す
 		if (g_Player->isParrying == FALSE)
 			g_Player->defendCnt = 0;
 	}
@@ -1266,6 +1390,9 @@ void UpdatePlayerAttackAABB()
 	case DASH_ATTACK:
 		attackTable = dashAttackTbl;
 		break;
+	case PARRY:
+		attackTable = parryTbl;
+		break;
 	default:
 		break;
 	}
@@ -1309,12 +1436,16 @@ void PlayerTakeDamage(ENEMY* enemy)
 	BOOL validDefend = g_Player->defendDir == CHAR_DIR_RIGHT && dir == -1 || g_Player->defendDir == CHAR_DIR_LEFT && dir == 1;
 	if (g_Player->state == DEFEND && validDefend)
 	{
-		if (g_Player->defendCnt <= PARRY_WINDOW)
+		if (g_Player->defendCnt <= PARRY_WINDOW && GetEnemyAttributes(enemy))
 		{
-			enemy->attackCooldown = ATTACK_COOLDOWN_TIME + GetRand(50, 150);  // クールダウンタイムをリセット
+			enemy->attributes.attackCooldown = GetEnemyAttributes(enemy)->attackCooldown + GetRand(10, 60);  // クールダウンタイムをリセット
+			enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance; // 強靭さをリセット
 			enemy->state = ENEMY_HIT;
 			enemy->countAnim = 0.0f;
 			g_Player->isParrying = TRUE;
+			g_Player->defendCnt = 0;
+			// 無敵状態を開始する
+			g_Player->isInvincible = TRUE;
 		}
 		else
 		{
@@ -1326,15 +1457,18 @@ void PlayerTakeDamage(ENEMY* enemy)
 	}
 	else
 	{
-		g_Player->move.x = dir * enemy->damage;
-		if (g_Player->onAirCnt > 0 || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
+		g_Player->move.x = dir * enemy->attributes.damage;
+		if (g_Player->onAirCnt > 0 || g_Player->state == JUMP || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
 		{
 			g_Player->jumpCnt = 0;
 			g_Player->onAirCnt = 0;
 			g_Player->state = KNOCKDOWN;
 		}
 		else
+		{
 			g_Player->state = HIT;
+		}
+
 
 		g_Player->animFrameCount = 0;
 		g_Player->patternAnim = 0;
@@ -1567,7 +1701,7 @@ void PlayAttackAnim(void)
 	AdjustAttackTextureSize();
 
 	int attackFrame = 0;
-
+	int animWait = ANIM_WAIT_ATTACK;
 	float speed = g_Player->move.x;
 	switch (g_Player->attackPattern)
 	{
@@ -1588,9 +1722,14 @@ void PlayAttackAnim(void)
 		attackFrame = ANIM_NORMAL_ATTACK4_FRAME;
 		break;
 	case DASH_ATTACK:
-	case PARRY:
 		g_Player->texNo = CHAR_DASH_ATTACK;
 		attackFrame = ANIM_DASH_ATTACK_FRAME;
+		animWait = ANIM_WAIT_DASH_ATTACK;
+		break;
+	case PARRY:
+		g_Player->texNo = CHAR_PARRY;
+		attackFrame = ANIM_PARRY_FRAME;
+		animWait = ANIM_WAIT_PARRY;
 		break;
 	default:
 		break;
@@ -1613,7 +1752,7 @@ void PlayAttackAnim(void)
 
 	// アニメーションを更新
 	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_ATTACK)
+	if (g_Player->countAnim > animWait)
 	{
 		g_Player->countAnim = 0.0f;
 		if (attackTouchGround == FALSE)
@@ -1641,6 +1780,9 @@ void PlayAttackAnim(void)
 	if (g_Player->animFrameCount >= attackFrame)
 	{
 		g_Player->animFrameCount = 0;
+
+		if (g_Player->attackPattern == PARRY)
+			g_Player->isInvincible = FALSE; // 無敵状態を終了する
 
 		// ジャンプ中かどうかを判定し、ジャンプ状態に移行
 		if (g_Player->jumpCnt > 0)
@@ -1749,7 +1891,7 @@ void PlayJumpAnim()
 		g_Player->actionQueue[g_Player->actionQueueStart] == JUMP);
 
 	// 上記の条件が両方とも満たされた場合、空中ジャンプを実行
-	if (isAtJumpPeak && hasJumpInQueue)
+	if (isAtJumpPeak && hasJumpInQueue && g_Player->jumpOnAirCnt == 0)
 	{
 		// アクションキューのスタートを次に進める
 		g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE;
@@ -1949,7 +2091,19 @@ void PlayDefendAnim(void)
 	g_Player->h = TEXTURE_DEFEND_HEIGHT;
 
 	g_Player->texNo = CHAR_DEFEND;
-	g_Player->patternAnim = 0;
+
+	if (g_Player->isWalkingOnDefend == TRUE)
+	{
+		g_Player->countAnim += 1.0f;
+		if (g_Player->countAnim > ANIM_WAIT_DEFEND)
+		{
+			g_Player->countAnim = 0.0f;
+			g_Player->patternAnim = g_Player->patternAnim == 0 ? 1 : 0;
+		}
+	}
+	else
+		g_Player->patternAnim = 0;
+
 }
 
 //=============================================================================
@@ -2111,6 +2265,8 @@ int GetTexturePatternDivideX()
 		return TEXTURE_REBOUND_PATTERN_DIVIDE_X;
 	case CHAR_DEFEND:
 		return TEXTURE_DEFEND_PATTERN_DIVIDE_X;
+	case CHAR_PARRY:
+		return TEXTURE_PARRY_PATTERN_DIVIDE_X;
 	default:
 		return -1;
 	}
@@ -2286,6 +2442,10 @@ void AdjustAttackTextureSize()
 		g_Player->w = TEXTURE_DASH_ATTACK_WIDTH;
 		g_Player->h = TEXTURE_DASH_ATTACK_HEIGHT;
 		break;
+	case PARRY:
+		g_Player->w = TEXTURE_PARRY_WIDTH;
+		g_Player->h = TEXTURE_PARRY_HEIGHT;
+		break;
 	default:
 		break;
 	}
@@ -2314,6 +2474,10 @@ void AdjustAttackTexturePos(float& px, float& py)
 	case DASH_ATTACK:
 		px += TEXTURE_DASH_ATTACK_OFFSET.x;
 		py += TEXTURE_DASH_ATTACK_OFFSET.y;
+		break;
+	case PARRY:
+		px += TEXTURE_PARRY_OFFSET.x;
+		py += TEXTURE_PARRY_OFFSET.y;
 		break;
 	default:
 		break;

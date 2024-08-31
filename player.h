@@ -23,10 +23,10 @@
 #define ACTION_QUEUE_SIZE		(4)
 #define ACTION_QUEUE_CLEAR_WAIT	(120)
 #define ATTACK_COMBO_WINDOW		(70)
-#define	PARRY_WINDOW			(201)
-#define DASH_CD_TIME			(40)
+#define	PARRY_WINDOW			(15)
+#define DASH_CD_TIME			(50)
 #define MAX_DASH_COUNT			(2)
-#define ATTACK_PATTERN_MAX		(5)		// キューをクリアするまでの待機時間
+#define ATTACK_PATTERN_MAX		(5)
 
 #define PLAYER_INIT_POS_X		(938.0f)
 #define PLAYER_INIT_POS_Y		(1306.5f)
@@ -73,6 +73,7 @@ enum
 	CHAR_NORMAL_ATTACK3,
 	CHAR_NORMAL_ATTACK4,
 	CHAR_DASH_ATTACK,
+	CHAR_PARRY,
 	CHAR_JUMP,
 	CHAR_HARD_LANDING,
 	CHAR_HIT,
@@ -150,6 +151,9 @@ struct PLAYER
 	BOOL		isDefending;
 	BOOL		isRunning;
 	BOOL		isParrying;
+	BOOL		isWalkingOnDefend;
+	BOOL		wasRunningExhausted;
+	BOOL		wasDefendingExhausted;
 	int			jumpCnt;		// ジャンプ中のカウント
 	float		jumpYMax;		// 
 	int			jumpOnAirCnt;
@@ -221,6 +225,7 @@ void UpdateBackGroundScroll(void);
 // キー入力で移動
 void UpdateKeyboardInput(void);
 void HandlePlayerMove(float speed, int direction);
+void HandlePlayerRun(float speed);
 void HandlePlayerDash(void);
 void HandlePlayerJump(void);
 void HandlePlayerAttack(void);
@@ -237,3 +242,5 @@ void PlayerTakeDamage(ENEMY* enemy);
 // プレイヤーと地面の衝突判定関数
 BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground);
 BOOL CheckMoveCollision(float move, int dir, BOOL checkGround = FALSE);
+
+float GetActionStaminaCost(int action);

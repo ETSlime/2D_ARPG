@@ -22,11 +22,14 @@ struct UISprite
 	XMFLOAT3 pos;
 };
 
+// texture num
 enum
 {
 	UI_HP,
 	UI_MP,
 	UI_ST,
+	UI_GAUGE_COVER,
+	UI_JUMP_ICON,
 };
 
 
@@ -38,4 +41,5 @@ void UninitUI(void);
 void UpdateUI(void);
 void DrawUI(void);
 void DrawPlayerGauge(void);
+void DrawPlayerJumpIcon(void);
 

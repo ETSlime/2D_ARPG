@@ -110,6 +110,135 @@ static ENEMY	g_Enemy[ENEMY_MAX];		// エネミー構造体
 
 static int		g_EnemyCount = ENEMY_MAX;
 
+static EnemyAttributes cyclopsAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes gargoyleAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes gnollAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes goblinAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes golemAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes impAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes mummyAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes ogreAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes skellAttributes = {
+	1000.0f,	// float hp
+	1000.0f,	// float maxhp
+	15,			// int damage
+	25,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	35,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes* attributesTbl[] =
+{
+	&cyclopsAttributes,
+	&gnollAttributes,
+	&goblinAttributes,
+	&golemAttributes,
+	&impAttributes,
+	&mummyAttributes,
+	&ogreAttributes,
+	&skellAttributes
+};
+
 static XMFLOAT3		g_EnemyInitPos[ENEMY_MAX] = {
 	XMFLOAT3(787.0f,  1314.0f, 0.0f),/*
 	XMFLOAT3(1800.0f,  534.0f, 0.0f),
@@ -319,27 +448,27 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].countAnim = 0;
 		g_Enemy[i].patternAnim = 0;
 
-		g_Enemy[i].move = XMFLOAT3(2.0f, 0.0f, 0.0f);		// 移動量
+		g_Enemy[i].attributes.move = XMFLOAT3(2.0f, 0.0f, 0.0f);		// 移動量
 		g_Enemy[i].idleCount = 0;
 		g_Enemy[i].state = ENEMY_IDLE;
 		g_Enemy[i].dir = CHAR_DIR_LEFT;
 		g_Enemy[i].oldDir = CHAR_DIR_LEFT;
-		g_Enemy[i].attackCooldown = 0;
-		g_Enemy[i].returnPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_Enemy[i].canFly = FALSE;
+		g_Enemy[i].attributes.attackCooldown = 0;
+		g_Enemy[i].returnPos = g_Enemy[i].pos;
+		g_Enemy[i].attributes.canFly = FALSE;
 		g_Enemy[i].stepBack = FALSE;
 		g_Enemy[i].onAirCnt = 0;
 		g_Enemy[i].isFalling = FALSE;
 
 		// battle
-		g_Enemy[i].damage = 16;
+		g_Enemy[i].attributes.damage = 16;
 		g_Enemy[i].isHit = FALSE;
 		g_Enemy[i].hitTimer = 0.0f;
 		g_Enemy[i].hitCD = 0.0f;
-		g_Enemy[i].hp = 1000;
-		g_Enemy[i].maxHp = 1000;
-		g_Enemy[i].staggerResistance = 10;
-		g_Enemy[i].staggerRecovery = 0;
+		g_Enemy[i].attributes.hp = 1000;
+		g_Enemy[i].attributes.maxHp = 1000;
+		g_Enemy[i].attributes.staggerResistance = 10;
+		g_Enemy[i].attributes.staggerRecoveryTime = 0;
 		g_Enemy[i].diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].dieInitSpeedX = 0.0f;
 		g_Enemy[i].dieInitSpeedY = 0.0f;
@@ -366,7 +495,7 @@ HRESULT InitEnemy(void)
 			g_Enemy[i].attackAABB[j].tag = ENEMY_ATTACK_AABB;
 		}
 
-		SetupEnemyStates(&g_Enemy[i]);
+		SetupEnemyAttributes(&g_Enemy[i]);
 	}
 
 	//// 0番だけ線形補間で動かしてみる
@@ -374,6 +503,7 @@ HRESULT InitEnemy(void)
 	g_Enemy[0].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
 	g_Enemy[0].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
 	g_Enemy[0].pos = g_MoveTbl0[0].pos;
+	g_Enemy[0].returnPos = g_Enemy[0].pos;
 
 	//// 1番だけ線形補間で動かしてみる
 	g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
@@ -410,40 +540,23 @@ HRESULT InitEnemy(void)
 	return S_OK;
 }
 
-void SetupEnemyStates(ENEMY* enemy)
+void SetupEnemyAttributes(ENEMY* enemy)
 {
-	switch (enemy->enemyType)
-	{
-	case CYCLOPS:
-		enemy->attackRange = CYCLOPS_ATTACK_RADIUS;
-		break;
-	case GARGOYLE:
-		enemy->attackRange = GARGOYLE_ATTACK_RADIUS;
-		break;
-	case GNOLL:
-		enemy->attackRange = GNOLL_ATTACK_RADIUS;
-		break;
-	case GOBLIN:
-		enemy->attackRange = GOBLIN_ATTACK_RADIUS;
-		break;
-	case GOLEM:
-		enemy->attackRange = GOLEM_ATTACK_RADIUS;
-		break;
-	case IMP:
-		enemy->attackRange = IMP_ATTACK_RADIUS;
-		break;
-	case MUMMY:
-		enemy->attackRange = MUMMY_ATTACK_RADIUS;
-		break;
-	case OGRE:
-		enemy->attackRange = OGRE_ATTACK_RADIUS;
-		break;
-	case SKELL:
-		enemy->attackRange = SKELL_ATTACK_RADIUS;
-		break;
-	default:
-		return;
-	}
+	enemy->attributes.hp = attributesTbl[enemy->enemyType]->hp;
+	enemy->attributes.maxHp = attributesTbl[enemy->enemyType]->maxHp;
+	enemy->attributes.damage = attributesTbl[enemy->enemyType]->damage;
+	enemy->attributes.staggerResistance = attributesTbl[enemy->enemyType]->staggerResistance;
+	enemy->attributes.staggerRecoveryTime = attributesTbl[enemy->enemyType]->staggerRecoveryTime;
+	enemy->attributes.stunTime = attributesTbl[enemy->enemyType]->stunTime;
+	enemy->attributes.attackRange = attributesTbl[enemy->enemyType]->attackRange;
+	enemy->attributes.attackCooldown = attributesTbl[enemy->enemyType]->attackCooldown;
+	enemy->attributes.canFly = attributesTbl[enemy->enemyType]->canFly;
+	enemy->attributes.move = attributesTbl[enemy->enemyType]->move;
+}
+
+const EnemyAttributes* GetEnemyAttributes(ENEMY* enemy)
+{
+	return attributesTbl[enemy->enemyType];
 }
 
 //=============================================================================
@@ -517,8 +630,6 @@ void UpdateEnemy(void)
 
 			UpdateEnemyStates(&g_Enemy[i]);
 
-
-
 			BOOL isMoveable = g_Enemy[i].state != ENEMY_HIT && g_Enemy[i].state != ENEMY_DIE && g_Enemy[i].onAirCnt < 5;
 			// 移動処理
 			if (g_Enemy[i].tblMax > 0 && isMoveable)
@@ -532,7 +643,7 @@ void UpdateEnemy(void)
 				XMVECTOR playerPos = XMLoadFloat3(&player->pos);
 				XMVECTOR direction = XMVector3Normalize(playerPos - enemyPos);
 				XMVECTOR returnPos = XMLoadFloat3(&g_Enemy[i].returnPos);
-				if (g_Enemy[i].canFly == FALSE)
+				if (g_Enemy[i].attributes.canFly == FALSE)
 					direction = XMVectorSetY(direction, 0);  // Y方向の速度を0に設定
 				float distanceToPlayer = XMVectorGetX(XMVector3Length(playerPos - enemyPos));
 				float distanceToReturnPos = XMVectorGetX(XMVector3Length(returnPos - enemyPos));
@@ -541,7 +652,7 @@ void UpdateEnemy(void)
 				{
 				case ENEMY_CHASE:
 				{
-					if (distanceToPlayer < g_Enemy[i].attackRange)
+					if (distanceToPlayer < g_Enemy[i].attributes.attackRange)
 					{
 						g_Enemy[i].stateOld = g_Enemy[i].state;
 						g_Enemy[i].state = ENEMY_ATTACK;
@@ -565,7 +676,7 @@ void UpdateEnemy(void)
 					{
 						// 追跡を行う
 						g_Enemy[i].stepBack = FALSE;
-						float speed = g_Enemy[i].move.x;
+						float speed = g_Enemy[i].attributes.move.x;
 						XMVECTOR moveStep = direction * speed;
 						enemyPos += moveStep;
 
@@ -594,9 +705,9 @@ void UpdateEnemy(void)
 					{
 						// 倒退方向（プレイヤーとは逆）
 						XMVECTOR direction = XMVector3Normalize(enemyPos - playerPos);
-						if (g_Enemy[i].canFly == FALSE)
+						if (g_Enemy[i].attributes.canFly == FALSE)
 							direction = XMVectorSetY(direction, 0);  // Y方向の速度を0に設定
-						XMVECTOR moveStep = direction * g_Enemy[i].move.x * RETREAT_SPEED_RATE;
+						XMVECTOR moveStep = direction * g_Enemy[i].attributes.move.x * RETREAT_SPEED_RATE;
 						enemyPos += moveStep;
 
 						XMFLOAT3 newPos;
@@ -628,11 +739,11 @@ void UpdateEnemy(void)
 						g_Enemy[i].state = ENEMY_RETREAT;  // 倒退状態に移行
 						g_Enemy[i].patternAnim = ANIM_WALK_PATTERN_NUM - 1;
 					}
-					else if (distanceToPlayer > g_Enemy[i].attackRange)
+					else if (distanceToPlayer > g_Enemy[i].attributes.attackRange && distanceToReturnPos < MAX_CHASE_DISTANCE)
 					{
 						// 攻撃範囲外なら追跡を続ける
 						g_Enemy[i].stepBack = FALSE;
-						float speed = g_Enemy[i].move.x;  // 追跡速度
+						float speed = g_Enemy[i].attributes.move.x;  // 追跡速度
 
 						XMVECTOR moveStep = direction * speed * 0.5f;
 						enemyPos += moveStep;
@@ -645,11 +756,11 @@ void UpdateEnemy(void)
 					
 					// 攻撃範囲内にいる場合は停止し、クールダウンを待つ
 					// クールダウンロジック
-					g_Enemy[i].attackCooldown--;
-					if (g_Enemy[i].attackCooldown <= 0)
+					g_Enemy[i].attributes.attackCooldown--;
+					if (g_Enemy[i].attributes.attackCooldown <= 0)
 					{
 						// クールダウン終了後、再び敵の行動を決定
-						if (distanceToPlayer < g_Enemy[i].attackRange)
+						if (distanceToPlayer < g_Enemy[i].attributes.attackRange)
 						{
 							g_Enemy[i].stateOld = g_Enemy[i].state;
 							g_Enemy[i].state = ENEMY_ATTACK;  // プレイヤーが攻撃範囲内にいる場合
@@ -771,9 +882,9 @@ void UpdateEnemy(void)
 						XMVECTOR enemyPos = XMLoadFloat3(&g_Enemy[i].pos);
 						XMVECTOR returnPos = XMLoadFloat3(&g_Enemy[i].returnPos);
 						XMVECTOR direction = XMVector3Normalize(returnPos - enemyPos);
-						if (g_Enemy[i].canFly == FALSE)
+						if (g_Enemy[i].attributes.canFly == FALSE)
 							direction = XMVectorSetY(direction, 0);  // Y方向の速度を0に設定
-						float speed = g_Enemy[i].move.x;  // 歩いて戻る速度
+						float speed = g_Enemy[i].attributes.move.x;  // 歩いて戻る速度
 						XMVECTOR moveStep = direction * speed;
 						enemyPos += moveStep;
 
@@ -787,7 +898,7 @@ void UpdateEnemy(void)
 						float deltaY = fabs(XMVectorGetY(delta));
 
 						// 元の位置に近づいたかを確認する
-						if (deltaX <= g_Enemy[i].move.x && deltaY <= g_Enemy[i].move.y)
+						if (deltaX <= g_Enemy[i].attributes.move.x && deltaY <= g_Enemy[i].attributes.move.y)
 						{
 							XMFLOAT3 newPos;
 							XMStoreFloat3(&newPos, enemyPos);
@@ -818,7 +929,7 @@ void UpdateEnemy(void)
 			// 移動が終わったらエネミーとの当たり判定
 			PLAYER* player = GetPlayer();
 
-			if (g_Enemy[i].hitCD <= 0 && g_Enemy[i].state != ENEMY_DIE)
+			if (g_Enemy[i].hitCD <= 0.0f && g_Enemy[i].state != ENEMY_DIE)
 			{
 				// 攻撃用の包囲ボックスを取得
 				for (int j = 0; j < MAX_ATTACK_AABB; j++)
@@ -893,11 +1004,11 @@ void UpdateEnemyStates(ENEMY* enemy)
 		}
 	}
 
-	enemy->staggerRecovery--;
-	if (enemy->staggerRecovery <= 0)
-		enemy->staggerResistance = 20;
+	enemy->attributes.staggerRecoveryTime--;
+	if (enemy->attributes.staggerRecoveryTime <= 0)
+		enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance;
 
-	if (enemy->attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN)
+	if (enemy->attributes.attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN && enemy->state != ENEMY_HIT)
 		enemy->state = ENEMY_COOLDOWN;
 }
 
@@ -906,21 +1017,21 @@ void UpdateEnemyGroundCollision(ENEMY* enemy)
 	AABB* grounds = GetMap01AABB();
 
 	if (enemy->onAirCnt >= ENEMY_FALL_CNT_MAX)
-		enemy->move.y = ENEMY_FALL_SPEED;
+		enemy->attributes.move.y = ENEMY_FALL_SPEED;
 	else
 	{
 		// sin関数を使用して下落速度を計算
 		float angle = (XM_PI / ENEMY_FALL_CNT_MAX) * enemy->onAirCnt;
-		enemy->move.y = ENEMY_FALL_SPEED * sinf(angle);
+		enemy->attributes.move.y = ENEMY_FALL_SPEED * sinf(angle);
 	}
-	if (enemy->move.y < 2.0f)
-		enemy->move.y = 2.0f;
+	if (enemy->attributes.move.y < 2.0f)
+		enemy->attributes.move.y = 2.0f;
 	// 滞空時間を増加させる
 	enemy->onAirCnt++;
 
 	XMVECTOR enemyPos = XMLoadFloat3(&enemy->pos);
 	XMVECTOR direction = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	enemyPos += direction * enemy->move.y;
+	enemyPos += direction * enemy->attributes.move.y;
 
 	XMFLOAT3 newPos;
 	XMStoreFloat3(&newPos, enemyPos);
@@ -945,20 +1056,24 @@ void EnemyTakeDamage(ENEMY* enemy)
 	enemy->dir = enemy->pos.x - player->pos.x > 0 ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 	enemy->isHit = true;
 	enemy->hitTimer = ENEMY_HIT_TIMER;
-	enemy->hitCD = ENEMY_HIT_CD;
-	enemy->staggerRecovery = ENEMY_STAGGER_RECOVERY_TIME;
-	enemy->staggerResistance -= 10;
-	if (enemy->staggerResistance <= 0)
+	if (player->attackPattern == PARRY)
+		enemy->hitCD = ENEMY_HIT_CD * 0.5f;
+	else
+		enemy->hitCD = ENEMY_HIT_CD;
+	enemy->attributes.staggerRecoveryTime = GetEnemyAttributes(enemy)->staggerRecoveryTime;
+	enemy->attributes.staggerResistance -= 10;
+	if (enemy->attributes.staggerResistance <= 0)
 	{
 		if (enemy->state != ENEMY_ATTACK)
 			enemy->stateOld = enemy->state;
-		enemy->attackCooldown = ATTACK_COOLDOWN_TIME;  // クールダウンタイムをリセット
+		enemy->attributes.attackCooldown = GetEnemyAttributes(enemy)->attackCooldown + GetRand(10, 60);  // クールダウンタイムをリセット
+		enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance; // 強靭さをリセット
 		enemy->state = ENEMY_HIT;
 		enemy->countAnim = 0.0f;
 	}
 
-	enemy->hp -= player->ATK;
-	if (enemy->hp <= 0)
+	enemy->attributes.hp -= player->ATK;
+	if (enemy->attributes.hp <= 0)
 	{
 		enemy->state = ENEMY_DIE;
 		enemy->countAnim = 0;
@@ -1157,7 +1272,7 @@ void DrawEnemyHPGauge(const ENEMY* enemy)
 
 
 	// 2. HPバーの前景を描画（敵の現在のHPを表示、ENEMY_HP_GAUGE_TEXTUREテクスチャを使用）
-	float hpRatio = (float)enemy->hp / (float)enemy->maxHp;  // HP比率を計算
+	float hpRatio = (float)enemy->attributes.hp / (float)enemy->attributes.maxHp;  // HP比率を計算
 	float hpWidth = pw * hpRatio;  // HP比率に基づいてHPバーの長さを計算
 
 	// 前景の色を設定（通常は緑色、現在のHPを表す）
@@ -1299,7 +1414,7 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 	if (enemy->patternAnim == ANIM_ATTACK_PATTERN_NUM + ANIM_ATTACK_OFFSET - 1 && enemy->countAnim == ANIM_WAIT_ATTACK)
 	{
 		// アニメーション終了後に攻撃を実行
-		enemy->attackCooldown = ATTACK_COOLDOWN_TIME + GetRand(10, 110);  // クールダウンタイムをリセット
+		enemy->attributes.attackCooldown = GetEnemyAttributes(enemy)->attackCooldown + GetRand(10, 60);  // クールダウンタイムをリセット
 		enemy->state = ENEMY_COOLDOWN;  // クールダウン状態に移行
 
 		for (int i = 0; i < MAX_ATTACK_AABB; i++)
@@ -1314,13 +1429,20 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 void PlayEnemyHitAnim(ENEMY* enemy)
 {
 	enemy->invertTex = enemy->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
-
+	int dir = enemy->dir == CHAR_DIR_RIGHT ? -1 : 1;
 	enemy->patternAnim = ANIM_HIT_OFFSET;
+	float rotationAngle = dir * 0.25f * enemy->countAnim / GetEnemyAttributes(enemy)->stunTime;
+	XMFLOAT3 rotation = XMFLOAT3(0.0f, 0.0f, rotationAngle);
+	XMStoreFloat3(&enemy->rot, XMLoadFloat3(&rotation));
+
 
 	enemy->countAnim++;
-	if (enemy->countAnim > ENEMY_STUN_TIME)
+	if (enemy->countAnim > GetEnemyAttributes(enemy)->stunTime)
 	{
 		enemy->countAnim = 0.0f;
+		XMFLOAT3 rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		XMStoreFloat3(&enemy->rot, XMLoadFloat3(&rotation));
+		enemy->patternAnim = 0;
 		enemy->state = enemy->stateOld;
 	}
 }

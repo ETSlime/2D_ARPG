@@ -14,9 +14,17 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define ENEMY_MAX					(1)			// エネミーのMax人数
-#define MAX_ATTACK_AABB				(3)
-#define ATTACK_COOLDOWN_TIME		(100)
+#define ENEMY_MAX							(1)			// エネミーのMax人数
+#define MAX_ATTACK_AABB						(3)
+#define ATTACK_COOLDOWN_TIME_CYCLOPS		(100)
+#define ATTACK_COOLDOWN_TIME_GARGOYLE		(100)
+#define ATTACK_COOLDOWN_TIME_GNOLL			(100)
+#define ATTACK_COOLDOWN_TIME_GOBLIN			(100)
+#define ATTACK_COOLDOWN_TIME_GOLEM			(100)
+#define ATTACK_COOLDOWN_TIME_IMP			(100)
+#define ATTACK_COOLDOWN_TIME_MUMMY			(100)
+#define ATTACK_COOLDOWN_TIME_OGRE			(100)
+#define ATTACK_COOLDOWN_TIME_SKELL			(100)
 
 #define SET_ENEMY_POS(enemy, value) \
     do { \
@@ -56,6 +64,20 @@ enum
 // 構造体定義
 //*****************************************************************************
 
+struct EnemyAttributes
+{
+	float	hp;
+	float	maxHp;
+	int damage;
+	int	staggerResistance;
+	int	staggerRecoveryTime;
+	int stunTime;
+	float attackRange;
+	int	attackCooldown;
+	BOOL canFly;
+	XMFLOAT3 move;			// 移動速度
+};
+
 struct ENEMY
 {
 	XMFLOAT3	pos;			// ポリゴンの座標
@@ -71,28 +93,20 @@ struct ENEMY
 	// state
 	int			dir;			// 向き
 	int			oldDir;
-	XMFLOAT3	move;			// 移動速度
 	int			idleCount;
 	int			state;
 	int			stateOld;
 	BOOL		finishAttack;
-	int			attackCooldown;
 	XMFLOAT3	returnPos;
-	BOOL		canFly;
 	BOOL		stepBack;
 	int			onAirCnt;
 	BOOL		isFalling;
 
 	// battle
-	int			damage;
+	EnemyAttributes attributes;
 	BOOL		isHit;
 	float		hitTimer;
 	float		hitCD;
-	float		attackRange;
-	int			hp;
-	int			maxHp;
-	int			staggerResistance;
-	int			staggerRecovery;
 	XMFLOAT3	diePos;
 	float		dieInitSpeedX;
 	float		dieInitSpeedY;
@@ -148,4 +162,6 @@ BOOL CheckChasingPlayer(const ENEMY* enemy);
 void UpdateEnemyGroundCollision(ENEMY* enemy);
 BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir);
 
-void SetupEnemyStates(ENEMY* enemy);
+void SetupEnemyAttributes(ENEMY* enemy);
+
+const EnemyAttributes* GetEnemyAttributes(ENEMY* enemy);
