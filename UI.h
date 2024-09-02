@@ -30,6 +30,12 @@ enum
 	UI_ST,
 	UI_GAUGE_COVER,
 	UI_JUMP_ICON,
+	UI_MAGIC_HEAL,
+	UI_MAGIC_FLAMEBLADE,
+	UI_MAGIC_FIRE_BALL,
+	UI_FLAMEBLADE_ICON,
+	UI_SKILL_ENABLED,
+	UI_NONE,
 };
 
 
@@ -42,4 +48,6 @@ void UpdateUI(void);
 void DrawUI(void);
 void DrawPlayerGauge(void);
 void DrawPlayerJumpIcon(void);
+void DrawSkillIcon(void);
+void DrawFlamebladeIcon(void);
 

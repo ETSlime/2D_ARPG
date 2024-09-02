@@ -12,6 +12,7 @@
 #include "sprite.h"
 #include "enemy.h"
 #include "collision.h"
+#include "magic.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -36,6 +37,9 @@
 #define HARDLANDING_HEIGHT		(60)
 #define	DIVE_ATTACK_SPEED		(10.0f)
 #define DASH_INTERVAL			(25)
+#define MAGIC_NUM_MAX			(3)
+#define	HEALING_CD_TIME			(100.0f)
+#define	FIRE_BALL_CD_TIME		(200.0f)
 
 #define SET_PLAYER_POS_Y(y_value) \
     do { \
@@ -74,12 +78,16 @@ enum
 	CHAR_NORMAL_ATTACK4,
 	CHAR_DASH_ATTACK,
 	CHAR_PARRY,
+	CHAR_FLAME_ATTACK1,
+	CHAR_FLAME_ATTACK2,
 	CHAR_JUMP,
 	CHAR_HARD_LANDING,
 	CHAR_HIT,
 	CHAR_KNOCKDOWN,
 	CHAR_REBOUND,
 	CHAR_DEFEND,
+	CHAR_FIREBALL,
+	CHAR_BOOM,
 	CHAR_SHADOW,
 };
 
@@ -98,6 +106,7 @@ enum
 	KNOCKDOWN,
 	REBOUND,
 	DEFEND,
+	CAST,
 };
 
 // attack pattern
@@ -108,7 +117,10 @@ enum
 	NORMAL_ATTACK2,
 	NORMAL_ATTACK3,
 	NORMAL_ATTACK4,
-	PLACEHOLDER,
+	NORMAL_ATTACK_PATTERN_MAX,
+	FLAME_ATTACK1,
+	FLAME_ATTACK2,
+	FLAME_ATTACK_PATTERN_MAX,
 	DASH_ATTACK,
 	PARRY,
 };
@@ -169,8 +181,12 @@ struct PLAYER
 	float		maxST;
 	float		ATK;
 	float		DEF;
-	BOOL		isInvincible;
 	int			attackInterval;
+	int			magic;
+	float		healingCD;
+	float		fireBallCD;
+	BOOL		isInvincible;
+	BOOL		flameblade;
 
 	XMFLOAT3	move;			// 移動速度
 	XMFLOAT3	offset[PLAYER_OFFSET_CNT];		// 残像ポリゴンの座標
@@ -216,6 +232,7 @@ void PlayKnockDownAnim(void);
 void PlayReboundAnim(void);
 void PlayHardLandingAnim(void);
 void PlayDefendAnim(void);
+void PlayCastAnim(void);
 void AdjustAttackTexturePos(float& px, float& py);
 void AdjustAttackTextureSize(void);
 void AdjustAttackPlayerPos(void);

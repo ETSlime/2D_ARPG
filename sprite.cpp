@@ -239,3 +239,36 @@ void SetSpriteColorRotation(ID3D11Buffer *buf, float X, float Y, float Width, fl
 
 }
 
+void SetSpriteTopToBottomRevealColor(ID3D11Buffer* buf,
+	float X, float Y, float Width, float Height,
+	float U, float V, float UW, float VH,
+	XMFLOAT4 color, float progress)
+{
+	D3D11_MAPPED_SUBRESOURCE msr;
+	GetDeviceContext()->Map(buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+
+	VERTEX_3D* vertex = (VERTEX_3D*)msr.pData;
+
+	// 進捗に応じた現在の高さとテクスチャV座標を計算
+	float currentHeight = Height * progress;
+	float currentV = VH * progress;
+
+	// 頂点を定義する（左上、右上、左下、右下）
+	vertex[0].Position = XMFLOAT3(X, Y, 0.0f);
+	vertex[0].Diffuse = color;
+	vertex[0].TexCoord = XMFLOAT2(U, V);
+
+	vertex[1].Position = XMFLOAT3(X + Width, Y, 0.0f);
+	vertex[1].Diffuse = color;
+	vertex[1].TexCoord = XMFLOAT2(U + UW, V);
+
+	vertex[2].Position = XMFLOAT3(X, Y + currentHeight, 0.0f);
+	vertex[2].Diffuse = color;
+	vertex[2].TexCoord = XMFLOAT2(U, V + currentV);
+
+	vertex[3].Position = XMFLOAT3(X + Width, Y + currentHeight, 0.0f);
+	vertex[3].Diffuse = color;
+	vertex[3].TexCoord = XMFLOAT2(U + UW, V + currentV);
+
+	GetDeviceContext()->Unmap(buf, 0);
+}

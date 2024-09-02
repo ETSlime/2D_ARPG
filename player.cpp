@@ -27,6 +27,10 @@
 #define TEXTURE_NORMAL_ATTACK3_HEIGHT		(247/2)
 #define TEXTURE_NORMAL_ATTACK4_WIDTH		(230/2)
 #define TEXTURE_NORMAL_ATTACK4_HEIGHT		(245/2)
+#define TEXTURE_FLAME_ATTACK1_WIDTH			(296/2)
+#define TEXTURE_FLAME_ATTACK1_HEIGHT		(245/2)
+#define TEXTURE_FLAME_ATTACK2_WIDTH			(326/2)
+#define TEXTURE_FLAME_ATTACK2_HEIGHT		(285/2)
 #define TEXTURE_DASH_ATTACK_WIDTH			(315/2)
 #define TEXTURE_DASH_ATTACK_HEIGHT			(235/2)
 #define TEXTURE_PARRY_WIDTH					(312/2)
@@ -45,7 +49,7 @@
 #define TEXTURE_REBOUND_HEIGHT				(150/2)
 #define TEXTURE_DEFEND_WIDTH				(160/2)
 #define TEXTURE_DEFEND_HEIGHT				(160/2)
-#define TEXTURE_MAX							(20)	// テクスチャの数
+#define TEXTURE_MAX							(25)	// テクスチャの数
 
 // アニメパターンのテクスチャ内分割数（X)
 #define TEXTURE_IDLE_PATTERN_DIVIDE_X			(4)		
@@ -62,6 +66,8 @@
 #define TEXTURE_NORMAL_ATTACK2_PATTERN_DIVIDE_X	(9)
 #define TEXTURE_NORMAL_ATTACK3_PATTERN_DIVIDE_X	(8)
 #define TEXTURE_NORMAL_ATTACK4_PATTERN_DIVIDE_X	(16)
+#define TEXTURE_FLAME_ATTACK1_PATTERN_DIVIDE_X	(11)
+#define TEXTURE_FLAME_ATTACK2_PATTERN_DIVIDE_X	(11)
 #define TEXTURE_DASH_ATTACK_PATTERN_DIVIDE_X	(8)
 #define TEXTURE_PARRY_PATTERN_DIVIDE_X			(8)
 #define TEXTURE_PATTERN_DIVIDE_Y				(1)
@@ -73,6 +79,7 @@
 #define ANIM_WAIT_DASH							(1)
 #define ANIM_WAIT_ATTACK						(5)
 #define ANIM_WAIT_DASH_ATTACK					(8)
+#define ANIM_WAI_FLAME_ATTACK2					(7)
 #define ANIM_WAIT_PARRY							(10)
 #define ANIM_WAIT_JUMP							(7)
 #define ANIM_WAIT_HARDLAND						(6)
@@ -80,6 +87,7 @@
 #define ANIM_WAIT_KNOCKDOWN						(18)
 #define ANIM_WAIT_REBOUND						(6)
 #define ANIM_WAIT_DEFEND						(25)
+#define ANIM_WAIT_CAST							(5)
 #define ANIM_DASH_FRAME							(10)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
@@ -91,9 +99,14 @@
 #define ANIM_NORMAL_ATTACK4_FRAME				(16)
 #define ANIM_PARRY_FRAME						(8)
 #define	ANIM_DASH_ATTACK_FRAME					(8)
+#define ANIM_FLAME_ATTACK1_FRAME				(8)
+#define	ANIM_FLAME_ATTACK2_FRAME				(8)
+#define ANIM_HEALING_CAST_FRAME					(12)
+#define ANIM_FIRE_BALL_CAST_FRAME				(12)
 
 
 #define	NORMAL_ATTACK4_DROP_FRAME				(9)
+#define FLAME_ATTACK2_DROP_FRAME				(4)
 
 #define TEXTURE_NORMAL_ATTACK1_OFFSET			XMFLOAT3(5.0f, -15.0f, 0.0f)
 #define TEXTURE_NORMAL_ATTACK2_OFFSET			XMFLOAT3(5.0f, -4.0f, 0.0f)
@@ -101,6 +114,8 @@
 #define TEXTURE_NORMAL_ATTACK4_OFFSET			XMFLOAT3(10.0f, -20.0f, 0.0f)
 #define TEXTURE_DASH_ATTACK_OFFSET				XMFLOAT3(10.0f, -5.0f, 0.0f)
 #define TEXTURE_PARRY_OFFSET					XMFLOAT3(-5.0f, -15.0f, 0.0f)
+#define TEXTURE_FLAME_ATTACK1_OFFSET			XMFLOAT3(5.0f, -15.0f, 0.0f)
+#define TEXTURE_FLAME_ATTACK2_OFFSET			XMFLOAT3(-5.0f, -15.0f, 0.0f)
 
 // プレイヤーの画面内配置座標
 #define PLAYER_DISP_X				(SCREEN_WIDTH/2)
@@ -118,10 +133,17 @@
 #define	ST_COST_NORMAL_ATTACK3		(160.0f)
 #define	ST_COST_NORMAL_ATTACK4		(180.0f)
 #define ST_COST_DASH_ATTACK			(150.0f)
+#define ST_COST_FLAME_ATTACK1		(165.0f)
+#define ST_COST_FLAME_ATTACK2		(185.0f)
 #define ST_COST_JUMP				(100.0f)
 #define ST_RUN_THRESHOLD			(150.0f)
 #define	ST_DEFEND_THRESHOLD			(100.0f)
 #define ST_RECOVERY_RATE			(3.5f)
+#define MP_RECOVERY_RATE			(0.5f)
+
+#define MP_COST_FIRE_BALL			(200.0f)
+#define	MP_COST_HEALING				(500.0f)
+#define MP_COST_FLAMEBLADE			(2.5f)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -151,13 +173,15 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/char/char_attack4.png",
 	"data/TEXTURE/char/char_dashattack.png",
 	"data/TEXTURE/char/char_parry.png",
+	"data/TEXTURE/char/char_flamestrike.png",
+	"data/TEXTURE/char/char_flamestrike2.png",
 	"data/TEXTURE/char/char_jump.png",
 	"data/TEXTURE/char/char_hardlanding.png",
 	"data/TEXTURE/char/char_hit.png",
 	"data/TEXTURE/char/char_knockdown.png",
 	"data/TEXTURE/char/char_rebound.png",
 	"data/TEXTURE/char/char_defend.png",
-	"data/TEXTURE/shadow000.jpg",
+	"data/TEXTURE/char/shadow000.jpg",
 };
 
 
@@ -347,6 +371,74 @@ static AttackAABBTBL parryTbl[MAX_ATTACK_AABB * ANIM_PARRY_FRAME] = {
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 };
 
+static AttackAABBTBL flameAttack1Tbl[MAX_ATTACK_AABB * ANIM_PARRY_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 70.0f, 90.0f},
+	{XMFLOAT3(0.0f, -30.0f, 0.0f), 80.0f, 50.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 70.0f, 90.0f},
+	{XMFLOAT3(0.0f, -30.0f, 0.0f), 80.0f, 50.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
+static AttackAABBTBL flameAttack2Tbl[MAX_ATTACK_AABB * ANIM_PARRY_FRAME] = {
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 50.0f, 90.0f},
+	{XMFLOAT3(0.0f, -30.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 60.0f, 90.0f},
+	{XMFLOAT3(0.0f, 30.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(-35.0f, 0.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(35.0f, 0.0f, 0.0f), 80.0f, 40.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
+};
+
 //=============================================================================
 // 初期化処理
 //=============================================================================
@@ -421,15 +513,18 @@ HRESULT InitPlayer(void)
 
 		g_Player[i].HP = 200;
 		g_Player[i].maxHP = 200;
-		g_Player[i].MP = 100;
-		g_Player[i].maxMP = 100;
+		g_Player[i].MP = 1800;
+		g_Player[i].maxMP = 1800;
 		g_Player[i].ST = 1000;
 		g_Player[i].maxST = 1000;
 		g_Player[i].ATK = 20;
 		g_Player[i].DEF = 10;
 		g_Player[i].isInvincible = FALSE;
 		g_Player[i].attackPattern = NONE;
-
+		g_Player[i].magic = MAGIC_HEALING;
+		g_Player[i].healingCD = 0;
+		g_Player[i].fireBallCD = 0;
+		g_Player[i].flameblade = FALSE;
 
 		g_Player[i].actionQueueStart = 0;
 		g_Player[i].actionQueueEnd = 0;
@@ -595,21 +690,6 @@ void UpdatePlayer(void)
 				}
 			}
 
-			// バレット処理
-			//if (GetKeyboardTrigger(DIK_SPACE))
-			//{
-			//	XMFLOAT3 pos = g_Player[i].pos;
-			//	pos.y += g_Player[i].jumpY;
-			//	SetBullet(pos);
-			//}
-
-			//if (IsButtonTriggered(0, BUTTON_B))
-			//{
-			//	XMFLOAT3 pos = g_Player[i].pos;
-			//	pos.y += g_Player[i].jumpY;
-			//	SetBullet(pos);
-			//}
-
 			// アニメーション  
 			switch (g_Player[i].state)
 			{
@@ -649,17 +729,13 @@ void UpdatePlayer(void)
 			case DEFEND:
 				PlayDefendAnim();
 				break;
+			case CAST:
+				PlayCastAnim();
+				break;
 			default:
 				break;
 			}
 		}
-	}
-
-
-	// 現状をセーブする
-	if (GetKeyboardTrigger(DIK_S))
-	{
-		SaveData();
 	}
 
 }
@@ -710,7 +786,7 @@ void HandleActionQueue(void)
 		break;
 	case ATTACK:
 		if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-			g_Player->attackPattern = NORMAL_ATTACK1;
+			g_Player->attackPattern = g_Player->flameblade == TRUE ? FLAME_ATTACK1 : NORMAL_ATTACK1;
 		g_Player->attackInterval = 0;
 		canExecuteAction = TRUE;
 		break;
@@ -916,7 +992,7 @@ void HandlePlayerAttack(void)
 		else
 		{
 			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-				g_Player->attackPattern = NORMAL_ATTACK1;
+				g_Player->attackPattern = g_Player->flameblade == TRUE ? FLAME_ATTACK1 : NORMAL_ATTACK1;
 			g_Player->patternAnim = 0;
 			g_Player->state = ATTACK;
 			g_Player->animFrameCount = 0;
@@ -944,7 +1020,7 @@ void HandlePlayerAttack(void)
 		if (g_Player->playAnim == FALSE)
 		{
 			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-				g_Player->attackPattern = NORMAL_ATTACK1;
+				g_Player->attackPattern = g_Player->flameblade == TRUE ? FLAME_ATTACK1 : NORMAL_ATTACK1;
 			g_Player->patternAnim = 0;
 			g_Player->animFrameCount = 0;
 			g_Player->playAnim = TRUE;
@@ -956,7 +1032,7 @@ void HandlePlayerAttack(void)
 		else if (g_Player->jumpCnt > PLAYER_JUMP_CNT_MAX / 2 && g_Player->state != ATTACK)
 		{
 			if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-				g_Player->attackPattern = NORMAL_ATTACK1;
+				g_Player->attackPattern = g_Player->flameblade == TRUE ? FLAME_ATTACK1 : NORMAL_ATTACK1;
 			g_Player->patternAnimOld = g_Player->patternAnim;
 			g_Player->patternAnim = 0;
 			g_Player->state = ATTACK;
@@ -1042,8 +1118,13 @@ float GetActionStaminaCost(int action)
 		int attackPattern = g_Player->attackPattern;
 		if (g_Player->state == RUN)
 			attackPattern = DASH_ATTACK;
-		else if (g_Player->attackInterval > ATTACK_COMBO_WINDOW && attackPattern < ATTACK_PATTERN_MAX)
-			attackPattern = NORMAL_ATTACK1;
+		else if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
+		{
+			if (attackPattern < NORMAL_ATTACK_PATTERN_MAX)
+				attackPattern = NORMAL_ATTACK1;
+			else if (attackPattern < FLAME_ATTACK_PATTERN_MAX)
+				attackPattern = FLAME_ATTACK1;
+		}
 		switch (attackPattern)
 		{
 		case NORMAL_ATTACK1:
@@ -1056,6 +1137,10 @@ float GetActionStaminaCost(int action)
 			return ST_COST_NORMAL_ATTACK4;
 		case DASH_ATTACK:
 			return ST_COST_DASH_ATTACK;
+		case FLAME_ATTACK1:
+			return ST_COST_FLAME_ATTACK1;
+		case FLAME_ATTACK2:
+			return ST_COST_FLAME_ATTACK2;
 		default:
 			return 0.0f;
 		}
@@ -1136,6 +1221,41 @@ void UpdateKeyboardInput(void)
 		// 攻撃処理
 		HandlePlayerAttack();
 	}
+
+	if (GetKeyboardRelease(DIK_Q))
+		g_Player->magic = (g_Player->magic + 2) % MAGIC_NUM_MAX;
+	if (GetKeyboardRelease(DIK_E))
+		g_Player->magic = (g_Player->magic + 1) % MAGIC_NUM_MAX;
+
+	if (GetKeyboardRelease(DIK_F))
+	{
+		switch (g_Player->magic)
+		{
+		case MAGIC_HEALING:
+			if (g_Player->healingCD <= 0 && g_Player->state == IDLE)
+			{
+				g_Player->healingCD = HEALING_CD_TIME;
+				g_Player->state = CAST;
+				TriggerMagic(MAGIC_HEALING);
+			}
+
+			break;
+		case MAGIC_FLAMEBLADE:
+			g_Player->flameblade = g_Player->flameblade == TRUE ? FALSE : TRUE;
+			break;
+		case MAGIC_FIRE_BALL:
+			if (g_Player->fireBallCD <= 0 && g_Player->state == IDLE)
+			{
+				g_Player->fireBallCD = FIRE_BALL_CD_TIME;
+				g_Player->state = CAST;
+				TriggerMagic(MAGIC_FIRE_BALL);
+			}
+
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 void UpdateGamepadInput(void)
@@ -1162,6 +1282,11 @@ void UpdatePlayerStates(void)
 	// スタミナが最大値未満の場合、スタミナを回復
 	else if(g_Player->ST < g_Player->maxST && g_Player->playAnim == FALSE)
 		g_Player->ST += ST_RECOVERY_RATE;
+
+	if (g_Player->MP < 0.0f)
+		g_Player->MP = 0.0f;
+	else if (g_Player->MP < g_Player->maxMP)
+		g_Player->MP += MP_RECOVERY_RATE;
 
 	// ダッシュクールダウンタイムを更新
 	g_Player->dashCD++;
@@ -1236,6 +1361,18 @@ void UpdatePlayerStates(void)
 		g_Player->move.x = PLAYER_WALK_SPEED;	// 移動速度を通常に戻す
 		if (g_Player->isParrying == FALSE)
 			g_Player->defendCnt = 0;
+	}
+
+	if (g_Player->fireBallCD > 0)
+		g_Player->fireBallCD--;
+	if (g_Player->healingCD > 0)
+		g_Player->healingCD--;
+
+	if (g_Player->flameblade == TRUE)
+	{
+		g_Player->MP -= MP_COST_FLAMEBLADE;
+		if (g_Player->MP < MP_COST_FLAMEBLADE)
+			g_Player->flameblade = FALSE;
 	}
 }
 
@@ -1392,6 +1529,12 @@ void UpdatePlayerAttackAABB()
 		break;
 	case PARRY:
 		attackTable = parryTbl;
+		break;
+	case FLAME_ATTACK1:
+		attackTable = flameAttack1Tbl;
+		break;
+	case FLAME_ATTACK2:
+		attackTable = flameAttack2Tbl;
 		break;
 	default:
 		break;
@@ -1693,9 +1836,17 @@ void PlayDashAnim(void)
 void PlayAttackAnim(void)
 {
 	// アタックパターンが最大または未設定の場合、最初の攻撃パターンを設定
-	if (g_Player->attackPattern == ATTACK_PATTERN_MAX ||
+	if (g_Player->attackPattern == NORMAL_ATTACK_PATTERN_MAX ||
 		g_Player->attackPattern == NONE)
 		g_Player->attackPattern = NORMAL_ATTACK1;
+
+	if (g_Player->flameblade == TRUE)
+	{
+		if (g_Player->attackPattern == FLAME_ATTACK_PATTERN_MAX || g_Player->attackPattern == NONE)
+			g_Player->attackPattern = FLAME_ATTACK1;
+	}
+
+		
 
 	// 攻撃時のテクスチャサイズを調整
 	AdjustAttackTextureSize();
@@ -1731,14 +1882,24 @@ void PlayAttackAnim(void)
 		attackFrame = ANIM_PARRY_FRAME;
 		animWait = ANIM_WAIT_PARRY;
 		break;
+	case FLAME_ATTACK1:
+		g_Player->texNo = CHAR_FLAME_ATTACK1;
+		attackFrame = ANIM_FLAME_ATTACK1_FRAME;
+		break;
+	case FLAME_ATTACK2:
+		g_Player->texNo = CHAR_FLAME_ATTACK2;
+		attackFrame = ANIM_FLAME_ATTACK2_FRAME;
+		animWait = ANIM_WAI_FLAME_ATTACK2;
+		break;
 	default:
 		break;
 	}
 
 
 	BOOL attackTouchGround = TRUE;
-	if (g_Player->attackPattern == NORMAL_ATTACK4 && (g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME
-		|| g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME + 1))
+	if ((g_Player->attackPattern == NORMAL_ATTACK4 && 
+		(g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME || g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME + 1))
+		|| (g_Player->attackPattern == FLAME_ATTACK2 && g_Player->patternAnim == FLAME_ATTACK2_DROP_FRAME))
 	{
 		if (CheckMoveCollision(DIVE_ATTACK_SPEED, CHAR_DIR_DOWN, TRUE))
 		{
@@ -1757,7 +1918,10 @@ void PlayAttackAnim(void)
 		g_Player->countAnim = 0.0f;
 		if (attackTouchGround == FALSE)
 		{
-			g_Player->patternAnim = g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME ? NORMAL_ATTACK4_DROP_FRAME + 1 : NORMAL_ATTACK4_DROP_FRAME;
+			if (g_Player->attackPattern == FLAME_ATTACK2)
+				g_Player->patternAnim = FLAME_ATTACK2_DROP_FRAME;
+			else
+				g_Player->patternAnim = g_Player->patternAnim == NORMAL_ATTACK4_DROP_FRAME ? NORMAL_ATTACK4_DROP_FRAME + 1 : NORMAL_ATTACK4_DROP_FRAME;
 		}
 
 		else
@@ -1795,7 +1959,7 @@ void PlayAttackAnim(void)
 		}
 
 		if (g_Player->attackInterval > ATTACK_COMBO_WINDOW)
-			g_Player->attackPattern = NORMAL_ATTACK1;
+			g_Player->attackPattern = g_Player->flameblade == TRUE ? FLAME_ATTACK1 : NORMAL_ATTACK1;
 		else
 			g_Player->attackPattern++;
 	}
@@ -2106,6 +2270,43 @@ void PlayDefendAnim(void)
 
 }
 
+void PlayCastAnim(void)
+{
+	int castingFrame;
+	switch (g_Player->magic)
+	{
+	case MAGIC_HEALING:
+		castingFrame = ANIM_HEALING_CAST_FRAME;
+		break;
+	case MAGIC_FIRE_BALL:
+		castingFrame = ANIM_FIRE_BALL_CAST_FRAME;
+		break;
+	default:
+		castingFrame = 0;
+		break;
+	}
+
+	g_Player->countAnim += 1.0f;
+	if (g_Player->countAnim > ANIM_WAIT_CAST)
+	{
+		g_Player->countAnim = 0.0f;
+		g_Player->patternAnim++;
+		// アニメーションパターンが最大を超えた場合、最大に固定
+		if (g_Player->patternAnim > GetTexturePatternDivideX() - 1)
+			g_Player->patternAnim = GetTexturePatternDivideX() - 1;
+		g_Player->animFrameCount++;
+	}
+
+	if (g_Player->animFrameCount >= castingFrame)
+	{
+		g_Player->state = IDLE;
+		g_Player->animFrameCount = 0;
+		g_Player->patternAnim = 0;
+
+	}
+
+}
+
 //=============================================================================
 // Player構造体の先頭アドレスを取得
 //=============================================================================
@@ -2267,6 +2468,10 @@ int GetTexturePatternDivideX()
 		return TEXTURE_DEFEND_PATTERN_DIVIDE_X;
 	case CHAR_PARRY:
 		return TEXTURE_PARRY_PATTERN_DIVIDE_X;
+	case CHAR_FLAME_ATTACK1:
+		return TEXTURE_FLAME_ATTACK1_PATTERN_DIVIDE_X;
+	case CHAR_FLAME_ATTACK2:
+		return TEXTURE_FLAME_ATTACK2_PATTERN_DIVIDE_X;
 	default:
 		return -1;
 	}
@@ -2446,6 +2651,14 @@ void AdjustAttackTextureSize()
 		g_Player->w = TEXTURE_PARRY_WIDTH;
 		g_Player->h = TEXTURE_PARRY_HEIGHT;
 		break;
+	case FLAME_ATTACK1:
+		g_Player->w = TEXTURE_FLAME_ATTACK1_WIDTH;
+		g_Player->h = TEXTURE_FLAME_ATTACK1_HEIGHT;
+		break;
+	case FLAME_ATTACK2:
+		g_Player->w = TEXTURE_FLAME_ATTACK2_WIDTH;
+		g_Player->h = TEXTURE_FLAME_ATTACK2_HEIGHT;
+		break;
 	default:
 		break;
 	}
@@ -2456,28 +2669,60 @@ void AdjustAttackTexturePos(float& px, float& py)
 	switch (g_Player->attackPattern)
 	{
 	case NORMAL_ATTACK1:
-		px += TEXTURE_NORMAL_ATTACK1_OFFSET.x;
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_NORMAL_ATTACK1_OFFSET.x;
+		else
+			px -= TEXTURE_NORMAL_ATTACK1_OFFSET.x;
 		py += TEXTURE_NORMAL_ATTACK1_OFFSET.y;
 		break;
 	case NORMAL_ATTACK2:
-		px += TEXTURE_NORMAL_ATTACK2_OFFSET.x;
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_NORMAL_ATTACK2_OFFSET.x;
+		else
+			px -= TEXTURE_NORMAL_ATTACK2_OFFSET.x;
 		py += TEXTURE_NORMAL_ATTACK2_OFFSET.y;
 		break;
 	case NORMAL_ATTACK3:
-		px += TEXTURE_NORMAL_ATTACK3_OFFSET.x;
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_NORMAL_ATTACK3_OFFSET.x;
+		else
+			px -= TEXTURE_NORMAL_ATTACK3_OFFSET.x;
 		py += TEXTURE_NORMAL_ATTACK3_OFFSET.y;
 		break;
 	case NORMAL_ATTACK4:
-		px += TEXTURE_NORMAL_ATTACK4_OFFSET.x;
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_NORMAL_ATTACK4_OFFSET.x;
+		else
+			px -= TEXTURE_NORMAL_ATTACK4_OFFSET.x;
 		py += TEXTURE_NORMAL_ATTACK4_OFFSET.y;
 		break;
 	case DASH_ATTACK:
-		px += TEXTURE_DASH_ATTACK_OFFSET.x;
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_DASH_ATTACK_OFFSET.x;
+		else
+			px -= TEXTURE_DASH_ATTACK_OFFSET.x;
 		py += TEXTURE_DASH_ATTACK_OFFSET.y;
 		break;
 	case PARRY:
-		px += TEXTURE_PARRY_OFFSET.x;
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_PARRY_OFFSET.x;
+		else
+			px -= TEXTURE_PARRY_OFFSET.x;
 		py += TEXTURE_PARRY_OFFSET.y;
+		break;
+	case FLAME_ATTACK1:
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_FLAME_ATTACK1_OFFSET.x;
+		else
+			px -= TEXTURE_FLAME_ATTACK1_OFFSET.x;
+		py += TEXTURE_FLAME_ATTACK1_OFFSET.y;
+		break;
+	case FLAME_ATTACK2:
+		if (g_Player->dir == CHAR_DIR_RIGHT)
+			px += TEXTURE_FLAME_ATTACK2_OFFSET.x;
+		else
+			px -= TEXTURE_FLAME_ATTACK2_OFFSET.x;
+		py += TEXTURE_FLAME_ATTACK2_OFFSET.y;
 		break;
 	default:
 		break;
@@ -2528,6 +2773,15 @@ void AdjustAttackPlayerPos(void)
 		float speedAdjust = 1.5f - g_Player->patternAnim * 0.2f;
 		if (isMoveFrame && CheckMoveCollision(speedX * speedAdjust, g_Player->dir))
 			CHANGE_PLAYER_POS_X(speedX * speedAdjust);
+		break;
+	}
+	case FLAME_ATTACK2:
+	{
+		float speedY = -40.0f;
+		BOOL isMoveFrame = g_Player->patternAnim >= 1 && g_Player->patternAnim <= 3 && g_Player->onAirCnt == 0;
+		if (isMoveFrame && CheckMoveCollision(speedY, g_Player->dir))
+			CHANGE_PLAYER_POS_Y(speedY);
+
 		break;
 	}
 	default:

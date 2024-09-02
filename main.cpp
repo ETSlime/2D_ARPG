@@ -319,7 +319,7 @@ void Update(void)
 		UpdateBG();
 		UpdatePlayer();
 		UpdateEnemy();
-		UpdateBullet();
+		UpdateMagic();
 		UpdateEffect();
 		UpdateUI();
 		//UpdateScore();
@@ -373,9 +373,9 @@ void Draw(void)
 
 	case MODE_GAME:			// ゲーム画面の描画
 		DrawBG();
-		DrawBullet();		// 重なる順番を意識してね
 		DrawEnemy();
 		DrawPlayer();
+		DrawMagic();
 		DrawEffect();
 		DrawUI();
 		//DrawScore();
@@ -457,6 +457,7 @@ void SetMode(int mode)
 
 	UninitUI();
 
+	UninitMagic();
 
 	g_Mode = mode;	// 次のモードをセットしている
 
@@ -473,7 +474,7 @@ void SetMode(int mode)
 		InitBG();
 		InitPlayer();
 		InitEnemy();
-		InitBullet();
+		InitMagic();
 		InitEffect();
 		//InitScore();
 		InitUI();

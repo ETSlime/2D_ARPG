@@ -11,6 +11,9 @@
 // マクロ定義
 //*****************************************************************************
 
+#define PI 3.14159265358979323846f
+#define MAX_SEGMENTS 100 // セグメント数の最大値
+
 struct AABB
 {
 	XMFLOAT3	pos;
@@ -26,7 +29,9 @@ enum
 	PLAYER_BODY_AABB,
 	PLAYER_ATTACK_AABB,
 	ENEMY_BODY_AABB,
-	ENEMY_ATTACK_AABB
+	ENEMY_ATTACK_AABB,
+	PLAYER_MAGIC_AABB,
+	ENEMY_MAGIC_AABB,
 };
 
 //*****************************************************************************
@@ -47,3 +52,8 @@ void SetSpriteLTColor(ID3D11Buffer* buf,
 	float U, float V, float UW, float VH,
 	XMFLOAT4 color);
 
+
+void SetSpriteTopToBottomRevealColor(ID3D11Buffer* buf,
+	float X, float Y, float Width, float Height,
+	float U, float V, float UW, float VH,
+	XMFLOAT4 color, float progress);
