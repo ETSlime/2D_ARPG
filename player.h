@@ -86,8 +86,6 @@ enum
 	CHAR_KNOCKDOWN,
 	CHAR_REBOUND,
 	CHAR_DEFEND,
-	CHAR_FIREBALL,
-	CHAR_BOOM,
 	CHAR_SHADOW,
 };
 
@@ -139,9 +137,11 @@ struct PLAYER
 	float		shadowY;		// 影の高さ
 	float		countAnim;		// アニメーションカウント
 	int			patternAnim;	// アニメーションパターンナンバー
+	int			patternAnimCast;
 	int			patternAnimOld;
 	int			texNo;			// テクスチャ番号
 	int			animFrameCount;
+	int			animFrameCountCast;
 	BOOL		invertTex;
 
 	// dash
@@ -171,6 +171,9 @@ struct PLAYER
 	int			jumpOnAirCnt;
 	int			onAirCnt;
 	int			defendCnt;
+	int			jumpEffectCnt;
+	int			magicCasting;
+	XMFLOAT3	airJumpPos;
 
 	// battle
 	float		HP;
@@ -210,7 +213,10 @@ HRESULT InitPlayer(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
+void DrawPlayerSprite(void);
 void DrawPlayerShadow(void);
+void DrawJumpEffect(void);
+void DrawCastEffect(void);
 
 PLAYER* GetPlayer(void);
 

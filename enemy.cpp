@@ -9,6 +9,8 @@
 #include "player.h"
 #include "fade.h"
 #include "collision.h"
+#include "score.h"
+#include "magic.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -32,9 +34,11 @@
 #define TEXTURE_HEIGHT_OGRE			(470/2)
 #define TEXTURE_WIDTH_SKELL			(390/2)
 #define TEXTURE_HEIGHT_SKELL		(297/2)
-#define TEXTURE_MAX					(20)		// テクスチャの数
+#define TEXTURE_MAX					(15)		// テクスチャの数
 
 #define	ENEMY_HP_GAUGE_TEXTURE		(9)
+#define ENEMY_SHADOW_TEXTURE		(11)
+#define LIGHTPOINT_TEXTURE			(12)
 
 #define TEXTURE_PATTERN_DIVIDE_X	(2)		// アニメパターンのテクスチャ内分割数（X)
 #define TEXTURE_PATTERN_DIVIDE_Y	(5)		// アニメパターンのテクスチャ内分割数（Y)
@@ -74,10 +78,21 @@
 #define ENEMY_FALL_SPEED			(6.5f)
 #define ENEMY_FALL_CNT_MAX			(30)
 
+// lightpoint
+#define TEXTURE_WIDTH_LIGHTPOINT	(150.0f)
+#define TEXTURE_HEIGHT_LIGHTPOINT	(150.0f)
+#define LIGHPOINT_SPEED_MIN			(2)
+#define LIGHTPOINT_SPEED_MAX		(5)
+#define LIGHTPOINT_FLY_TIME			(25)
+#define LIGHTPOINT_STAY_TIME		(45)
+#define LIGHTPOINT_REACH_PLAYER_TIME (80.0f)
+#define LIGHTPOINT_TARGET_OFFSET_X	(-70.0f)
+#define LIGHTPOINT_TARGET_OFFSET_Y	(-70.0f)
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
-
+void EnemyTakeDamage(ENEMY* enemy, Magic* magic = nullptr);
 
 //*****************************************************************************
 // グローバル変数
@@ -102,17 +117,21 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/monster/M_skell_warrior.png",
 	"data/TEXTURE/monster/EnemyHPGauge.png",
 	"data/TEXTURE/monster/EnemyHPGauge_bg.png",
+	"data/TEXTURE/char/shadow000.jpg",
+	"data/TEXTURE/lightpoint.png",
 };
 
 
-static BOOL		g_Load = FALSE;			// 初期化を行ったかのフラグ
-static ENEMY	g_Enemy[ENEMY_MAX];		// エネミー構造体
+static BOOL			g_Load = FALSE;			// 初期化を行ったかのフラグ
+static ENEMY		g_Enemy[ENEMY_MAX];		// エネミー構造体
+static LightPoint 	g_LightPoint[LIGHTPOINT_MAX];
 
 static int		g_EnemyCount = ENEMY_MAX;
+static int		g_LightPointInterval = 10;
 
 static EnemyAttributes cyclopsAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
+	100.0f,	// float hp
+	100.0f,	// float maxhp
 	15,			// int damage
 	25,			// int staggerResistance
 	80,			// int staggerRecoveryTime
@@ -465,8 +484,8 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].isHit = FALSE;
 		g_Enemy[i].hitTimer = 0.0f;
 		g_Enemy[i].hitCD = 0.0f;
-		g_Enemy[i].attributes.hp = 1000;
-		g_Enemy[i].attributes.maxHp = 1000;
+		g_Enemy[i].attributes.hp = 1011110;
+		g_Enemy[i].attributes.maxHp = 1001111;
 		g_Enemy[i].attributes.staggerResistance = 10;
 		g_Enemy[i].attributes.staggerRecoveryTime = 0;
 		g_Enemy[i].diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -496,6 +515,20 @@ HRESULT InitEnemy(void)
 		}
 
 		SetupEnemyAttributes(&g_Enemy[i]);
+	}
+
+	for (int i = 0; i < LIGHTPOINT_MAX; i++)
+	{
+		g_LightPoint[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_LightPoint[i].move = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_LightPoint[i].w = TEXTURE_WIDTH_LIGHTPOINT;
+		g_LightPoint[i].h = TEXTURE_HEIGHT_LIGHTPOINT;
+		g_LightPoint[i].timeToPlayer = 0.0f;
+		g_LightPoint[i].use = FALSE;
+		g_LightPoint[i].flyingToPlayer = FALSE;
+		g_LightPoint[i].distanceToPlayer = 0.0f;
+		g_LightPoint[i].timeToFly = 0.0f;
+		g_LightPoint[i].desiredToPlayerTime = LIGHTPOINT_REACH_PLAYER_TIME;
 	}
 
 	//// 0番だけ線形補間で動かしてみる
@@ -946,7 +979,7 @@ void UpdateEnemy(void)
 					float attackW = attackBox.w;
 					float attackH = attackBox.h;
 
-					// プレイヤーの包囲ボックスとエネミーの攻撃範囲が重なっているかを確認
+					// エネミーの包囲ボックスとプレイヤーの攻撃範囲が重なっているかを確認
 					BOOL isColliding = CollisionBB(enemyPos, enemyW, enemyH, attackPos, attackW, attackH);
 
 					if (isColliding)
@@ -956,10 +989,43 @@ void UpdateEnemy(void)
 						break;
 					}
 				}
+
+				// 魔法の包囲ボックスを取得
+				Magic* magic = GetMagic();
+				for (int j = 0; j < MAX_ATTACK_AABB; j++)
+				{
+					if (magic[j].use == FALSE) continue;
+
+					if (magic[j].magicAABB.tag == PLAYER_MAGIC_AABB)
+					{
+						AABB attackBox = magic[j].magicAABB;
+
+						// 敵のAABB情報を取得
+						XMFLOAT3 enemyPos = g_Enemy[i].bodyAABB.pos;
+						float enemyW = g_Enemy[i].bodyAABB.w;
+						float enemyH = g_Enemy[i].bodyAABB.h;
+
+						// 魔法のAABB情報を取得
+						XMFLOAT3 attackPos = attackBox.pos;
+						float attackW = attackBox.w;
+						float attackH = attackBox.h;
+
+						// エネミーの包囲ボックスとプレイヤーの攻撃範囲が重なっているかを確認
+						BOOL isColliding = CollisionBB(enemyPos, enemyW, enemyH, attackPos, attackW, attackH);
+
+						if (isColliding)
+						{
+							// 当たり判定があった場合、敵にダメージを与える
+							EnemyTakeDamage(&g_Enemy[i], &magic[j]);
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
 
+	UpdateLightPoint();
 
 	//// エネミー全滅チェック
 	//if (g_EnemyCount <= 0)
@@ -1008,12 +1074,14 @@ void UpdateEnemyStates(ENEMY* enemy)
 	if (enemy->attributes.staggerRecoveryTime <= 0)
 		enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance;
 
-	if (enemy->attributes.attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN && enemy->state != ENEMY_HIT)
+	if (enemy->attributes.attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN && enemy->state != ENEMY_HIT && enemy->state != ENEMY_DIE)
 		enemy->state = ENEMY_COOLDOWN;
 }
 
 void UpdateEnemyGroundCollision(ENEMY* enemy)
 {
+	if (enemy->attributes.canFly == TRUE) return;
+
 	AABB* grounds = GetMap01AABB();
 
 	if (enemy->onAirCnt >= ENEMY_FALL_CNT_MAX)
@@ -1050,18 +1118,37 @@ void UpdateEnemyGroundCollision(ENEMY* enemy)
 
 }
 
-void EnemyTakeDamage(ENEMY* enemy)
+void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 {
 	PLAYER* player = GetPlayer();
 	enemy->dir = enemy->pos.x - player->pos.x > 0 ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 	enemy->isHit = true;
 	enemy->hitTimer = ENEMY_HIT_TIMER;
-	if (player->attackPattern == PARRY)
-		enemy->hitCD = ENEMY_HIT_CD * 0.5f;
-	else
-		enemy->hitCD = ENEMY_HIT_CD;
+	enemy->hitCD = ENEMY_HIT_CD;
 	enemy->attributes.staggerRecoveryTime = GetEnemyAttributes(enemy)->staggerRecoveryTime;
-	enemy->attributes.staggerResistance -= 10;
+
+	if (magic == nullptr)
+	{
+		if (player->attackPattern == PARRY)
+			enemy->hitCD = ENEMY_HIT_CD * 0.5f;
+
+
+		enemy->attributes.staggerResistance -= 10;
+		enemy->attributes.hp -= player->ATK;
+	}
+	else
+	{
+		switch (magic->magicType)
+		{
+		case MAGIC_FIRE_BALL:
+			enemy->attributes.staggerResistance -= 20;
+			enemy->attributes.hp -= 15;
+			break;
+		default:
+			return;
+		}
+	}
+
 	if (enemy->attributes.staggerResistance <= 0)
 	{
 		if (enemy->state != ENEMY_ATTACK)
@@ -1072,7 +1159,6 @@ void EnemyTakeDamage(ENEMY* enemy)
 		enemy->countAnim = 0.0f;
 	}
 
-	enemy->attributes.hp -= player->ATK;
 	if (enemy->attributes.hp <= 0)
 	{
 		enemy->state = ENEMY_DIE;
@@ -1081,6 +1167,7 @@ void EnemyTakeDamage(ENEMY* enemy)
 		enemy->pos.y -= 70.0f;
 		enemy->dieInitSpeedX = 0.2f * (float)GetRand(-10, 10);
 		enemy->dieInitSpeedY = 0.1f * (float)GetRand(1, 5);
+		EnemyDieOnTrigger(enemy);
 	}
 
 }
@@ -1113,10 +1200,13 @@ void DrawEnemy(void)
 		if (g_Enemy[i].use == TRUE)			// このエネミーが使われている？
 		{									// Yes
 
+			// 敵の影
+			DrawEnemyShadow(&g_Enemy[i]);
+
 			// テクスチャ設定
 			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_Enemy[i].enemyType]);
-			DrawEnemySprite(&g_Enemy[i]);
 
+			DrawEnemySprite(&g_Enemy[i]);
 			if (g_Enemy[i].state == ENEMY_DIE)
 			{
 				g_Enemy[i].patternAnim = ANIM_DIE_OFFSET + 1;
@@ -1125,9 +1215,11 @@ void DrawEnemy(void)
 
 			// 敵のHPゲージ
 			DrawEnemyHPGauge(&g_Enemy[i]);
+
 		}
 	}
 
+	DrawLightPoint();
 
 
 #ifdef _DEBUG
@@ -1245,9 +1337,20 @@ void DrawEnemyHPGauge(const ENEMY* enemy)
 {
 	BG* bg = GetBG();
 
+	float posX, posY;
+	if (enemy->state == ENEMY_DIE)
+	{
+		posX = enemy->diePos.x;
+		posY = enemy->diePos.y;
+	}
+	else
+	{
+		posX = enemy->bodyAABB.pos.x;
+		posY = enemy->bodyAABB.pos.y;
+	}
 	// HPバーの位置を計算
-	float px = enemy->bodyAABB.pos.x - enemy->bodyAABB.w * 0.5f - bg->pos.x;  // HPバーのX座標（敵の中央に表示）
-	float py = enemy->bodyAABB.pos.y - enemy->bodyAABB.h * 0.7f - bg->pos.y;  // HPバーのY座標
+	float px = posX - enemy->bodyAABB.w * 0.5f - bg->pos.x;  // HPバーのX座標（敵の中央に表示）
+	float py = posY - enemy->bodyAABB.h * 0.7f - bg->pos.y;  // HPバーのY座標
 	float pw = enemy->bodyAABB.w;   // HPバーの幅
 	float ph = 10.0f;    // HPバーの高さ
 
@@ -1282,6 +1385,102 @@ void DrawEnemyHPGauge(const ENEMY* enemy)
 		tx, ty, tw * hpRatio, th,    // HP比率に応じてテクスチャの幅を縮小
 		color);
 	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawEnemyShadow(const ENEMY* enemy)
+{
+	BG* bg = GetBG();
+
+	// 影表示
+	SetBlendState(BLEND_MODE_SUBTRACT);	// 減算合成
+
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ENEMY_SHADOW_TEXTURE]);
+
+	float px = enemy->pos.x - bg->pos.x;	// プレイヤーの表示位置X
+	float py = enemy->pos.y - bg->pos.y;	// プレイヤーの表示位置Y
+	float pw = enemy->bodyAABB.w;		// プレイヤーの表示幅
+	float ph = enemy->bodyAABB.w / 3;		// プレイヤーの表示高さ
+
+	// 地面との衝突判定に基づく影の位置
+	// プレイヤーの位置に対応する地面の高さを計算
+	float shadowPosY = py;  // 影の最終的なY座標
+	float highestGroundY = FLT_MAX;  // 最も高い地面のY座標を保持
+
+	// 地面のAABB情報を取得
+	AABB* ground = GetMap01AABB();
+	BOOL isOnGround = false;
+
+	// プレイヤーが地面にいるかどうかを確認
+	for (int j = 0; j < MAP01_GROUND_MAX; j++)
+	{
+		float groundX = ground[j].pos.x;
+		float groundY = ground[j].pos.y;
+		float groundW = ground[j].w;
+		float groundH = ground[j].h;
+
+		if (groundY < enemy->pos.y) continue;
+
+		// プレイヤーのx座標が地面の幅の範囲に入っているかどうかを確認
+		if (enemy->pos.x >= groundX - groundW / 2 && enemy->pos.x <= groundX + groundW / 2)
+		{
+			// もっとも高い地面を探す
+			if (groundY - groundH / 2 < highestGroundY)
+			{
+				highestGroundY = groundY - groundH / 2;  // 現在の地面が最も高いので更新
+				shadowPosY = groundY - groundH / 2 - bg->pos.y - 50.0f; // 地面の上に影を表示
+				isOnGround = true;  // プレイヤーが地面にいるとフラグを設定
+			}
+		}
+	}
+	py = shadowPosY + 50.0f;
+
+	float tw = 1.0f;	// テクスチャの幅
+	float th = 1.0f;	// テクスチャの高さ
+	float tx = 0.0f;	// テクスチャの左上X座標
+	float ty = 0.0f;	// テクスチャの左上Y座標
+
+
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColor(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+
+	SetBlendState(BLEND_MODE_ALPHABLEND);	// 半透明処理を元に戻す
+}
+
+void DrawLightPoint(void)
+{
+	BG* bg = GetBG();
+	for (int i = 0; i < LIGHTPOINT_MAX; i++)
+	{
+		if (g_LightPoint[i].use == TRUE)
+		{
+			// テクスチャ設定
+			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[LIGHTPOINT_TEXTURE]);
+
+			float px = g_LightPoint[i].pos.x - bg->pos.x;
+			float py = g_LightPoint[i].pos.y - bg->pos.y;
+			float pw = g_LightPoint[i].w;
+			float ph = g_LightPoint[i].h;
+
+			float tw = 1.0f;     // テクスチャの幅
+			float th = 1.0f;     // テクスチャの高さ
+			float tx = 0.0f;     // テクスチャのX座標
+			float ty = 0.0f;     // テクスチャのY座標
+
+			XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			SetSpriteLTColor(g_VertexBuffer,
+				px, py, pw, ph,
+				tx, ty, tw, th,
+				color);
+			GetDeviceContext()->Draw(4, 0);
+		}
+	}
 }
 
 BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
@@ -1620,4 +1819,116 @@ BOOL CheckChasingPlayer(const ENEMY* enemy)
 		isChasingPlayer = true;
 	}
 	return isChasingPlayer;
+}
+
+void EnemyDieOnTrigger(ENEMY* enemy)
+{
+	// 敵のサイズに基づいて光点の数を決定する
+	int numLightPoints = enemy->w * enemy->h * 0.00025f;
+
+	// 光点の数が最大値を超えないように制限する
+	if (numLightPoints > LIGHTPOINT_MAX)
+		numLightPoints = LIGHTPOINT_MAX;
+
+	for (int i = 0; i < LIGHTPOINT_MAX; ++i)
+	{
+		if (g_LightPoint[i].use == TRUE) continue;
+
+		numLightPoints--;
+
+		// 光点が発散する角度を調整し、上方向により多くの光点が向かうようにする
+		int directionBias = GetRand(0, 100);  // 方向のバイアスを決定するランダム値
+		float angle; 
+		if (directionBias < 70) 
+		{  // 70%の確率で上方向に発散
+			angle = GetRand(180, 360) * PI / 180.0f;
+		}
+		else 
+		{  // 30%の確率で下方向に発散
+			angle = GetRand(0, 180) * PI / 180.0f;
+		}
+		float speed = GetRand(LIGHPOINT_SPEED_MIN, LIGHTPOINT_SPEED_MAX);
+		XMFLOAT3 velocity(cosf(angle) * speed, sinf(angle) * speed, 0.0f);
+
+		g_LightPoint[i].timeToFly = LIGHTPOINT_FLY_TIME;
+		g_LightPoint[i].use = TRUE;
+		g_LightPoint[i].timeToPlayer = LIGHTPOINT_STAY_TIME;
+		g_LightPoint[i].move = velocity;
+		g_LightPoint[i].pos = enemy->bodyAABB.pos;
+		if (numLightPoints == 0)
+			break;
+	}
+}
+
+void UpdateLightPoint(void)
+{
+	PLAYER* player = GetPlayer();
+	for (int i = 0; i < LIGHTPOINT_MAX; i++)
+	{
+		if (g_LightPoint[i].use == FALSE) continue;
+
+		// 光点がプレイヤーに向かって飛んでいる場合
+		if (g_LightPoint[i].flyingToPlayer == TRUE)
+		{
+			XMVECTOR posVec = XMLoadFloat3(&g_LightPoint[i].pos);
+			XMFLOAT3 targetPos = player->bodyAABB.pos;
+			targetPos.x += LIGHTPOINT_TARGET_OFFSET_X;
+			targetPos.y += LIGHTPOINT_TARGET_OFFSET_Y;
+			XMVECTOR playerVec = XMLoadFloat3(&targetPos);
+			XMVECTOR direction = XMVector3Normalize(XMVectorSubtract(playerVec, posVec));
+			XMVECTOR distanceVec = XMVectorSubtract(playerVec, posVec);
+			float distance = XMVectorGetX(XMVector3Length(distanceVec));
+
+			// プレイヤーに到達するまでの時間を計算し、適切な速度を設定
+			float desiredTime = g_LightPoint[i].desiredToPlayerTime;
+			if (g_LightPoint[i].desiredToPlayerTime > 1.0f)
+				g_LightPoint[i].desiredToPlayerTime--;
+			float adjustedSpeed = distance / desiredTime;
+
+			XMVECTOR velocityVec = XMVectorScale(direction, adjustedSpeed);
+			XMStoreFloat3(&g_LightPoint[i].move, velocityVec);
+
+			posVec = XMVectorAdd(posVec, XMVectorScale(velocityVec, 1.0f));
+			XMStoreFloat3(&g_LightPoint[i].pos, posVec);
+		}
+		
+		else if (g_LightPoint[i].timeToFly > 0.0f)
+		{
+			// 光点を四方に発散させる
+			XMVECTOR posVec = XMLoadFloat3(&g_LightPoint[i].pos);
+			XMVECTOR velocityVec = XMLoadFloat3(&g_LightPoint[i].move);
+
+			posVec = XMVectorAdd(posVec, velocityVec);
+			XMStoreFloat3(&g_LightPoint[i].pos, posVec);
+
+			g_LightPoint[i].timeToFly--;
+
+			XMVECTOR playerVec = XMLoadFloat3(&player->bodyAABB.pos);
+			XMVECTOR distanceVec = XMVectorSubtract(posVec, playerVec);
+			g_LightPoint[i].distanceToPlayer = XMVectorGetX(XMVector3Length(distanceVec));
+		}
+		// 光点がまだ静止している場合
+		else if (g_LightPoint[i].timeToFly <= 0.0f)
+		{
+			g_LightPoint[i].timeToPlayer--;
+			// プレイヤーに向かって飛ぶ
+			if (g_LightPoint[i].timeToPlayer <= 0.0f)
+				g_LightPoint[i].flyingToPlayer = TRUE;
+		}
+
+		// 光点がプレイヤーに到達したかどうかをチェック
+		XMVECTOR posVec = XMLoadFloat3(&g_LightPoint[i].pos);
+		XMFLOAT3 targetPos = player->bodyAABB.pos;
+		targetPos.x += LIGHTPOINT_TARGET_OFFSET_X;
+		targetPos.y += LIGHTPOINT_TARGET_OFFSET_Y;
+		XMVECTOR playerVec = XMLoadFloat3(&targetPos);
+		XMVECTOR distanceVec = XMVectorSubtract(posVec, playerVec);
+		float distance = XMVectorGetX(XMVector3Length(distanceVec));
+		if (distance < player->w * 0.3f)
+		{
+			g_LightPoint[i].use = FALSE;
+			int score = GetRand(888, 999);
+			AddScore(score);
+		}
+	}
 }

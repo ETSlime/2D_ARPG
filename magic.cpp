@@ -20,12 +20,12 @@
 #define MAGIC_FIRE_BALL_OFFSET					(50.0f)
 
 #define	ANIM_WAIT_FIRE_BALL						(3)
-#define	ANIM_WAIT_BOOM							(9)
+#define	ANIM_WAIT_BOOM							(6)
 #define ANIM_WAIT_HEAL							(4)
 #define	TEXTURE_FIRE_BALL_PATTERN_DIVIDE_X		(27)
 #define TEXTURE_FIRE_BALL_PATTERN_DIVIDE_Y		(1)
-#define	TEXTURE_BOOM_PATTERN_DIVIDE_X			(7)
-#define	TEXTURE_BOOM_PATTERN_DIVIDE_Y			(1)
+#define	TEXTURE_BOOM_PATTERN_DIVIDE_X			(4)
+#define	TEXTURE_BOOM_PATTERN_DIVIDE_Y			(4)
 #define	TEXTURE_HEAL_PATTERN_DIVIDE_X			(26)
 #define	TEXTURE_HEAL_PATTERN_DIVIDE_Y			(1)
 
@@ -423,8 +423,8 @@ void SetUpMagicCollision(Magic* magic)
 	case MAGIC_FIRE_BALL:
 		magic->magicAABB.pos = magic->pos;
 		magic->magicAABB.tag = PLAYER_MAGIC_AABB;
-		magic->magicAABB.w = magic->width;
-		magic->magicAABB.h = magic->height;
+		magic->magicAABB.w = magic->width * 0.3f;
+		magic->magicAABB.h = magic->height * 0.5f;
 		break;
 	case MAGIC_BOOM:
 		magic->magicAABB.pos = magic->pos;
@@ -490,4 +490,9 @@ void HandleMagicCollision(Magic* magic)
 		}
 	}
 
+}
+
+Magic* GetMagic(void)
+{
+	return &g_Magic[0];
 }

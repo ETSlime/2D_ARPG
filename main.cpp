@@ -322,7 +322,7 @@ void Update(void)
 		UpdateMagic();
 		UpdateEffect();
 		UpdateUI();
-		//UpdateScore();
+		UpdateScore();
 
 		if(GetFade() == FADE_NONE)
 		{	// 全滅チェック
@@ -378,7 +378,7 @@ void Draw(void)
 		DrawMagic();
 		DrawEffect();
 		DrawUI();
-		//DrawScore();
+		DrawScore();
 		break;
 
 	case MODE_RESULT:		// リザルト画面の描画
@@ -447,7 +447,7 @@ void SetMode(int mode)
 	UninitBullet();
 
 	// スコアの終了処理
-	//UninitScore();
+	UninitScore();
 
 	// リザルトの終了処理
 	UninitResult();
@@ -476,7 +476,7 @@ void SetMode(int mode)
 		InitEnemy();
 		InitMagic();
 		InitEffect();
-		//InitScore();
+		InitScore();
 		InitUI();
 
 		// ロードゲームだったらすべての初期化が終わった後にセーブデータを読み込む

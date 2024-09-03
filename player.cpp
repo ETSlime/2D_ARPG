@@ -87,7 +87,6 @@
 #define ANIM_WAIT_KNOCKDOWN						(18)
 #define ANIM_WAIT_REBOUND						(6)
 #define ANIM_WAIT_DEFEND						(25)
-#define ANIM_WAIT_CAST							(5)
 #define ANIM_DASH_FRAME							(10)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
@@ -101,8 +100,6 @@
 #define	ANIM_DASH_ATTACK_FRAME					(8)
 #define ANIM_FLAME_ATTACK1_FRAME				(8)
 #define	ANIM_FLAME_ATTACK2_FRAME				(8)
-#define ANIM_HEALING_CAST_FRAME					(12)
-#define ANIM_FIRE_BALL_CAST_FRAME				(12)
 
 
 #define	NORMAL_ATTACK4_DROP_FRAME				(9)
@@ -124,6 +121,28 @@
 // ジャンプ処理
 #define	PLAYER_JUMP_CNT_MAX			(60)		// 60フレームで着地する
 #define	PLAYER_JUMP_Y_MAX			(7.5f)	// ジャンプの高さ
+#define JUMP_EFFECT_TIME			(55)
+#define JUMP_EFFECT_TEXTURE			(19)
+#define TEXTURE_JUMP_EFFECT_WIDTH	(195.0f)
+#define TEXTURE_JUMP_EFFECT_HEIGHT	(70.0f)
+
+// cast effect
+#define CAST_HEALING_TEXTURE					(20)
+#define TEXTURE_CAST_HEALING_WIDTH				(195.0f)
+#define TEXTURE_CAST_HEALING_HEIGHT				(70.0f)
+#define ANIM_WAIT_CAST_HEALING					(5)
+#define ANIM_HEALING_CAST_FRAME					(12)
+#define TEXTURE_CAST_HEALING_PATTERN_DIVIDE_X	(12)
+#define TEXTURE_CAST_HEALING_PATTERN_DIVIDE_Y	(1)
+#define CAST_FIRE_BALL_TEXTURE					(21)
+#define TEXTURE_CAST_FIRE_BALL_WIDTH			(195.0f)
+#define TEXTURE_CAST_FIRE_BALL_HEIGHT			(70.0f)
+#define ANIM_WAIT_CAST_FIRE_BALL				(5)
+#define ANIM_FIRE_BALL_CAST_FRAME				(11)
+#define TEXTURE_CAST_FIRE_BALL_PATTERN_DIVIDE_X	(11)
+#define TEXTURE_CAST_FIRE_BALL_PATTERN_DIVIDE_Y (1)
+#define TEXTURE_CAST_OFFSET_X					(2.1f)
+#define TEXTURE_CAST_OFFSET_Y					(-12.5f)
 
 #define ST_COST_RUN					(5.5f)
 #define	ST_COST_DEFEND				(4.5f)
@@ -182,6 +201,9 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/char/char_rebound.png",
 	"data/TEXTURE/char/char_defend.png",
 	"data/TEXTURE/char/shadow000.jpg",
+	"data/TEXTURE/char/jump_effect.png",
+	"data/TEXTURE/char/heal_effect.png",
+	"data/TEXTURE/char/fire_ball_effect.png",
 };
 
 
@@ -488,6 +510,7 @@ HRESULT InitPlayer(void)
 		g_Player[i].patternAnim = 0;
 		g_Player[i].patternAnimOld = 0;
 		g_Player[i].animFrameCount = 0;
+		g_Player[i].animFrameCountCast = 0;
 		g_Player[i].dashCount = 0;
 		g_Player[i].dashCD = 0;
 		g_Player[i].airDashCount = 0;
@@ -509,7 +532,11 @@ HRESULT InitPlayer(void)
 		g_Player[i].wasDefendingExhausted = FALSE;
 		g_Player[i].jumpOnAirCnt = 0;
 		g_Player[i].defendCnt = 0;
+		g_Player[i].jumpEffectCnt = 0;
+		g_Player[i].patternAnimCast = 0;
+		g_Player[i].magicCasting = MAGIC_NONE;
 		g_Player[i].patternAnim = CHAR_IDLE;
+		g_Player[i].airJumpPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 		g_Player[i].HP = 200;
 		g_Player[i].maxHP = 200;
@@ -761,6 +788,8 @@ void HandleActionQueue(void)
 			{
 				// 空中ジャンプが可能であれば実行
 				canExecuteAction = TRUE;
+				g_Player->jumpEffectCnt = JUMP_EFFECT_TIME;
+				g_Player->airJumpPos = g_Player->pos;
 				g_Player->jumpOnAirCnt = 1;	 // 空中ジャンプ回数を更新
 			}
 		}
@@ -939,6 +968,8 @@ void HandlePlayerJump(void)
 			g_Player->jumpCnt = 0;
 			if (g_Player->onAirCnt > 0)
 			{
+				g_Player->jumpEffectCnt = JUMP_EFFECT_TIME;
+				g_Player->airJumpPos = g_Player->pos;
 				g_Player->jumpOnAirCnt = 1;
 			}
 		}
@@ -952,6 +983,8 @@ void HandlePlayerJump(void)
 		g_Player->animFrameCount = 0;
 		g_Player->playAnim = TRUE;
 		g_Player->jumpCnt = 0;
+		g_Player->jumpEffectCnt = JUMP_EFFECT_TIME;
+		g_Player->airJumpPos = g_Player->pos;
 		g_Player->jumpOnAirCnt = 1;
 		g_Player->ST -= ST_COST_JUMP;
 
@@ -1234,9 +1267,14 @@ void UpdateKeyboardInput(void)
 		case MAGIC_HEALING:
 			if (g_Player->healingCD <= 0 && g_Player->state == IDLE)
 			{
-				g_Player->healingCD = HEALING_CD_TIME;
 				g_Player->state = CAST;
-				TriggerMagic(MAGIC_HEALING);
+				g_Player->patternAnim = 0;
+				g_Player->patternAnimCast = 0;
+				g_Player->animFrameCount = 0;
+				g_Player->animFrameCountCast = 0;
+				g_Player->countAnim = 0;
+				g_Player->playAnim = TRUE;
+				g_Player->magicCasting = MAGIC_HEALING;
 			}
 
 			break;
@@ -1246,9 +1284,14 @@ void UpdateKeyboardInput(void)
 		case MAGIC_FIRE_BALL:
 			if (g_Player->fireBallCD <= 0 && g_Player->state == IDLE)
 			{
-				g_Player->fireBallCD = FIRE_BALL_CD_TIME;
 				g_Player->state = CAST;
-				TriggerMagic(MAGIC_FIRE_BALL);
+				g_Player->patternAnim = 0;
+				g_Player->patternAnimCast = 0;
+				g_Player->animFrameCount = 0;
+				g_Player->animFrameCountCast = 0;
+				g_Player->countAnim = 0;
+				g_Player->playAnim = TRUE;
+				g_Player->magicCasting = MAGIC_FIRE_BALL;
 			}
 
 			break;
@@ -1374,6 +1417,9 @@ void UpdatePlayerStates(void)
 		if (g_Player->MP < MP_COST_FLAMEBLADE)
 			g_Player->flameblade = FALSE;
 	}
+
+	if (g_Player->jumpEffectCnt > 0)
+		g_Player->jumpEffectCnt--;
 }
 
 void UpdateBackGroundScroll(void)
@@ -1652,8 +1698,13 @@ void DrawPlayer(void)
 		if (g_Player[i].use == TRUE)		// このプレイヤーが使われている？
 		{									// Yes
 
-
 			DrawPlayerShadow();
+
+			if (g_Player->jumpEffectCnt > 0)
+				DrawJumpEffect();
+
+			if (g_Player->state == CAST)
+				DrawCastEffect();
 
 			// プレイヤーの分身を描画
 			if (g_Player[i].state == DASH)
@@ -1661,38 +1712,7 @@ void DrawPlayer(void)
 				DrawPlayerOffset(i);
 			}
 
-			// テクスチャ設定
-			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_Player[i].texNo]);
-
-			//プレイヤーの位置やテクスチャー座標を反映
-			float px = g_Player[i].pos.x - bg->pos.x;	// プレイヤーの表示位置X
-			float py = g_Player[i].pos.y - bg->pos.y;	// プレイヤーの表示位置Y
-			float pw = g_Player[i].w;		// プレイヤーの表示幅
-			float ph = g_Player[i].h;		// プレイヤーの表示高さ
-
-			if (g_Player->state == ATTACK)
-				AdjustAttackTexturePos(px, py);
-
-			// アニメーション用
-			float tw, th, tx, ty;
-			tw = 1.0f / GetTexturePatternDivideX(); // テクスチャの幅
-			th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
-			ty = (float)(g_Player[i].patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
-			if (g_Player->invertTex)
-			{
-				tw *= -1.0f;
-				tx = (float)(g_Player[i].patternAnim % GetTexturePatternDivideX()) * (-1 * tw) - tw;	// テクスチャの左上X座標
-			}
-			else
-				tx = (float)(g_Player[i].patternAnim % GetTexturePatternDivideX()) * tw;
-
-			// １枚のポリゴンの頂点とテクスチャ座標を設定
-			SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
-				XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-				g_Player[i].rot.z);
-
-			// ポリゴン描画
-			GetDeviceContext()->Draw(4, 0);
+			DrawPlayerSprite();
 
 
 #ifdef _DEBUG
@@ -2066,6 +2086,8 @@ void PlayJumpAnim()
 
 		// ジャンプカウントと空中ジャンプ回数をリセット
 		g_Player->jumpCnt = 0;
+		g_Player->jumpEffectCnt = JUMP_EFFECT_TIME;
+		g_Player->airJumpPos = g_Player->pos;
 		g_Player->jumpOnAirCnt = 1;
 	}
 	// ジャンプカウントが最大に達した場合の処理
@@ -2272,37 +2294,52 @@ void PlayDefendAnim(void)
 
 void PlayCastAnim(void)
 {
-	int castingFrame;
-	switch (g_Player->magic)
+	int castFrame, castAnimWait;
+	switch (g_Player->magicCasting)
 	{
 	case MAGIC_HEALING:
-		castingFrame = ANIM_HEALING_CAST_FRAME;
+		castFrame = ANIM_HEALING_CAST_FRAME;
+		castAnimWait = ANIM_WAIT_CAST_HEALING;
 		break;
 	case MAGIC_FIRE_BALL:
-		castingFrame = ANIM_FIRE_BALL_CAST_FRAME;
+		castFrame = ANIM_FIRE_BALL_CAST_FRAME;
+		castAnimWait = ANIM_WAIT_CAST_FIRE_BALL;
 		break;
 	default:
-		castingFrame = 0;
+		castFrame = 0;
+		castAnimWait = 0;
 		break;
 	}
 
 	g_Player->countAnim += 1.0f;
-	if (g_Player->countAnim > ANIM_WAIT_CAST)
+	if (g_Player->countAnim > castAnimWait)
 	{
 		g_Player->countAnim = 0.0f;
 		g_Player->patternAnim++;
-		// アニメーションパターンが最大を超えた場合、最大に固定
-		if (g_Player->patternAnim > GetTexturePatternDivideX() - 1)
-			g_Player->patternAnim = GetTexturePatternDivideX() - 1;
+		g_Player->patternAnimCast++;
 		g_Player->animFrameCount++;
+		g_Player->animFrameCountCast++;
 	}
 
-	if (g_Player->animFrameCount >= castingFrame)
+	if (g_Player->animFrameCount >= castFrame)
 	{
 		g_Player->state = IDLE;
 		g_Player->animFrameCount = 0;
 		g_Player->patternAnim = 0;
-
+		g_Player->patternAnimCast = 0;
+		g_Player->playAnim = FALSE;
+		TriggerMagic(g_Player->magicCasting);
+		switch (g_Player->magicCasting)
+		{
+		case MAGIC_HEALING:
+			g_Player->healingCD = HEALING_CD_TIME;
+			break;
+		case MAGIC_FIRE_BALL:
+			g_Player->fireBallCD = FIRE_BALL_CD_TIME;
+			break;
+		default:
+			break;
+		}
 	}
 
 }
@@ -2385,6 +2422,128 @@ void DrawPlayerShadow(void)
 	GetDeviceContext()->Draw(4, 0);
 
 	SetBlendState(BLEND_MODE_ALPHABLEND);	// 半透明処理を元に戻す
+}
+
+void DrawPlayerSprite(void)
+{
+	BG* bg = GetBG();
+
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_Player->texNo]);
+
+	//プレイヤーの位置やテクスチャー座標を反映
+	float px = g_Player->pos.x - bg->pos.x;	// プレイヤーの表示位置X
+	float py = g_Player->pos.y - bg->pos.y;	// プレイヤーの表示位置Y
+	float pw = g_Player->w;		// プレイヤーの表示幅
+	float ph = g_Player->h;		// プレイヤーの表示高さ
+
+	if (g_Player->state == ATTACK)
+		AdjustAttackTexturePos(px, py);
+
+	// アニメーション用
+	float tw, th, tx, ty;
+	tw = 1.0f / GetTexturePatternDivideX(); // テクスチャの幅
+	th = 1.0f / TEXTURE_PATTERN_DIVIDE_Y;	// テクスチャの高さ
+	ty = (float)(g_Player->patternAnim / GetTexturePatternDivideX()) * th;	// テクスチャの左上Y座標
+	if (g_Player->invertTex)
+	{
+		tw *= -1.0f;
+		tx = (float)(g_Player->patternAnim % GetTexturePatternDivideX()) * (-1 * tw) - tw;	// テクスチャの左上X座標
+	}
+	else
+		tx = (float)(g_Player->patternAnim % GetTexturePatternDivideX()) * tw;
+
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		g_Player->rot.z);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawJumpEffect(void)
+{
+	BG* bg = GetBG();
+
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[JUMP_EFFECT_TEXTURE]);
+
+	float px = g_Player->airJumpPos.x - bg->pos.x;
+	float py = g_Player->airJumpPos.y - bg->pos.y;
+	float pw = TEXTURE_JUMP_EFFECT_WIDTH;
+	float ph = TEXTURE_JUMP_EFFECT_HEIGHT;
+
+	py += 50.0f;
+
+	float tw = 1.0f;	// テクスチャの幅
+	float th = 1.0f;	// テクスチャの高さ
+	float tx = 0.0f;	// テクスチャの左上X座標
+	float ty = 0.0f;	// テクスチャの左上Y座標
+
+
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	color.w = (float)g_Player->jumpEffectCnt / (float)JUMP_EFFECT_TIME;
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColor(g_VertexBuffer, 
+		px, py, pw, ph, 
+		tx, ty, tw, th,
+		color);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawCastEffect(void)
+{
+	BG* bg = GetBG();
+	int castingTexNo = 0;
+	float px, py, pw, ph;
+	int patternDividX, patternDividY;
+	switch (g_Player->magicCasting)
+	{
+	case MAGIC_HEALING:
+		castingTexNo = CAST_HEALING_TEXTURE;
+		pw = TEXTURE_CAST_HEALING_WIDTH;
+		ph = TEXTURE_CAST_HEALING_HEIGHT;
+		patternDividX = TEXTURE_CAST_HEALING_PATTERN_DIVIDE_X;
+		patternDividY = TEXTURE_CAST_HEALING_PATTERN_DIVIDE_Y;
+		break;
+	case MAGIC_FIRE_BALL:
+		castingTexNo = CAST_FIRE_BALL_TEXTURE;
+		pw = TEXTURE_CAST_FIRE_BALL_WIDTH;
+		ph = TEXTURE_CAST_FIRE_BALL_HEIGHT;
+		patternDividX = TEXTURE_CAST_FIRE_BALL_PATTERN_DIVIDE_X;
+		patternDividY = TEXTURE_CAST_FIRE_BALL_PATTERN_DIVIDE_Y;
+		break;
+	default:
+		return;
+	}
+
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[castingTexNo]);
+
+	px = g_Player->pos.x - bg->pos.x + TEXTURE_CAST_OFFSET_X;
+	py = g_Player->pos.y - bg->pos.y + TEXTURE_CAST_OFFSET_Y;
+
+	py += 50.0f;
+
+	float tw = 1.0f / patternDividX;	// テクスチャの幅
+	float th = 1.0f / patternDividY;
+	float tx = g_Player->animFrameCountCast % patternDividX * tw;
+	float ty = g_Player->animFrameCountCast / patternDividY * th;
+
+	std::cout << tx << std::endl;
+
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColor(g_VertexBuffer,
+		px, py, pw, ph,
+		tx, ty, tw, th,
+		color);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
 }
 
 //=============================================================================
@@ -2747,7 +2906,8 @@ void AdjustAttackPlayerPos(void)
 	case NORMAL_ATTACK2:
 	{
 		BOOL isMoveFrame = g_Player->patternAnim >= 1 && g_Player->patternAnim <= 6;
-		if (isMoveFrame && CheckMoveCollision(-speedX * 0.2f, g_Player->dir))
+		int dir = g_Player->dir == CHAR_DIR_RIGHT ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
+		if (isMoveFrame && CheckMoveCollision(-speedX * 0.2f, dir))
 			CHANGE_PLAYER_POS_X(-speedX * 0.2f);
 		break;
 	}	

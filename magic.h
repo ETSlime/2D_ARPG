@@ -10,6 +10,7 @@
 #include "debugproc.h"
 #include "sprite.h"
 #include "player.h"
+
 //*****************************************************************************
 // É}ÉNÉçíËã`
 //*****************************************************************************
@@ -58,3 +59,5 @@ void TriggerMagic(int magic, XMFLOAT3 pos = XMFLOAT3(0.0f, 0.0f, 0.0f));
 void ClearMagic(Magic* magic);
 void SetUpMagicCollision(Magic* magic);
 void HandleMagicCollision(Magic* magic);
+
+Magic* GetMagic();

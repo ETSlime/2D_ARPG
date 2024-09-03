@@ -14,7 +14,9 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define ENEMY_MAX							(1)			// エネミーのMax人数
+#define ENEMY_MAX							(11)			// エネミーのMax人数
+#define LIGHTPOINT_MAX						(80)
+
 #define MAX_ATTACK_AABB						(3)
 #define ATTACK_COOLDOWN_TIME_CYCLOPS		(100)
 #define ATTACK_COOLDOWN_TIME_GARGOYLE		(100)
@@ -76,6 +78,20 @@ struct EnemyAttributes
 	int	attackCooldown;
 	BOOL canFly;
 	XMFLOAT3 move;			// 移動速度
+};
+
+struct LightPoint
+{
+	XMFLOAT3 pos;
+	XMFLOAT3 move;
+	float w, h;
+	float timeToPlayer;
+	float timeToFly;
+	float distanceToPlayer;
+	float flyInterval;
+	float desiredToPlayerTime;
+	BOOL use;
+	BOOL flyingToPlayer;
 };
 
 struct ENEMY
@@ -141,7 +157,8 @@ void UpdateEnemyStates(ENEMY* enemy);
 void DrawEnemy(void);
 void DrawEnemySprite(const ENEMY* enemy, BOOL die = FALSE);
 void DrawEnemyHPGauge(const ENEMY* enemy);
-void EnemyTakeDamage(ENEMY* enemy);
+void DrawEnemyShadow(const ENEMY*);
+void DrawLightPoint(void);
 ENEMY* GetEnemy(void);
 
 int GetEnemyCount(void);
@@ -156,9 +173,9 @@ void PlayEnemyIdleAnim(ENEMY* enemy);
 void PlayEnemyHitAnim(ENEMY* enemy);
 void PlayEnemyDieAnim(ENEMY* enemy);
 void UpdateEnemyAttackAABB(ENEMY* enemy);
-
+void UpdateLightPoint(void);
 BOOL CheckChasingPlayer(const ENEMY* enemy);
-
+void EnemyDieOnTrigger(ENEMY* enemy);
 void UpdateEnemyGroundCollision(ENEMY* enemy);
 BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir);
 

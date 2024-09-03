@@ -74,7 +74,7 @@ HRESULT InitScore(void)
 	g_Use   = true;
 	g_w     = TEXTURE_WIDTH;
 	g_h     = TEXTURE_HEIGHT;
-	g_Pos   = { 500.0f, 20.0f, 0.0f };
+	g_Pos   = { 950.0f, 20.0f, 0.0f };
 	g_TexNo = 0;
 
 	g_Score = 0;	// ÉXÉRÉAÇÃèâä˙âª
