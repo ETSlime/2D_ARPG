@@ -5,10 +5,16 @@
 //
 //=============================================================================
 #include "UI.h"
+#include "input.h"
+#include "fade.h"
+#include "player.h"
+#include "title.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
+
+// in game
 #define TEXTURE_HP_WIDTH				(450)
 #define TEXTURE_MP_WIDTH				(350)
 #define TEXTURE_ST_WIDTH				(400)
@@ -40,7 +46,7 @@
 #define UI_MAGIC_ICON_RIGHT_POS_Y		(480.0f)
 #define UI_FLAMEBLADE_ICON_POS_X		(756.0f)
 #define UI_FLAMEBLADE_ICON_POS_Y		(376.0f)
-#define	UI_MAX							(15)
+#define	UI_MAX							(20)
 #define	GAUGE_MAX						(3)
 
 #define TEXTURE_FLAMEBLADE_ICON_PATTERN_DIVIDE_X	(4)
@@ -51,6 +57,33 @@
 #define ANIM_WAIT_FLAMEBLADE_ICON		(5)
 #define ANIM_WAIT_SKILL_ENABLED			(8)
 
+// タイトルUIテクスチャサイズ
+#define TEXTURE_SYSTEM_MENU_BOX_TITLE_WIDTH			(450)
+#define TEXTURE_SYSTEM_MENU_BOX_TITLE_HEIGHT		(250)
+#define TEXTURE_BUTTON_TITLE_WIDTH					(260)
+#define TEXTURE_BUTTON_TITLE_HEIGHT					(40)
+// タイトルUIポジション
+#define UI_SYSTEM_MENU_BOX_TITLE_POS_X				(200)
+#define UI_SYSTEM_MENU_BOX_TITLE_POS_Y				(200)
+#define UI_TITLE_BUTTON_POS_X						(350)
+#define	UI_TITLE_BUTTON_POS_Y						(250)
+#define UI_TITLE_BUTTON_OFFSET_Y					(70)
+
+
+// 一時停止UIテクスチャサイズ
+#define TEXTURE_SYSTEM_MENU_BOX_PAUSE_WIDTH			(550)
+#define TEXTURE_SYSTEM_MENU_BOX_PAUSE_HEIGHT		(150)
+#define	TEXTURE_BUTTON_PAUSE_WIDTH					(80)
+#define	TEXTURE_BUTTON_PAUSE_HEIGHT					(40)
+// 一時停止UIポジション
+#define UI_SYSTEM_MENU_BOX_PAUSE_POS_X				(400)
+#define UI_SYSTEM_MENU_BOX_PAUSE_POS_Y				(400)
+#define UI_PAUSE_BUTTON_POS_X						(350)
+#define UI_PAUSE_BUTTON_POS_Y						(350)
+#define UI_PAUSE_BUTTON_OFFSET_X					(150)
+#define UI_BUTTON_SELECTED_SCALE					(1.2f)
+
+#define BG_PAUSE_TEXTURE							(16)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -74,6 +107,13 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/fire_ball.png",
 	"data/TEXTURE/UI/flameblade_icon.png",
 	"data/TEXTURE/UI/skillEnabled.png",
+	"data/TEXTURE/UI/systemMenuBox.png",
+	"data/TEXTURE/UI/button_new_game.png",
+	"data/TEXTURE/UI/button_tutorial.png",
+	"data/TEXTURE/UI/button_exit_game.png",
+	"data/TEXTURE/UI/button_yes.png",
+	"data/TEXTURE/UI/button_no.png",
+	"data/TEXTURE/fade_black.png",
 
 };
 
@@ -83,6 +123,8 @@ static int						g_flamebladePatternAnim;
 static int						g_skillEnabledCountAnim;
 static int						g_skillEnabledPatternAnim;
 static BOOL						g_Load = FALSE;
+static int						g_Cursor;
+static int						g_Pause;
 
 //=============================================================================
 // 初期化処理
@@ -114,6 +156,16 @@ HRESULT InitUI(void)
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
 	// 変数の初期化
+	for (int i = 0; i < UI_MAX; i++)
+	{
+		g_UI[i].use = FALSE;
+		g_UI[i].width = 0.0f;
+		g_UI[i].height = 0.0f;
+		g_UI[i].ratio = 1.0f;
+		g_UI[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	}
+
+	// ゲージの初期化
 	for (int i = 0; i < GAUGE_MAX; i++)
 	{
 		g_UI[i].use = TRUE;
@@ -143,6 +195,30 @@ HRESULT InitUI(void)
 	g_UI[UI_FLAMEBLADE_ICON].height = TEXTURE_FLAMEBLADE_ICON_HEIGHT;
 	g_UI[UI_FLAMEBLADE_ICON].pos = XMFLOAT3(UI_FLAMEBLADE_ICON_POS_X, UI_FLAMEBLADE_ICON_POS_Y, 0.0f);
 
+	g_UI[UI_SYSTEM_MENU_BOX].width = TEXTURE_SYSTEM_MENU_BOX_TITLE_WIDTH;
+	g_UI[UI_SYSTEM_MENU_BOX].height = TEXTURE_SYSTEM_MENU_BOX_TITLE_HEIGHT;
+	g_UI[UI_SYSTEM_MENU_BOX].pos = XMFLOAT3(UI_SYSTEM_MENU_BOX_TITLE_POS_X, UI_SYSTEM_MENU_BOX_TITLE_POS_Y, 0.0f);
+
+	g_UI[UI_BUTTON_NEW_GAME].width = TEXTURE_BUTTON_TITLE_WIDTH;
+	g_UI[UI_BUTTON_NEW_GAME].height = TEXTURE_BUTTON_TITLE_HEIGHT;
+	g_UI[UI_BUTTON_NEW_GAME].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y, 0.0f);
+
+	g_UI[UI_BUTTON_TUTORIAL].width = TEXTURE_BUTTON_TITLE_WIDTH;
+	g_UI[UI_BUTTON_TUTORIAL].height = TEXTURE_BUTTON_TITLE_HEIGHT;
+	g_UI[UI_BUTTON_TUTORIAL].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y, 0.0f);
+
+	g_UI[UI_BUTTON_EXIT_GAME].width = TEXTURE_BUTTON_TITLE_WIDTH;
+	g_UI[UI_BUTTON_EXIT_GAME].height = TEXTURE_BUTTON_TITLE_HEIGHT;
+	g_UI[UI_BUTTON_EXIT_GAME].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y * 2, 0.0f);
+
+	g_UI[UI_BUTTON_YES].width = TEXTURE_BUTTON_PAUSE_WIDTH;
+	g_UI[UI_BUTTON_YES].height = TEXTURE_BUTTON_PAUSE_HEIGHT;
+	g_UI[UI_BUTTON_YES].pos = XMFLOAT3(UI_PAUSE_BUTTON_POS_X, UI_PAUSE_BUTTON_POS_Y, 0.0f);
+
+	g_UI[UI_BUTTON_NO].width = TEXTURE_BUTTON_PAUSE_WIDTH;
+	g_UI[UI_BUTTON_NO].height = TEXTURE_BUTTON_PAUSE_HEIGHT;
+	g_UI[UI_BUTTON_NO].pos = XMFLOAT3(UI_PAUSE_BUTTON_POS_X + UI_PAUSE_BUTTON_OFFSET_X, UI_PAUSE_BUTTON_POS_Y, 0.0f);
+
 	g_Load = TRUE;
 	return S_OK;
 }
@@ -160,7 +236,7 @@ void UninitUI(void)
 		g_VertexBuffer = NULL;
 	}
 
-	for (int i = 0; i < TEXTURE_MAX; i++)
+	for (int i = 0; i < UI_MAX; i++)
 	{
 		if (g_Texture[i])
 		{
@@ -177,34 +253,75 @@ void UninitUI(void)
 //=============================================================================
 void UpdateUI(void)
 {
-	PLAYER* player = GetPlayer();
-
-	g_UI[UI_HP].ratio = player->HP / player->maxHP;
-	g_UI[UI_MP].ratio = player->MP / player->maxMP;
-	g_UI[UI_ST].ratio = player->ST / player->maxST;
-
-	if (player->flameblade == TRUE)
+	int mode = GetMode();
+	switch (mode)
 	{
-		g_flamebladeIconCountAnim++;
-		// 一定のカウントに達したらアニメーションを更新
-		if (g_flamebladeIconCountAnim > ANIM_WAIT_FLAMEBLADE_ICON)
+	case MODE_TITLE:
+	{
+		g_Cursor = GetTitleCursor();
+		break;
+	}
+	case MODE_GAME:
+	{
+		if (GetKeyboardRelease(DIK_P))
 		{
-			g_flamebladeIconCountAnim = 0.0f;
-			// パターンの切り替え
-			g_flamebladePatternAnim = (g_flamebladePatternAnim + 1) % 
-				(TEXTURE_FLAMEBLADE_ICON_PATTERN_DIVIDE_X * TEXTURE_FLAMEBLADE_ICON_PATTERN_DIVIDE_Y);
+			BOOL pause = GetPause() == TRUE ? FALSE : TRUE;
+			SetPause(pause);
+			g_Cursor = UI_BUTTON_NO;
+		}
+		g_Pause = GetPause();
+
+		if (g_Pause == FALSE)
+		{
+			PLAYER* player = GetPlayer();
+
+			g_UI[UI_HP].ratio = player->HP / player->maxHP;
+			g_UI[UI_MP].ratio = player->MP / player->maxMP;
+			g_UI[UI_ST].ratio = player->ST / player->maxST;
+
+			if (player->flameblade == TRUE)
+			{
+				g_flamebladeIconCountAnim++;
+				// 一定のカウントに達したらアニメーションを更新
+				if (g_flamebladeIconCountAnim > ANIM_WAIT_FLAMEBLADE_ICON)
+				{
+					g_flamebladeIconCountAnim = 0;
+					// パターンの切り替え
+					g_flamebladePatternAnim = (g_flamebladePatternAnim + 1) %
+						(TEXTURE_FLAMEBLADE_ICON_PATTERN_DIVIDE_X * TEXTURE_FLAMEBLADE_ICON_PATTERN_DIVIDE_Y);
+				}
+
+				g_skillEnabledCountAnim++;
+				// 一定のカウントに達したらアニメーションを更新
+				if (g_skillEnabledCountAnim > ANIM_WAIT_SKILL_ENABLED)
+				{
+					g_skillEnabledCountAnim = 0;
+					// パターンの切り替え
+					g_skillEnabledPatternAnim = (g_skillEnabledPatternAnim + 1) %
+						(TEXTURE_SKILL_ENABLED_PATTERN_DIVIDE_X * TEXTURE_SKILL_ENABLED_PATTERN_DIVIDE_Y);
+				}
+			}
+		}
+		else
+		{
+			if (GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT))
+				g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+
+			if (GetKeyboardRelease(DIK_RETURN))
+			{
+				if (g_Cursor == UI_BUTTON_YES)
+					SetFade(FADE_OUT, MODE_TITLE);
+				SetPause(FALSE);
+			}
 		}
 
-		g_skillEnabledCountAnim++;
-		// 一定のカウントに達したらアニメーションを更新
-		if (g_skillEnabledCountAnim > ANIM_WAIT_SKILL_ENABLED)
-		{
-			g_skillEnabledCountAnim = 0.0f;
-			// パターンの切り替え
-			g_skillEnabledPatternAnim = (g_skillEnabledPatternAnim + 1) %
-				(TEXTURE_SKILL_ENABLED_PATTERN_DIVIDE_X * TEXTURE_SKILL_ENABLED_PATTERN_DIVIDE_Y);
-		}
+		break;
 	}
+
+	default:
+		break;
+	}
+
 
 
 }
@@ -214,6 +331,8 @@ void UpdateUI(void)
 //=============================================================================
 void DrawUI(void)
 {
+	int mode = GetMode();
+	
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -225,6 +344,46 @@ void DrawUI(void)
 	// プリミティブトポロジ設定
 	GetDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 
+	switch (mode)
+	{
+	case MODE_TITLE:
+		DrawTitleUI();
+		break;
+	case MODE_GAME:
+		DrawInGameUI();
+
+		if (GetPause())
+			DrawPauseUI();
+		break;
+	default:
+		break;
+	}
+}
+
+void DrawTitleUI(void)
+{
+	// システムメニューボックス
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SYSTEM_MENU_BOX]);
+	SetSpriteColor(g_VertexBuffer, 
+		g_UI[UI_SYSTEM_MENU_BOX].pos.x, g_UI[UI_SYSTEM_MENU_BOX].pos.y, 
+		g_UI[UI_SYSTEM_MENU_BOX].width, g_UI[UI_SYSTEM_MENU_BOX].height, 
+		0.0f, 0.0f, 1.0f, 1.0f,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	GetDeviceContext()->Draw(4, 0);
+
+	// ボタン
+	BOOL selected = g_Cursor == 0;
+	DrawButton(UI_BUTTON_NEW_GAME, selected);
+
+	selected = g_Cursor == UI_BUTTON_TUTORIAL - UI_BUTTON_NEW_GAME;
+	DrawButton(UI_BUTTON_TUTORIAL, selected);
+
+	selected = g_Cursor == UI_BUTTON_EXIT_GAME - UI_BUTTON_NEW_GAME;
+	DrawButton(UI_BUTTON_EXIT_GAME, selected);
+}
+
+void DrawInGameUI(void)
+{
 	DrawPlayerGauge();
 	DrawPlayerJumpIcon();
 	DrawSkillIcon();
@@ -241,20 +400,24 @@ void DrawPlayerGauge(void)
 
 	// HPゲージ
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_HP]);
-	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_HP].pos.x + UI_GAUGE_OFFSET_X, g_UI[UI_HP].pos.y + UI_GAUGE_OFFSET_Y, 
-		g_UI[UI_HP].width * UI_GAUGE_SCALE_X * g_UI[UI_HP].ratio, g_UI[UI_HP].height * UI_GAUGE_SCALE_Y, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSpriteLeftTop(g_VertexBuffer, 
+		g_UI[UI_HP].pos.x + UI_GAUGE_OFFSET_X, g_UI[UI_HP].pos.y + UI_GAUGE_OFFSET_Y, 
+		g_UI[UI_HP].width * UI_GAUGE_SCALE_X * g_UI[UI_HP].ratio, g_UI[UI_HP].height * UI_GAUGE_SCALE_Y, 
+		0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	// MPゲージ
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_MP]);
 	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_MP].pos.x + UI_GAUGE_OFFSET_X, g_UI[UI_MP].pos.y + UI_GAUGE_OFFSET_Y, 
-		g_UI[UI_MP].width * UI_GAUGE_SCALE_X * g_UI[UI_MP].ratio, g_UI[UI_MP].height * UI_GAUGE_SCALE_Y, 0.0f, 0.0f, 1.0f, 1.0f);
+		g_UI[UI_MP].width * UI_GAUGE_SCALE_X * g_UI[UI_MP].ratio, g_UI[UI_MP].height * UI_GAUGE_SCALE_Y, 
+		0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	// STゲージ
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_ST]);
 	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_ST].pos.x + UI_GAUGE_OFFSET_X, g_UI[UI_ST].pos.y + UI_GAUGE_OFFSET_Y, 
-		g_UI[UI_ST].width * UI_GAUGE_SCALE_X * g_UI[UI_ST].ratio, g_UI[UI_ST].height * UI_GAUGE_SCALE_Y, 0.0f, 0.0f, 1.0f, 1.0f);
+		g_UI[UI_ST].width * UI_GAUGE_SCALE_X * g_UI[UI_ST].ratio, g_UI[UI_ST].height * UI_GAUGE_SCALE_Y, 
+		0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.7f);
@@ -262,17 +425,26 @@ void DrawPlayerGauge(void)
 
 	// HPゲージカバー
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_GAUGE_COVER]);
-	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_HP].pos.x, g_UI[UI_HP].pos.y, g_UI[UI_HP].width, g_UI[UI_HP].height, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSpriteLeftTop(g_VertexBuffer, 
+		g_UI[UI_HP].pos.x, g_UI[UI_HP].pos.y, 
+		g_UI[UI_HP].width, g_UI[UI_HP].height, 
+		0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	// MPゲージカバー
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_GAUGE_COVER]);
-	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_MP].pos.x, g_UI[UI_MP].pos.y, g_UI[UI_MP].width, g_UI[UI_MP].height, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSpriteLeftTop(g_VertexBuffer, 
+		g_UI[UI_MP].pos.x, g_UI[UI_MP].pos.y, 
+		g_UI[UI_MP].width, g_UI[UI_MP].height, 
+		0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
 	// STゲージカバー
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_GAUGE_COVER]);
-	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_ST].pos.x, g_UI[UI_ST].pos.y, g_UI[UI_ST].width, g_UI[UI_ST].height, 0.0f, 0.0f, 1.0f, 1.0f);
+	SetSpriteLeftTop(g_VertexBuffer, 
+		g_UI[UI_ST].pos.x, g_UI[UI_ST].pos.y, 
+		g_UI[UI_ST].width, g_UI[UI_ST].height, 
+		0.0f, 0.0f, 1.0f, 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 }
 
@@ -288,15 +460,19 @@ void DrawPlayerJumpIcon(void)
 	if (player->dashCount < 1)
 	{
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_JUMP_ICON]);
-		SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_JUMP_ICON].pos.x + TEXTURE_JUMP_ICON_WIDTH, g_UI[UI_JUMP_ICON].pos.y,
-			g_UI[UI_JUMP_ICON].width, g_UI[UI_JUMP_ICON].height, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSpriteLeftTop(g_VertexBuffer, 
+			g_UI[UI_JUMP_ICON].pos.x + TEXTURE_JUMP_ICON_WIDTH, g_UI[UI_JUMP_ICON].pos.y,
+			g_UI[UI_JUMP_ICON].width, g_UI[UI_JUMP_ICON].height, 
+			0.0f, 0.0f, 1.0f, 1.0f);
 		GetDeviceContext()->Draw(4, 0);
 	}
 	if (player->dashCount < 2)
 	{
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_JUMP_ICON]);
-		SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_JUMP_ICON].pos.x, g_UI[UI_JUMP_ICON].pos.y,
-			g_UI[UI_JUMP_ICON].width, g_UI[UI_JUMP_ICON].height, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSpriteLeftTop(g_VertexBuffer, 
+			g_UI[UI_JUMP_ICON].pos.x, g_UI[UI_JUMP_ICON].pos.y,
+			g_UI[UI_JUMP_ICON].width, g_UI[UI_JUMP_ICON].height, 
+			0.0f, 0.0f, 1.0f, 1.0f);
 		GetDeviceContext()->Draw(4, 0);
 	}
 
@@ -340,31 +516,53 @@ void DrawSkillIcon(void)
 	float currentMagicCD = (currentMagic == UI_MAGIC_HEAL) ? healingCDProgress : (currentMagic == UI_MAGIC_FLAMEBLADE ? 1.0f : fireBallCDProgress);
 	float rightMagicCD = (rightMagic == UI_MAGIC_HEAL) ? healingCDProgress : (rightMagic == UI_MAGIC_FLAMEBLADE ? 1.0f : fireBallCDProgress);
 
+	// 中央のマジックアイコン
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[currentMagic]);
 	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	SetSpriteTopToBottomRevealColor(g_VertexBuffer, UI_MAGIC_ICON_MIDDLE_POS_X, UI_MAGIC_ICON_MIDDLE_POS_Y,
-		TEXTURE_MAGIC_ICON_SIZE, TEXTURE_MAGIC_ICON_SIZE, 0.0f, 0.0f, 1.0f, 1.0f, color, currentMagicCD);
+	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
+		UI_MAGIC_ICON_MIDDLE_POS_X, UI_MAGIC_ICON_MIDDLE_POS_Y,
+		TEXTURE_MAGIC_ICON_SIZE, TEXTURE_MAGIC_ICON_SIZE, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		color, currentMagicCD);
 	GetDeviceContext()->Draw(4, 0);
-	SetSpriteTopToBottomRevealColor(g_VertexBuffer, UI_MAGIC_ICON_MIDDLE_POS_X, UI_MAGIC_ICON_MIDDLE_POS_Y,
-		TEXTURE_MAGIC_ICON_SIZE, TEXTURE_MAGIC_ICON_SIZE, 0.0f, 0.0f, 1.0f, 1.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 1.0f);
+	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
+		UI_MAGIC_ICON_MIDDLE_POS_X, UI_MAGIC_ICON_MIDDLE_POS_Y,
+		TEXTURE_MAGIC_ICON_SIZE, TEXTURE_MAGIC_ICON_SIZE, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
+	// 左側のマジックアイコン
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[leftMagic]);
-	SetSpriteTopToBottomRevealColor(g_VertexBuffer, UI_MAGIC_ICON_LEFT_POS_X, UI_MAGIC_ICON_LEFT_POS_Y,
-		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 0.0f, 0.0f, 1.0f, 1.0f, color, leftMagicCD);
+	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
+		UI_MAGIC_ICON_LEFT_POS_X, UI_MAGIC_ICON_LEFT_POS_Y,
+		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		color, leftMagicCD);
 	GetDeviceContext()->Draw(4, 0);
-	SetSpriteTopToBottomRevealColor(g_VertexBuffer, UI_MAGIC_ICON_LEFT_POS_X, UI_MAGIC_ICON_LEFT_POS_Y,
-		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 0.0f, 0.0f, 1.0f, 1.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 1.0f);
+	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
+		UI_MAGIC_ICON_LEFT_POS_X, UI_MAGIC_ICON_LEFT_POS_Y,
+		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
+	// 右側のマジックアイコン
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[rightMagic]);
-	SetSpriteTopToBottomRevealColor(g_VertexBuffer, UI_MAGIC_ICON_RIGHT_POS_X, UI_MAGIC_ICON_RIGHT_POS_Y,
-		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 0.0f, 0.0f, 1.0f, 1.0f, color, rightMagicCD);
+	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
+		UI_MAGIC_ICON_RIGHT_POS_X, UI_MAGIC_ICON_RIGHT_POS_Y,
+		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		color, rightMagicCD);
 	GetDeviceContext()->Draw(4, 0);
-	SetSpriteTopToBottomRevealColor(g_VertexBuffer, UI_MAGIC_ICON_RIGHT_POS_X, UI_MAGIC_ICON_RIGHT_POS_Y,
-		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 0.0f, 0.0f, 1.0f, 1.0f, XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 1.0f);
+	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
+		UI_MAGIC_ICON_RIGHT_POS_X, UI_MAGIC_ICON_RIGHT_POS_Y,
+		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 
+		0.0f, 0.0f, 1.0f, 1.0f, 
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 1.0f);
 	GetDeviceContext()->Draw(4, 0);
 
+	// フレームブレードアイコン
 	if (player->flameblade == TRUE)
 	{
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SKILL_ENABLED]);
@@ -429,7 +627,65 @@ void DrawFlamebladeIcon(void)
 		material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
 		SetMaterial(material);
 	}
-	SetSpriteLeftTop(g_VertexBuffer, g_UI[UI_FLAMEBLADE_ICON].pos.x, g_UI[UI_FLAMEBLADE_ICON].pos.y,
-		g_UI[UI_FLAMEBLADE_ICON].width, g_UI[UI_FLAMEBLADE_ICON].height, tx, ty, tw, th);
+	SetSpriteLeftTop(g_VertexBuffer, 
+		g_UI[UI_FLAMEBLADE_ICON].pos.x, g_UI[UI_FLAMEBLADE_ICON].pos.y,
+		g_UI[UI_FLAMEBLADE_ICON].width, g_UI[UI_FLAMEBLADE_ICON].height, 
+		tx, ty, tw, th);
+	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawPauseUI(void)
+{
+	// マテリアル設定
+	MATERIAL material;
+	ZeroMemory(&material, sizeof(material));
+	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	SetMaterial(material);
+
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[BG_PAUSE_TEXTURE]);
+	SetSpriteColor(g_VertexBuffer,
+		SCREEN_CENTER_X, SCREEN_CENTER_Y,
+		SCREEN_WIDTH, SCREEN_HEIGHT,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f));
+	GetDeviceContext()->Draw(4, 0);
+
+	// システムメニューボックス
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SYSTEM_MENU_BOX]);
+	SetSpriteColor(g_VertexBuffer,
+		UI_SYSTEM_MENU_BOX_PAUSE_POS_X, UI_SYSTEM_MENU_BOX_PAUSE_POS_Y,
+		TEXTURE_SYSTEM_MENU_BOX_PAUSE_WIDTH, TEXTURE_SYSTEM_MENU_BOX_PAUSE_HEIGHT,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	GetDeviceContext()->Draw(4, 0);
+
+	// ボタン
+	BOOL selected = g_Cursor == UI_BUTTON_YES;
+	DrawButton(UI_BUTTON_YES, selected);
+
+	selected = g_Cursor == UI_BUTTON_NO;
+	DrawButton(UI_BUTTON_NO, selected);
+}
+
+void DrawButton(int button, BOOL selected)
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[button]);
+	float buttonWidth, buttonHeight;
+
+	if (selected == TRUE)
+	{
+		buttonWidth = g_UI[button].width * UI_BUTTON_SELECTED_SCALE;
+		buttonHeight = g_UI[button].height * UI_BUTTON_SELECTED_SCALE;
+	}
+	else
+	{
+		buttonWidth = g_UI[button].width;
+		buttonHeight = g_UI[button].height;
+	}
+	SetSpriteColor(g_VertexBuffer,
+		g_UI[button].pos.x, g_UI[button].pos.y,
+		buttonWidth, buttonHeight,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 	GetDeviceContext()->Draw(4, 0);
 }

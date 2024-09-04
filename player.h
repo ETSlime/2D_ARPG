@@ -260,7 +260,7 @@ void UpdateGroundCollision(void);
 void UpdateActionQueue(void);
 void UpdatePlayerAttackAABB(void);
 void UpdatePlayerStates(void);
-void PlayerTakeDamage(ENEMY* enemy);
+void PlayerTakeDamage(ENEMY* enemy = nullptr, Magic* magic = nullptr);
 
 // プレイヤーと地面の衝突判定関数
 BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground);

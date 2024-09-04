@@ -7,6 +7,7 @@
 #include "title.h"
 #include "input.h"
 #include "fade.h"
+#include "map.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
@@ -15,8 +16,7 @@
 #define TEXTURE_HEIGHT				(SCREEN_HEIGHT)	// 
 #define TEXTURE_MAX					(3)				// ÉeÉNÉXÉ`ÉÉÇÃêî
 
-#define TEXTURE_WIDTH_LOGO			(480)			// ÉçÉSÉTÉCÉY
-#define TEXTURE_HEIGHT_LOGO			(80)			// 
+#define	BUTTON_NUM					(3)
 
 //*****************************************************************************
 // ÉvÉçÉgÉ^ÉCÉvêÈåæ
@@ -31,8 +31,6 @@ static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// ÉeÉNÉXÉ`É
 
 static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/bg000.jpg",
-	"data/TEXTURE/title.png",
-	"data/TEXTURE/effect000.jpg",
 };
 
 
@@ -40,6 +38,7 @@ static BOOL						g_Use;						// TRUE:égÇ¡ÇƒÇ¢ÇÈ  FALSE:ñ¢égóp
 static float					g_w, g_h;					// ïùÇ∆çÇÇ≥
 static XMFLOAT3					g_Pos;						// É|ÉäÉSÉìÇÃç¿ïW
 static int						g_TexNo;					// ÉeÉNÉXÉ`ÉÉî‘çÜ
+static int						g_Cursor;
 
 float	alpha;
 BOOL	flag_alpha;
@@ -86,13 +85,7 @@ HRESULT InitTitle(void)
 	g_h     = TEXTURE_HEIGHT;
 	g_Pos   = XMFLOAT3(g_w/2, g_h/2, 0.0f);
 	g_TexNo = 0;
-
-	alpha = 1.0f;
-	flag_alpha = TRUE;
-
-	effect_dx = 100.0f;
-	effect_dy = 100.0f;
-
+	g_Cursor = 0;
 	g_Load = TRUE;
 	return S_OK;
 }
@@ -130,7 +123,7 @@ void UpdateTitle(void)
 
 	if (GetKeyboardTrigger(DIK_RETURN))
 	{// EnterâüÇµÇΩÇÁÅAÉXÉeÅ[ÉWÇêÿÇËë÷Ç¶ÇÈ
-		SetFade(FADE_OUT, MODE_GAME);
+		HandleButtonPressed();
 	}
 	// ÉQÅ[ÉÄÉpÉbÉhÇ≈ì¸óÕèàóù
 	else if (IsButtonTriggered(0, BUTTON_START))
@@ -143,36 +136,17 @@ void UpdateTitle(void)
 	}
 
 
-
-	// ÉZÅ[ÉuÉfÅ[É^ÇÉçÅ[ÉhÇ∑ÇÈÅH
-	if (GetKeyboardTrigger(DIK_L))
-	{
-		SetLoadGame(TRUE);
-		SetFade(FADE_OUT, MODE_GAME);
-	}
-
-
 	// ÉeÉXÉgÇ≈ÉGÉtÉFÉNÉgÇÃî≠ê∂èÍèäÇà⁄ìÆÇ≥ÇπÇÈ
 	float speed = 4.0f;
 
-	if (GetKeyboardPress(DIK_DOWN))
+	if (GetKeyboardRelease(DIK_UP))
 	{
-		effect_dy += speed;
+		g_Cursor = (g_Cursor + BUTTON_NUM - 1) % BUTTON_NUM;
 	}
-	else if (GetKeyboardPress(DIK_UP))
+	else if (GetKeyboardRelease(DIK_DOWN))
 	{
-		effect_dy -= speed;
+		g_Cursor = (g_Cursor + 1) % BUTTON_NUM;
 	}
-
-	if (GetKeyboardPress(DIK_RIGHT))
-	{
-		effect_dx += speed;
-	}
-	else if (GetKeyboardPress(DIK_LEFT))
-	{
-		effect_dx -= speed;
-	}
-
 
 #ifdef _DEBUG	// ÉfÉoÉbÉOèÓïÒÇï\é¶Ç∑ÇÈ
 	//PrintDebugProc("Player:Å™ Å® Å´ Å©Å@Space\n");
@@ -214,35 +188,31 @@ void DrawTitle(void)
 		// É|ÉäÉSÉìï`âÊ
 		GetDeviceContext()->Draw(4, 0);
 	}
-
-
-	// â¡å∏éZÇÃÉeÉXÉg
-	SetBlendState(BLEND_MODE_ADD);		// â¡éZçáê¨
-//	SetBlendState(BLEND_MODE_SUBTRACT);	// å∏éZçáê¨
-		
-	// ÉeÉNÉXÉ`ÉÉê›íË
-	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
-	
-	for (int i = 0; i < 30; i++)
-	{
-		// ÇPñáÇÃÉ|ÉäÉSÉìÇÃí∏ì_Ç∆ÉeÉNÉXÉ`ÉÉç¿ïWÇê›íË
-		float dx = effect_dx;
-		float dy = effect_dy;
-		float sx = (float)(rand() % 100);
-		float sy = (float)(rand() % 100);
-
-		SetSpriteColor(g_VertexBuffer, dx + sx, dy + sy, 50, 50, 0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 0.3f, 1.0f, 0.5f));
-
-		// É|ÉäÉSÉìï`âÊ
-		GetDeviceContext()->Draw(4, 0);
-	}
-	SetBlendState(BLEND_MODE_ALPHABLEND);	// îºìßñæèàóùÇå≥Ç…ñﬂÇ∑
-
-
 }
 
+void HandleButtonPressed(void)
+{
+	switch (g_Cursor)
+	{
+	case NEW_GANE:
+		SetFade(FADE_OUT, MODE_GAME);
+		SetCurrentMap(MAP_01);
+		break;
+	case TUTORIAL:
+		SetFade(FADE_OUT, MODE_GAME);
+		SetCurrentMap(TUTORIAL_01);
+		break;
+	case EXIT_GAME:
+		ExitGame();
+		break;
+	default:
+		break;
+	}
+}
 
-
+int GetTitleCursor(void)
+{
+	return g_Cursor;
+}
 
 

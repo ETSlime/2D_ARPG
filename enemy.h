@@ -159,12 +159,8 @@ void DrawEnemySprite(const ENEMY* enemy, BOOL die = FALSE);
 void DrawEnemyHPGauge(const ENEMY* enemy);
 void DrawEnemyShadow(const ENEMY*);
 void DrawLightPoint(void);
-ENEMY* GetEnemy(void);
 
-int GetEnemyCount(void);
-
-int GetCurrentTextureSizeW(int enemyType);
-int GetCurrentTextureSizeH(int enemyType);
+void HandleEnemyMagic(ENEMY* enemy);
 
 // anim
 void PlayEnemyWalkAnim(ENEMY* enemy);
@@ -179,6 +175,12 @@ void EnemyDieOnTrigger(ENEMY* enemy);
 void UpdateEnemyGroundCollision(ENEMY* enemy);
 BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir);
 
-void SetupEnemyAttributes(ENEMY* enemy);
 
 const EnemyAttributes* GetEnemyAttributes(ENEMY* enemy);
+void SetupEnemyAttributes(ENEMY* enemy);
+ENEMY* GetEnemy(void);
+int GetEnemyCount(void);
+float GetCurrentTextureSizeW(int enemyType);
+float GetCurrentTextureSizeH(int enemyType);
+
+void ClearEnemy(ENEMY* enemy);

@@ -11,7 +11,7 @@
 #include "input.h"
 
 #include "title.h"
-#include "bg.h"
+#include "map.h"
 #include "player.h"
 #include "enemy.h"
 #include "bullet.h"
@@ -54,7 +54,8 @@ char	g_DebugStr[2048] = WINDOW_NAME;		// デバッグ文字表示用
 #endif
 
 int	g_Mode = MODE_TITLE;					// 起動時の画面を設定
-
+int g_Pause = FALSE;
+int g_Map = MAP_01;
 BOOL g_LoadGame = FALSE;					// NewGame
 
 
@@ -266,6 +267,8 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	// フェード処理の初期化
 	InitFade();
 
+	// UI処理の初期化
+	InitUI();
 
 	// 最初のモードをセット
 	SetMode(g_Mode);	// ここはSetModeのままで！
@@ -295,6 +298,9 @@ void Uninit(void)
 
 	// レンダラーの終了処理
 	UninitRenderer();
+
+	// UIの終了処理
+	UninitUI();
 }
 
 //=============================================================================
@@ -316,21 +322,23 @@ void Update(void)
 		break;
 
 	case MODE_GAME:			// ゲーム画面の更新
-		UpdateBG();
-		UpdatePlayer();
-		UpdateEnemy();
-		UpdateMagic();
-		UpdateEffect();
-		UpdateUI();
-		UpdateScore();
+		if (g_Pause == FALSE)
+		{
+			UpdateMap();
+			UpdatePlayer();
+			UpdateEnemy();
+			UpdateMagic();
+			UpdateEffect();
+			UpdateScore();
 
-		if(GetFade() == FADE_NONE)
-		{	// 全滅チェック
-			int ans = CheckGameClear();
-			if (ans != 0)
-			{
-				//SetMode(MODE_RESULT);
-				SetFade(FADE_OUT, MODE_RESULT);
+			if (GetFade() == FADE_NONE)
+			{	// 全滅チェック
+				int ans = CheckGameClear();
+				if (ans != 0)
+				{
+					//SetMode(MODE_RESULT);
+					SetFade(FADE_OUT, MODE_RESULT);
+				}
 			}
 		}
 
@@ -341,6 +349,7 @@ void Update(void)
 		break;
 	}
 
+	UpdateUI();				// UIの更新処理
 	UpdateFade();			// フェードの更新処理
 }
 
@@ -363,7 +372,6 @@ void Draw(void)
 	// ライティングを無効
 	SetLightEnable(FALSE);
 
-
 	// モードによって処理を分ける
 	switch (g_Mode)
 	{
@@ -372,12 +380,11 @@ void Draw(void)
 		break;
 
 	case MODE_GAME:			// ゲーム画面の描画
-		DrawBG();
+		DrawMap();
 		DrawEnemy();
 		DrawPlayer();
 		DrawMagic();
 		DrawEffect();
-		DrawUI();
 		DrawScore();
 		break;
 
@@ -386,9 +393,8 @@ void Draw(void)
 		break;
 	}
 
-
+	DrawUI();				// UIの描画
 	DrawFade();				// フェード画面の描画
-
 
 #ifdef _DEBUG
 	// デバッグ表示
@@ -435,7 +441,7 @@ void SetMode(int mode)
 	UninitTitle();
 
 	// BGの終了処理
-	UninitBG();
+	UninitMap();
 
 	// プレイヤーの終了処理
 	UninitPlayer();
@@ -455,9 +461,11 @@ void SetMode(int mode)
 	// エフェクトの終了処理
 	UninitEffect();
 
-	UninitUI();
-
+	// マジックの終了処理
 	UninitMagic();
+
+	// UIの終了処理
+	UninitUI();
 
 	g_Mode = mode;	// 次のモードをセットしている
 
@@ -465,19 +473,20 @@ void SetMode(int mode)
 	{
 	case MODE_TITLE:
 		// タイトル画面の初期化
+		InitUI();
 		InitTitle();
 		PlaySound(SOUND_LABEL_BGM_maou);
 		break;
 
 	case MODE_GAME:
 		// ゲーム画面の初期化
-		InitBG();
+		InitUI();
+		InitMap();
 		InitPlayer();
 		InitEnemy();
 		InitMagic();
 		InitEffect();
 		InitScore();
-		InitUI();
 
 		// ロードゲームだったらすべての初期化が終わった後にセーブデータを読み込む
 		if (g_LoadGame == TRUE)
@@ -561,4 +570,28 @@ int GetRand(int min, int max)
 	std::uniform_int_distribution<> random(min, max);	// 生成ランダムは0～100の範囲
 	int answer = random(g_mt);
 	return answer;
+}
+
+void SetPause(BOOL pause)
+{
+	g_Pause = pause;
+}
+
+BOOL GetPause(void)
+{
+	return g_Pause;
+}
+
+void ExitGame(void)
+{
+	PostQuitMessage(0);
+}
+
+int GetCurrentMap()
+{
+	return g_Map;
+}
+void SetCurrentMap(int map)
+{
+	g_Map = map;
 }

@@ -8,7 +8,7 @@
 #include "enemy.h"
 #include "collision.h"
 #include "score.h"
-#include "bg.h"
+#include "map.h"
 #include "effect.h"
 
 //*****************************************************************************

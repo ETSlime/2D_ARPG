@@ -16,6 +16,12 @@
 // É}ÉNÉçíËã`
 //*****************************************************************************
 
+enum
+{
+	NEW_GANE,
+	TUTORIAL,
+	EXIT_GAME,
+};
 
 
 
@@ -27,4 +33,6 @@ void UninitTitle(void);
 void UpdateTitle(void);
 void DrawTitle(void);
 
+void HandleButtonPressed(void);
 
+int GetTitleCursor(void);

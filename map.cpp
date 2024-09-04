@@ -1,17 +1,16 @@
 ﻿//=============================================================================
 //
-// BG処理 [bg.cpp]
+// map処理 [map.cpp]
 // Author : 
 //
 //=============================================================================
-#include "bg.h"
+#include "map.h"
+#include "enemy.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 
-#define TEXTURE_WIDTH_LOGO			(480)			// ロゴサイズ
-#define TEXTURE_HEIGHT_LOGO			(80)			// 
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -30,20 +29,53 @@ static ID3D11Buffer* g_AABBVertexBuffer = NULL;
 
 
 static char *g_TexturName[TEXTURE_MAX] = {
+	"data/TEXTURE/map/tutorial01.jpg",
+	"data/TEXTURE/map/tutorial02.jpg",
 	"data/TEXTURE/map/map01.png",
+	"data/TEXTURE/map/rock01.png",
+	"data/TEXTURE/map/rock02.png",
+	"data/TEXTURE/map/rock03.png",
+	"data/TEXTURE/map/rock04.png",
 };
 
 
 static BOOL	g_Load = FALSE;		// 初期化を行ったかのフラグ
 static BG	g_BG;
-static AABB g_AABB[MAP01_GROUND_MAX];
+static AABB g_AABB[MAP_GROUND_MAX];
+
+static INTERPOLATION_DATA g_MoveTbl0[] = {
+	//座標									回転率							拡大率					時間
+	{ XMFLOAT3(1500.0f, 1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+	{ XMFLOAT3(450.0f,  1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+};
 
 
+static INTERPOLATION_DATA g_MoveTbl1[] = {
+	//座標									回転率							拡大率					時間
+	{ XMFLOAT3(1200.0f, 534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+	{ XMFLOAT3(850.0f,  534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
+};
+
+
+static INTERPOLATION_DATA g_MoveTbl2[] = {
+	//座標									回転率							拡大率							時間
+	{ XMFLOAT3(3000.0f, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
+	{ XMFLOAT3(3000 + SCREEN_WIDTH, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
+};
+
+static EnemyConfig	g_EnemyConfig[MAP_NUM_MAX][MAP_ENEMY_MAX] =
+{
+	{},
+	{},
+	{{GOLEM, g_MoveTbl0}, {CYCLOPS, g_MoveTbl1} },
+	{},
+	{},
+};
 
 //=============================================================================
 // 初期化処理
 //=============================================================================
-HRESULT InitBG(void)
+HRESULT InitMap(void)
 {
 	ID3D11Device *pDevice = GetDevice();
 
@@ -78,42 +110,15 @@ HRESULT InitBG(void)
 	g_BG.scrl  = 0.0f;		// TEXスクロール
 	g_BG.scrl2 = 0.0f;		// TEXスクロール
 
-	// AABB
-	for (int i = 0; i < MAP01_GROUND_MAX; i++)
-	{
-		g_AABB[i].pos.x = 0;
-		g_AABB[i].pos.y = 0;
-		g_AABB[i].w = 0;
-		g_AABB[i].h = 0;
-		g_AABB[i].tag = WALL_AABB;
-	}
-
-	g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
-	g_AABB[0].pos.y = 1290.0f + (TEXTURE_HEIGHT - 1290.0f) * 0.5f;
-	g_AABB[0].w = TEXTURE_WIDTH;
-	g_AABB[0].h = GROUND_H * 0.5f;
-
-	g_AABB[1].pos.x = 685;
-	g_AABB[1].pos.y = 1226;
-	g_AABB[1].w = 103;
-	g_AABB[1].h = 224;
-
-	g_AABB[2].pos.x = 900;
-	g_AABB[2].pos.y = 857;
-	g_AABB[2].w = 640;
-	g_AABB[2].h = 40;
-
-	g_AABB[3].pos.x = 1450;
-	g_AABB[3].pos.y = 594;
-	g_AABB[3].w = 2200;
-	g_AABB[3].h = 40;
+	int map = GetCurrentMap();
+	InitMapCollisionBox(map);
 
 
 #ifdef _DEBUG	
 	// debug
 	{
-		int aabbCount = MAP01_GROUND_MAX;
-		const int maxVertices = MAP01_GROUND_MAX * 4;
+		int aabbCount = MAP_GROUND_MAX;
+		const int maxVertices = MAP_GROUND_MAX * 4;
 
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
@@ -135,7 +140,7 @@ HRESULT InitBG(void)
 //=============================================================================
 // 終了処理
 //=============================================================================
-void UninitBG(void)
+void UninitMap(void)
 {
 	if (g_Load == FALSE) return;
 
@@ -154,16 +159,67 @@ void UninitBG(void)
 		}
 	}
 
+	for (int i = 0; i < MAP_GROUND_MAX; i++)
+	{
+		g_AABB[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_AABB[i].w = 0.0f;
+		g_AABB[i].h = 0.0f;
+	}
+
 	g_Load = FALSE;
+}
+
+void InitMapCollisionBox(int map)
+{
+	switch (map)
+	{
+	case MAP_01:
+	{
+		// AABB
+		for (int i = 0; i < MAP_GROUND_MAX; i++)
+		{
+			g_AABB[i].pos.x = 0;
+			g_AABB[i].pos.y = 0;
+			g_AABB[i].w = 0;
+			g_AABB[i].h = 0;
+			g_AABB[i].tag = WALL_AABB;
+		}
+
+		g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
+		g_AABB[0].pos.y = 1290.0f + (TEXTURE_HEIGHT - 1290.0f) * 0.5f;
+		g_AABB[0].w = TEXTURE_WIDTH;
+		g_AABB[0].h = MAP01_GROUND_H * 0.5f;
+
+		g_AABB[1].pos.x = 685;
+		g_AABB[1].pos.y = 1226;
+		g_AABB[1].w = 103;
+		g_AABB[1].h = 224;
+
+		g_AABB[2].pos.x = 900;
+		g_AABB[2].pos.y = 857;
+		g_AABB[2].w = 640;
+		g_AABB[2].h = 40;
+
+		g_AABB[3].pos.x = 1450;
+		g_AABB[3].pos.y = 594;
+		g_AABB[3].w = 2200;
+		g_AABB[3].h = 40;
+
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 //=============================================================================
 // 更新処理
 //=============================================================================
-void UpdateBG(void)
+void UpdateMap(void)
 {
 	g_BG.old_pos = g_BG.pos;	// １フレ前の情報を保存
 
+	g_BG.texNo = GetCurrentMap();
 
 	//g_BG.scrl -= 0.0f;		// 0.005f;		// スクロール
 
@@ -178,7 +234,7 @@ void UpdateBG(void)
 //=============================================================================
 // 描画処理
 //=============================================================================
-void DrawBG(void)
+void DrawMap(void)
 {
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
@@ -242,7 +298,7 @@ void DrawBG(void)
 
 		SetMaterial(materialAABB);
 		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
-		for (int i = 0; i < MAP01_GROUND_MAX; ++i)
+		for (int i = 0; i < MAP_GROUND_MAX; ++i)
 		{
 			int vertexOffset = i * 4;
 
@@ -302,5 +358,7 @@ AABB* GetMap01AABB(void)
 }
 
 
-
-
+EnemyConfig* GetEnemyConfig(int map)
+{
+	return g_EnemyConfig[map];
+}

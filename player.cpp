@@ -6,7 +6,7 @@
 //=============================================================================
 #include "player.h"
 #include "input.h"
-#include "bg.h"
+#include "map.h"
 #include "bullet.h"
 #include "enemy.h"
 #include "collision.h"
@@ -1508,7 +1508,7 @@ void UpdateGroundCollision(void)
 		g_Player->onAirCnt++;
 
 		CHANGE_PLAYER_POS_Y(g_Player->move.y);
-		for (int j = 0; j < MAP01_GROUND_MAX; j++)
+		for (int j = 0; j < MAP_GROUND_MAX; j++)
 		{
 			if (CheckGroundCollision(g_Player, &grounds[j]))
 				onGround = TRUE;
@@ -1541,7 +1541,7 @@ void UpdateGroundCollision(void)
 	}
 	else
 	{
-		for (int j = 0; j < MAP01_GROUND_MAX; j++)
+		for (int j = 0; j < MAP_GROUND_MAX; j++)
 		{
 			CheckGroundCollision(g_Player, &grounds[j]);
 		}
@@ -1619,13 +1619,21 @@ void UpdateActionQueue(void)
 	}
 }
 
-void PlayerTakeDamage(ENEMY* enemy)
+void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 {
-	int dir = g_Player->pos.x - enemy->pos.x >= 0 ? 1 : -1;
+	int dir;
+	if (enemy)
+	{
+		dir = g_Player->pos.x - enemy->pos.x >= 0 ? 1 : -1;
+	}
+	else if (magic)
+	{
+		dir = g_Player->pos.x - magic->pos.x >= 0 ? 1 : -1;
+	}
 	BOOL validDefend = g_Player->defendDir == CHAR_DIR_RIGHT && dir == -1 || g_Player->defendDir == CHAR_DIR_LEFT && dir == 1;
 	if (g_Player->state == DEFEND && validDefend)
-	{
-		if (g_Player->defendCnt <= PARRY_WINDOW && GetEnemyAttributes(enemy))
+	{		
+		if (enemy && g_Player->defendCnt <= PARRY_WINDOW && GetEnemyAttributes(enemy))
 		{
 			enemy->attributes.attackCooldown = GetEnemyAttributes(enemy)->attackCooldown + GetRand(10, 60);  // クールダウンタイムをリセット
 			enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance; // 強靭さをリセット
@@ -1646,7 +1654,15 @@ void PlayerTakeDamage(ENEMY* enemy)
 	}
 	else
 	{
-		g_Player->move.x = dir * enemy->attributes.damage;
+		if (enemy)
+		{
+			g_Player->move.x = (float)dir * enemy->attributes.damage;
+		}
+		else if (magic)
+		{
+			g_Player->move.x = dir * magic->damage;
+		}
+
 		if (g_Player->onAirCnt > 0 || g_Player->state == JUMP || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
 		{
 			g_Player->jumpCnt = 0;
@@ -2384,7 +2400,7 @@ void DrawPlayerShadow(void)
 	BOOL isOnGround = false;
 
 	// プレイヤーが地面にいるかどうかを確認
-	for (int j = 0; j < MAP01_GROUND_MAX; j++)
+	for (int j = 0; j < MAP_GROUND_MAX; j++)
 	{
 		float groundX = ground[j].pos.x;
 		float groundY = ground[j].pos.y;
@@ -2640,7 +2656,7 @@ BOOL CheckMoveCollision(float move, int dir, BOOL checkGround)
 {
 	// 壁のAABB情報を取得
 	AABB* walls = GetMap01AABB();
-	for (int i = 0; i < MAP01_GROUND_MAX; i++)
+	for (int i = 0; i < MAP_GROUND_MAX; i++)
 	{
 		if (walls[i].tag == GROUND_AABB && checkGround == FALSE) continue;
 

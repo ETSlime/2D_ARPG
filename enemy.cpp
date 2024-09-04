@@ -5,7 +5,7 @@
 //
 //=============================================================================
 #include "enemy.h"
-#include "bg.h"
+#include "map.h"
 #include "player.h"
 #include "fade.h"
 #include "collision.h"
@@ -258,45 +258,8 @@ static EnemyAttributes* attributesTbl[] =
 	&skellAttributes
 };
 
-static XMFLOAT3		g_EnemyInitPos[ENEMY_MAX] = {
-	XMFLOAT3(787.0f,  1314.0f, 0.0f),/*
-	XMFLOAT3(1800.0f,  534.0f, 0.0f),
-	XMFLOAT3(1462.0f,  1314.0f, 0.0f),
-	XMFLOAT3(1837.0f,  1314.0f, 0.0f),
-	XMFLOAT3(2212.0f,  1314.0f, 0.0f),
-	XMFLOAT3(2587.0f,  1314.0f, 0.0f),
-	XMFLOAT3(2962.0f,  1314.0f, 0.0f),
-	XMFLOAT3(3187.0f,  1314.0f, 0.0f),
-	XMFLOAT3(3487.0f,  1314.0f, 0.0f),*/
-};
 
-static INTERPOLATION_DATA g_MoveTbl0[] = {
-	//座標									回転率							拡大率					時間
-	{ XMFLOAT3(900.0f, 1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-	{ XMFLOAT3(450.0f,  1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-};
-
-
-static INTERPOLATION_DATA g_MoveTbl1[] = {
-	//座標									回転率							拡大率					時間
-	{ XMFLOAT3(1200.0f, 534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-	{ XMFLOAT3(850.0f,  534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-};
-
-
-static INTERPOLATION_DATA g_MoveTbl2[] = {
-	//座標									回転率							拡大率							時間
-	{ XMFLOAT3(3000.0f, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
-	{ XMFLOAT3(3000 + SCREEN_WIDTH, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
-};
-
-static INTERPOLATION_DATA* g_MoveTblAdr[] =
-{
-	g_MoveTbl0,
-	g_MoveTbl1,
-	g_MoveTbl2,
-
-};
+static INTERPOLATION_DATA* g_MoveTblAdr[MAP_ENEMY_MAX];
 
 static AttackAABBTBL cyclopsAttackTbl[MAX_ATTACK_AABB * ANIM_ATTACK_PATTERN_NUM] = {
 	{XMFLOAT3(95.0f, 0.0f, 0.0f), 50.0f, 130.0f},
@@ -359,11 +322,11 @@ static AttackAABBTBL golemAttackTbl[MAX_ATTACK_AABB * ANIM_ATTACK_PATTERN_NUM] =
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 
-	{XMFLOAT3(-105.0f, 10.0f, 0.0f), 50.0f, 250.0f},
+	{XMFLOAT3(-75.0f, 10.0f, 0.0f), 125.0f, 250.0f},
 	{XMFLOAT3(0.0f, -120.0f, 0.0f), 160.0f, 50.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 
-	{XMFLOAT3(-105.0f, 10.0f, 0.0f), 50.0f, 250.0f},
+	{XMFLOAT3(-75.0f, 10.0f, 0.0f), 125.0f, 250.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 };
@@ -453,52 +416,47 @@ HRESULT InitEnemy(void)
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
-
+	EnemyConfig* enemyConfig = GetEnemyConfig(GetCurrentMap());
 	// エネミー構造体の初期化
 	g_EnemyCount = 0;
-	for (int i = 0; i < ENEMY_MAX; i++)
+	for (int i = 0; i < MAP_ENEMY_MAX; i++)
 	{
+		if (enemyConfig[i].moveTbl == nullptr) break;
+
+		g_MoveTblAdr[i] = enemyConfig[i].moveTbl;
+
+		g_Enemy[i].enemyType = enemyConfig[i].enemyType;
+		g_Enemy[i].time = 0.0f;		// 線形補間用のタイマーをクリア
+		g_Enemy[i].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
+		g_Enemy[i].tblMax = sizeof(*enemyConfig[i].moveTbl) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
+		g_Enemy[i].pos = enemyConfig[i].moveTbl[0].pos;
+		g_Enemy[i].returnPos = g_Enemy[i].pos;
+
+		SetupEnemyAttributes(&g_Enemy[i]);
+
 		g_EnemyCount++;
 		g_Enemy[i].use = TRUE;
-		g_Enemy[i].pos = g_EnemyInitPos[i];
 		g_Enemy[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
 
 		g_Enemy[i].countAnim = 0;
 		g_Enemy[i].patternAnim = 0;
 
-		g_Enemy[i].attributes.move = XMFLOAT3(2.0f, 0.0f, 0.0f);		// 移動量
 		g_Enemy[i].idleCount = 0;
 		g_Enemy[i].state = ENEMY_IDLE;
 		g_Enemy[i].dir = CHAR_DIR_LEFT;
 		g_Enemy[i].oldDir = CHAR_DIR_LEFT;
-		g_Enemy[i].attributes.attackCooldown = 0;
-		g_Enemy[i].returnPos = g_Enemy[i].pos;
-		g_Enemy[i].attributes.canFly = FALSE;
 		g_Enemy[i].stepBack = FALSE;
 		g_Enemy[i].onAirCnt = 0;
 		g_Enemy[i].isFalling = FALSE;
 
 		// battle
-		g_Enemy[i].attributes.damage = 16;
 		g_Enemy[i].isHit = FALSE;
 		g_Enemy[i].hitTimer = 0.0f;
 		g_Enemy[i].hitCD = 0.0f;
-		g_Enemy[i].attributes.hp = 1011110;
-		g_Enemy[i].attributes.maxHp = 1001111;
-		g_Enemy[i].attributes.staggerResistance = 10;
-		g_Enemy[i].attributes.staggerRecoveryTime = 0;
 		g_Enemy[i].diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].dieInitSpeedX = 0.0f;
 		g_Enemy[i].dieInitSpeedY = 0.0f;
-
-		g_Enemy[i].time = 0.0f;			// 線形補間用のタイマーをクリア
-		g_Enemy[i].tblNo = 0;			// 再生する行動データテーブルNoをセット
-		g_Enemy[i].tblMax = 0;			// 再生する行動データテーブルのレコード数をセット
-
-		g_Enemy[i].enemyType = CYCLOPS;
-		g_Enemy[i].w = GetCurrentTextureSizeW(g_Enemy[i].enemyType);
-		g_Enemy[i].h = GetCurrentTextureSizeH(g_Enemy[i].enemyType);
 
 		// AABB
 		g_Enemy[i].bodyAABB.pos = g_Enemy[i].pos;
@@ -514,7 +472,6 @@ HRESULT InitEnemy(void)
 			g_Enemy[i].attackAABB[j].tag = ENEMY_ATTACK_AABB;
 		}
 
-		SetupEnemyAttributes(&g_Enemy[i]);
 	}
 
 	for (int i = 0; i < LIGHTPOINT_MAX; i++)
@@ -531,18 +488,12 @@ HRESULT InitEnemy(void)
 		g_LightPoint[i].desiredToPlayerTime = LIGHTPOINT_REACH_PLAYER_TIME;
 	}
 
-	//// 0番だけ線形補間で動かしてみる
-	g_Enemy[0].time = 0.0f;		// 線形補間用のタイマーをクリア
-	g_Enemy[0].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
-	g_Enemy[0].tblMax = sizeof(g_MoveTbl0) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
-	g_Enemy[0].pos = g_MoveTbl0[0].pos;
-	g_Enemy[0].returnPos = g_Enemy[0].pos;
 
 	//// 1番だけ線形補間で動かしてみる
-	g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
-	g_Enemy[1].tblNo = 1;		// 再生するアニメデータの先頭アドレスをセット
-	g_Enemy[1].tblMax = sizeof(g_MoveTbl1) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
-	g_Enemy[1].pos = g_MoveTbl1[0].pos;
+	//g_Enemy[1].time = 0.0f;		// 線形補間用のタイマーをクリア
+	//g_Enemy[1].tblNo = 1;		// 再生するアニメデータの先頭アドレスをセット
+	//g_Enemy[1].tblMax = sizeof(g_MoveTbl1) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
+	//g_Enemy[1].pos = g_MoveTbl1[0].pos;
 
 	//// 2番だけ線形補間で動かしてみる
 	//g_Enemy[2].time = 0.0f;		// 線形補間用のタイマーをクリア
@@ -585,6 +536,9 @@ void SetupEnemyAttributes(ENEMY* enemy)
 	enemy->attributes.attackCooldown = attributesTbl[enemy->enemyType]->attackCooldown;
 	enemy->attributes.canFly = attributesTbl[enemy->enemyType]->canFly;
 	enemy->attributes.move = attributesTbl[enemy->enemyType]->move;
+
+	enemy->w = GetCurrentTextureSizeW(enemy->enemyType);
+	enemy->h = GetCurrentTextureSizeH(enemy->enemyType);
 }
 
 const EnemyAttributes* GetEnemyAttributes(ENEMY* enemy)
@@ -612,6 +566,12 @@ void UninitEnemy(void)
 			g_Texture[i]->Release();
 			g_Texture[i] = NULL;
 		}
+	}
+
+	for (int i = 0; i < MAP_ENEMY_MAX; i++)
+	{
+		ClearEnemy(&g_Enemy[i]);
+		g_MoveTblAdr[i] = nullptr;
 	}
 
 	g_Load = FALSE;
@@ -1412,7 +1372,7 @@ void DrawEnemyShadow(const ENEMY* enemy)
 	BOOL isOnGround = false;
 
 	// プレイヤーが地面にいるかどうかを確認
-	for (int j = 0; j < MAP01_GROUND_MAX; j++)
+	for (int j = 0; j < MAP_GROUND_MAX; j++)
 	{
 		float groundX = ground[j].pos.x;
 		float groundY = ground[j].pos.y;
@@ -1487,7 +1447,7 @@ BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
 {
 	// 壁のAABB情報を取得
 	AABB* walls = GetMap01AABB();
-	for (int i = 0; i < MAP01_GROUND_MAX; i++)
+	for (int i = 0; i < MAP_GROUND_MAX; i++)
 	{
 		XMFLOAT3 wallPos = walls[i].pos;
 		float wallW = walls[i].w;
@@ -1623,6 +1583,9 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 			enemy->attackAABB[i].w = 0;
 		}
 	}
+
+
+	HandleEnemyMagic(enemy);
 }
 
 void PlayEnemyHitAnim(ENEMY* enemy)
@@ -1683,7 +1646,7 @@ void PlayEnemyDieAnim(ENEMY* enemy)
 	}
 }
 
-int GetCurrentTextureSizeW(int enemyType)
+float GetCurrentTextureSizeW(int enemyType)
 {
 	switch (enemyType)
 	{
@@ -1709,7 +1672,7 @@ int GetCurrentTextureSizeW(int enemyType)
 		return -1;
 	}
 }
-int GetCurrentTextureSizeH(int enemyType)
+float GetCurrentTextureSizeH(int enemyType)
 {
 	switch (enemyType)
 	{
@@ -1824,7 +1787,7 @@ BOOL CheckChasingPlayer(const ENEMY* enemy)
 void EnemyDieOnTrigger(ENEMY* enemy)
 {
 	// 敵のサイズに基づいて光点の数を決定する
-	int numLightPoints = enemy->w * enemy->h * 0.00025f;
+	int numLightPoints = (int)enemy->w * enemy->h * 0.00025f;
 
 	// 光点の数が最大値を超えないように制限する
 	if (numLightPoints > LIGHTPOINT_MAX)
@@ -1930,5 +1893,79 @@ void UpdateLightPoint(void)
 			int score = GetRand(888, 999);
 			AddScore(score);
 		}
+	}
+}
+
+void HandleEnemyMagic(ENEMY* enemy)
+{
+	switch (enemy->enemyType)
+	{
+	case GOLEM:
+		if (enemy->patternAnim == ANIM_ATTACK_OFFSET + 1 && enemy->countAnim == 0)
+			TriggerMagic(MAGIC_STOMP, enemy->pos, enemy);
+		break;
+	default:
+		break;
+	}
+}
+
+void ClearEnemy(ENEMY* enemy)
+{
+	enemy->enemyType = 0;
+	enemy->time = 0.0f;		// 線形補間用のタイマーをクリア
+	enemy->tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
+	enemy->tblMax = 0;
+	enemy->pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	enemy->returnPos = enemy->pos;
+
+	enemy->attributes.hp = 0.0f;
+	enemy->attributes.maxHp = 0.0f;
+	enemy->attributes.damage = 0;
+	enemy->attributes.staggerResistance = 0;
+	enemy->attributes.staggerRecoveryTime = 0;
+	enemy->attributes.stunTime = 0;
+	enemy->attributes.attackRange = 0.0f;
+	enemy->attributes.attackCooldown = 0;
+	enemy->attributes.canFly = FALSE;
+	enemy->attributes.move = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	enemy->w = 0.0f;
+	enemy->h = 0.0f;
+
+	enemy->use = FALSE;
+	enemy->rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	enemy->scl = XMFLOAT3(1.0f, 1.0f, 1.0f);
+
+	enemy->countAnim = 0;
+	enemy->patternAnim = 0;
+
+	enemy->idleCount = 0;
+	enemy->state = ENEMY_IDLE;
+	enemy->dir = CHAR_DIR_LEFT;
+	enemy->oldDir = CHAR_DIR_LEFT;
+	enemy->stepBack = FALSE;
+	enemy->onAirCnt = 0;
+	enemy->isFalling = FALSE;
+
+	// battle
+	enemy->isHit = FALSE;
+	enemy->hitTimer = 0.0f;
+	enemy->hitCD = 0.0f;
+	enemy->diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	enemy->dieInitSpeedX = 0.0f;
+	enemy->dieInitSpeedY = 0.0f;
+
+	// AABB
+	enemy->bodyAABB.pos = XMFLOAT3(1.0f, 1.0f, 1.0f);
+	enemy->bodyAABB.w = 0.0f;
+	enemy->bodyAABB.h = 0.0f;
+	enemy->bodyAABB.tag = ENEMY_BODY_AABB;
+
+	for (int j = 0; j < MAX_ATTACK_AABB; j++)
+	{
+		enemy->attackAABB[j].pos = XMFLOAT3(1.0f, 1.0f, 1.0f);
+		enemy->attackAABB[j].w = 0.0f;
+		enemy->attackAABB[j].h = 0.0f;
+		enemy->attackAABB[j].tag = ENEMY_ATTACK_AABB;
 	}
 }

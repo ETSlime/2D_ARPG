@@ -16,8 +16,8 @@
 #define TEXTURE_HEIGHT				(SCREEN_HEIGHT)	// 
 #define TEXTURE_MAX					(3)				// テクスチャの数
 
-#define TEXTURE_WIDTH_LOGO			(480)			// ロゴサイズ
-#define TEXTURE_HEIGHT_LOGO			(80)			// 
+#define TEXTURE_WIDTH_LOGO			(111)
+#define TEXTURE_HEIGHT_LOGO			(111)
 
 //*****************************************************************************
 // プロトタイプ宣言

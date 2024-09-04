@@ -5,6 +5,7 @@
 //
 //=============================================================================
 #include "magic.h"
+#include "player.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -16,20 +17,30 @@
 #define TEXTURE_BOOM_HEIGHT						(250)
 #define TEXTURE_HEAL_WIDTH						(150)
 #define TEXTURE_HEAL_HEIGHT						(210)
+#define TEXTURE_STOMP_WIDTH						(250)
+#define TEXTURE_STOMP_HEIGHT					(110)
 
 #define MAGIC_FIRE_BALL_OFFSET					(50.0f)
+#define MAGIC_STOMP_OFFSET_X					(55.0f)
+#define MAGIC_STOMP_OFFSET_Y					(-50.0f)
 
 #define	ANIM_WAIT_FIRE_BALL						(3)
 #define	ANIM_WAIT_BOOM							(6)
 #define ANIM_WAIT_HEAL							(4)
+#define ANIM_WAIT_STOMP							(8)
 #define	TEXTURE_FIRE_BALL_PATTERN_DIVIDE_X		(27)
 #define TEXTURE_FIRE_BALL_PATTERN_DIVIDE_Y		(1)
 #define	TEXTURE_BOOM_PATTERN_DIVIDE_X			(4)
 #define	TEXTURE_BOOM_PATTERN_DIVIDE_Y			(4)
 #define	TEXTURE_HEAL_PATTERN_DIVIDE_X			(26)
 #define	TEXTURE_HEAL_PATTERN_DIVIDE_Y			(1)
+#define TEXTURE_STOMP_PATTERN_DIVIDE_X			(11)
+#define TEXTURE_STOMP_PATTERN_DIVIDE_Y			(1)
 
-#define TEXTURE_MAX								(8)
+#define MAGIC_FIRE_BALL_SPEED					(6.0f)
+#define MAGIC_STOMP_SPEED						(3.5f)
+
+#define TEXTURE_MAX								(20)
 
 
 //*****************************************************************************
@@ -47,6 +58,8 @@ static char* g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/magic/fireball.png",
 	"data/TEXTURE/UI/flameblade_icon.png",
 	"data/TEXTURE/magic/boom.png",
+	"data/TEXTURE/magic/earth.png",
+	"data/TEXTURE/magic/stomp.png",
 
 };
 
@@ -120,7 +133,7 @@ void UninitMagic(void)
 		g_VertexBuffer = NULL;
 	}
 
-	for (int i = 0; i < MAGIC_MAX; i++)
+	for (int i = 0; i < TEXTURE_MAX; i++)
 	{
 		if (g_Texture[i])
 		{
@@ -144,34 +157,7 @@ void UpdateMagic(void)
 	{
 		if (g_Magic[i].use == TRUE)
 		{
-			// アニメーション  
-			g_Magic[i].countAnim++;
-			if ((g_Magic[i].countAnim % GetMagicAnimWait(&g_Magic[i])) == 0)
-			{
-				// パターンの切り替え
-				g_Magic[i].patternAnim = (g_Magic[i].patternAnim + 1) % 
-					(GetMagicTexturePatternDivideX(&g_Magic[i]) * GetMagicTexturePatternDivideY(&g_Magic[i]));
-
-				if (g_Magic[i].isAnimRepeat == FALSE &&
-					g_Magic[i].patternAnim == GetMagicTexturePatternDivideX(&g_Magic[i]) * GetMagicTexturePatternDivideY(&g_Magic[i]) - 1)
-				{
-					g_Magic[i].use = FALSE;
-					ClearMagic(&g_Magic[i]);
-				}
-			}
-
-			// 移動処理
-			if (g_Magic[i].followPlayer == TRUE)
-			{
-				g_Magic[i].pos = player->pos;
-			}
-			else
-			{
-				XMVECTOR pos = XMLoadFloat3(&g_Magic[i].pos);
-				XMVECTOR move = XMLoadFloat3(&g_Magic[i].move);
-				pos += move;
-				XMStoreFloat3(&g_Magic[i].pos, pos);
-			}
+			PlayMagicAnim(&g_Magic[i]);
 
 			// 画面外まで進んだ？
 			BG* bg = GetBG();
@@ -241,7 +227,7 @@ void DrawMagic(void)
 			// テクスチャの左上X座標
 			float tx;
 			// テクスチャの左上Y座標
-			float ty = (float)(g_Magic[i].patternAnim / GetMagicTexturePatternDivideY(&g_Magic[i])) * th;
+			float ty = (float)(g_Magic[i].patternAnim / GetMagicTexturePatternDivideX(&g_Magic[i])) * th;
 			if (g_Magic[i].invertTex)
 			{
 				tw *= -1.0f;
@@ -290,10 +276,9 @@ void DrawMagic(void)
 
 }
 
-void TriggerMagic(int magicType, XMFLOAT3 pos)
+void TriggerMagic(int magicType, XMFLOAT3 pos, ENEMY* enemy)
 {
 	PLAYER* player = GetPlayer();
-
 	for (int i = 0; i < MAGIC_MAX; i++)
 	{
 		if (g_Magic[i].use == FALSE)		// 未使用状態のバレットを見つける
@@ -310,7 +295,7 @@ void TriggerMagic(int magicType, XMFLOAT3 pos)
 				g_Magic[i].pos.x += player->dir == CHAR_DIR_RIGHT ? MAGIC_FIRE_BALL_OFFSET : -MAGIC_FIRE_BALL_OFFSET;
 				g_Magic[i].width = TEXTURE_FIRE_BALL_WIDTH;
 				g_Magic[i].height = TEXTURE_FIRE_BALL_HEIGHT;
-				float speed = player->dir == CHAR_DIR_RIGHT ? FIRE_BALL_SPEED : -FIRE_BALL_SPEED;
+				float speed = player->dir == CHAR_DIR_RIGHT ? MAGIC_FIRE_BALL_SPEED : -MAGIC_FIRE_BALL_SPEED;
 				g_Magic[i].move = XMFLOAT3(speed, 0.0f, 0.0f);
 				g_Magic[i].invertTex = player->invertTex;
 				g_Magic[i].isAnimRepeat = TRUE;
@@ -341,6 +326,21 @@ void TriggerMagic(int magicType, XMFLOAT3 pos)
 				g_Magic[i].isCollision = TRUE;
 				break;
 			}
+			case MAGIC_STOMP:
+			{
+				g_Magic[i].pos = enemy->pos;	// 座標をセット
+				g_Magic[i].pos.x += enemy->dir == CHAR_DIR_RIGHT ? MAGIC_STOMP_OFFSET_X : -MAGIC_STOMP_OFFSET_X;
+				g_Magic[i].pos.y += enemy->bodyAABB.h * 0.5f + MAGIC_STOMP_OFFSET_Y;
+				g_Magic[i].width = TEXTURE_STOMP_WIDTH;
+				g_Magic[i].height = TEXTURE_STOMP_HEIGHT;
+				float speed = enemy->dir == CHAR_DIR_RIGHT ? MAGIC_STOMP_SPEED : -MAGIC_STOMP_SPEED;
+				g_Magic[i].move = XMFLOAT3(speed, 0.0f, 0.0f);
+				g_Magic[i].invertTex = enemy->invertTex;
+				g_Magic[i].isAnimRepeat = FALSE;
+				g_Magic[i].followPlayer = FALSE;
+				g_Magic[i].isCollision = TRUE;
+				break;
+			}
 			default:
 				break;
 			}
@@ -359,6 +359,8 @@ int GetMagicTexturePatternDivideX(Magic* magic)
 		return TEXTURE_BOOM_PATTERN_DIVIDE_X;
 	case MAGIC_HEALING:
 		return TEXTURE_HEAL_PATTERN_DIVIDE_X;
+	case MAGIC_STOMP:
+		return TEXTURE_STOMP_PATTERN_DIVIDE_X;
 	default:
 		return -1;
 	}
@@ -374,6 +376,8 @@ int GetMagicTexturePatternDivideY(Magic* magic)
 		return TEXTURE_BOOM_PATTERN_DIVIDE_Y;
 	case MAGIC_HEALING:
 		return TEXTURE_HEAL_PATTERN_DIVIDE_Y;
+	case MAGIC_STOMP:
+		return TEXTURE_STOMP_PATTERN_DIVIDE_Y;
 	default:
 		return -1;
 	}
@@ -389,6 +393,8 @@ int GetMagicAnimWait(Magic* magic)
 		return ANIM_WAIT_BOOM;
 	case MAGIC_HEALING:
 		return ANIM_WAIT_HEAL;
+	case MAGIC_STOMP:
+		return ANIM_WAIT_STOMP;
 	default:
 		return -1;
 	}
@@ -401,6 +407,9 @@ void ClearMagic(Magic* magic)
 	magic->isAnimRepeat = FALSE;
 	magic->followPlayer = FALSE;
 	magic->isCollision = FALSE;
+	magic->destroyAnim = FALSE;
+	magic->reverseAnim = FALSE;
+	magic->damage = 0.0f;
 	magic->pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	magic->rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	magic->width = 0.0f;
@@ -423,7 +432,7 @@ void SetUpMagicCollision(Magic* magic)
 	case MAGIC_FIRE_BALL:
 		magic->magicAABB.pos = magic->pos;
 		magic->magicAABB.tag = PLAYER_MAGIC_AABB;
-		magic->magicAABB.w = magic->width * 0.3f;
+		magic->magicAABB.w = magic->width * 0.1f;
 		magic->magicAABB.h = magic->height * 0.5f;
 		break;
 	case MAGIC_BOOM:
@@ -431,6 +440,12 @@ void SetUpMagicCollision(Magic* magic)
 		magic->magicAABB.tag = PLAYER_MAGIC_AABB;
 		magic->magicAABB.w = magic->width;
 		magic->magicAABB.h = magic->height;
+		break;
+	case MAGIC_STOMP:
+		//magic->magicAABB.pos = magic->pos;
+		//magic->magicAABB.tag = ENEMY_MAGIC_AABB;
+		//magic->magicAABB.w = magic->width * 0.5f;
+		//magic->magicAABB.h = magic->height * 0.5f;
 		break;
 	default:
 		break;
@@ -441,7 +456,7 @@ void HandleMagicCollision(Magic* magic)
 {
 	// 地面のAABB情報を取得
 	AABB* grounds = GetMap01AABB();
-	for (int j = 0; j < MAP01_GROUND_MAX; j++)
+	for (int j = 0; j < MAP_GROUND_MAX; j++)
 	{
 		if (grounds[j].tag == GROUND_AABB) continue;
 		if (CollisionBB(magic->magicAABB.pos, magic->magicAABB.w, magic->magicAABB.h,
@@ -453,7 +468,8 @@ void HandleMagicCollision(Magic* magic)
 				TriggerMagic(MAGIC_BOOM, magic->pos);
 				magic->use = FALSE;
 				break;
-			case MAGIC_BOOM:
+			case MAGIC_STOMP:
+				magic->destroyAnim = TRUE;
 				break;
 			default:
 				break;
@@ -471,15 +487,13 @@ void HandleMagicCollision(Magic* magic)
 		{
 			// 生きてるエネミーと当たり判定をする
 			if (enemy[j].use == TRUE && CollisionBB(magic->magicAABB.pos, magic->magicAABB.w, magic->magicAABB.h,
-				enemy[j].pos, enemy[j].w, enemy[j].h))
+				enemy[j].bodyAABB.pos, enemy[j].bodyAABB.w, enemy[j].bodyAABB.h))
 			{
 				switch (magic->magicType)
 				{
 				case MAGIC_FIRE_BALL:
 					TriggerMagic(MAGIC_BOOM, magic->pos);
 					magic->use = FALSE;
-					break;
-				case MAGIC_BOOM:
 					break;
 				default:
 					break;
@@ -488,6 +502,96 @@ void HandleMagicCollision(Magic* magic)
 				return;
 			}
 		}
+	}
+
+	if (magic->magicAABB.tag == ENEMY_MAGIC_AABB)
+	{
+		PLAYER* player = GetPlayer();
+		// プレイヤーとの当たり判定
+		if (CollisionBB(magic->magicAABB.pos, magic->magicAABB.w, magic->magicAABB.h,
+			player->bodyAABB.pos, player->bodyAABB.w, player->bodyAABB.h))
+		{
+			switch (magic->magicType)
+			{
+			case MAGIC_STOMP:
+				PlayerTakeDamage(nullptr, magic);
+				break;
+			default:
+				break;
+			}
+
+			return;
+		}
+	}
+
+}
+
+void PlayMagicAnim(Magic* magic)
+{
+	PLAYER* player = GetPlayer();
+
+	// アニメーション  
+	magic->countAnim++;
+
+	switch (magic->magicType)
+	{
+	case MAGIC_STOMP:
+		if ((magic->countAnim % GetMagicAnimWait(magic)) == 0)
+		{
+			// パターンの切り替え
+			if (magic->patternAnim == 10)
+			{
+				magic->reverseAnim = TRUE;
+			}
+			else if (magic->patternAnim == 7)
+			{
+				magic->reverseAnim = FALSE;
+			}
+
+			magic->patternAnim += magic->reverseAnim == TRUE ? -1 : 1;
+
+			if (magic->destroyAnim == TRUE)
+			{
+				magic->use = FALSE;
+				ClearMagic(magic);
+			}
+		}
+
+		// 移動処理
+		XMVECTOR pos = XMLoadFloat3(&magic->pos);
+		XMVECTOR move = XMLoadFloat3(&magic->move);
+		pos += move;
+		XMStoreFloat3(&magic->pos, pos);
+
+		break;
+	default:
+		if ((magic->countAnim % GetMagicAnimWait(magic)) == 0)
+		{
+			// パターンの切り替え
+			magic->patternAnim = (magic->patternAnim + 1) %
+				(GetMagicTexturePatternDivideX(magic) * GetMagicTexturePatternDivideY(magic));
+
+			if (magic->isAnimRepeat == FALSE &&
+				magic->patternAnim == GetMagicTexturePatternDivideX(magic) * GetMagicTexturePatternDivideY(magic) - 1)
+			{
+				magic->use = FALSE;
+				ClearMagic(magic);
+			}
+		}
+
+		// 移動処理
+		if (magic->followPlayer == TRUE)
+		{
+			magic->pos = player->pos;
+		}
+		else
+		{
+			XMVECTOR pos = XMLoadFloat3(&magic->pos);
+			XMVECTOR move = XMLoadFloat3(&magic->move);
+			pos += move;
+			XMStoreFloat3(&magic->pos, pos);
+		}
+		break;
 	}
 
 }
