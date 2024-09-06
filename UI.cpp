@@ -9,6 +9,7 @@
 #include "fade.h"
 #include "player.h"
 #include "title.h"
+#include "score.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -63,27 +64,30 @@
 #define TEXTURE_BUTTON_TITLE_WIDTH					(260)
 #define TEXTURE_BUTTON_TITLE_HEIGHT					(40)
 // タイトルUIポジション
-#define UI_SYSTEM_MENU_BOX_TITLE_POS_X				(200)
-#define UI_SYSTEM_MENU_BOX_TITLE_POS_Y				(200)
-#define UI_TITLE_BUTTON_POS_X						(350)
-#define	UI_TITLE_BUTTON_POS_Y						(250)
+#define UI_TITLE_BUTTON_POS_X						(470)
+#define	UI_TITLE_BUTTON_POS_Y						(330)
 #define UI_TITLE_BUTTON_OFFSET_Y					(70)
 
 
+// システムメニューボックステクスチャサイズ
+#define TEXTURE_SYSTEM_MENU_BOX_WIDTH				(550)
+#define TEXTURE_SYSTEM_MENU_BOX_HEIGHT				(350)
+// システムメニューボックスポジション
+#define UI_SYSTEM_MENU_BOX_POS_X					(490)
+#define UI_SYSTEM_MENU_BOX_POS_Y					(300)
 // 一時停止UIテクスチャサイズ
-#define TEXTURE_SYSTEM_MENU_BOX_PAUSE_WIDTH			(550)
-#define TEXTURE_SYSTEM_MENU_BOX_PAUSE_HEIGHT		(150)
-#define	TEXTURE_BUTTON_PAUSE_WIDTH					(80)
+#define	TEXTURE_BUTTON_PAUSE_WIDTH					(150)
 #define	TEXTURE_BUTTON_PAUSE_HEIGHT					(40)
 // 一時停止UIポジション
-#define UI_SYSTEM_MENU_BOX_PAUSE_POS_X				(400)
-#define UI_SYSTEM_MENU_BOX_PAUSE_POS_Y				(400)
-#define UI_PAUSE_BUTTON_POS_X						(350)
-#define UI_PAUSE_BUTTON_POS_Y						(350)
-#define UI_PAUSE_BUTTON_OFFSET_X					(150)
+#define UI_PAUSE_BUTTON_POS_X						(390)
+#define UI_PAUSE_BUTTON_POS_Y						(295)
+#define UI_PAUSE_BUTTON_OFFSET_X					(200)
 #define UI_BUTTON_SELECTED_SCALE					(1.2f)
 
-#define BG_PAUSE_TEXTURE							(16)
+#define MESSAGEBOX_DELTA_TIME						(3)
+
+#define UI_RESPAWN_MESSAGE_OFFSET_Y					(40.0f)
+
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -107,12 +111,14 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/fire_ball.png",
 	"data/TEXTURE/UI/flameblade_icon.png",
 	"data/TEXTURE/UI/skillEnabled.png",
-	"data/TEXTURE/UI/systemMenuBox.png",
+	"data/TEXTURE/UI/messagebox_return_title.png",
 	"data/TEXTURE/UI/button_new_game.png",
 	"data/TEXTURE/UI/button_tutorial.png",
 	"data/TEXTURE/UI/button_exit_game.png",
 	"data/TEXTURE/UI/button_yes.png",
 	"data/TEXTURE/UI/button_no.png",
+	"data/TEXTURE/UI/messagebox_tutorial.png",
+	"data/TEXTURE/UI/messagebox_respawn.png",
 	"data/TEXTURE/fade_black.png",
 
 };
@@ -125,6 +131,13 @@ static int						g_skillEnabledPatternAnim;
 static BOOL						g_Load = FALSE;
 static int						g_Cursor;
 static int						g_Pause;
+static int						g_messageboxCurretTime;
+static int						g_messageboxActionTime;
+static BOOL						g_PlayerRespawnMsg;
+static BOOL						g_RenderGauge;
+static BOOL						g_RenderSkillIcon;
+static BOOL						g_RenderBladeIcon;
+static BOOL						g_RenderJumpIcon;
 
 //=============================================================================
 // 初期化処理
@@ -173,6 +186,12 @@ HRESULT InitUI(void)
 		g_UI[i].ratio = 1.0f;
 	}
 
+	g_PlayerRespawnMsg = FALSE;
+	g_RenderGauge = TRUE;
+	g_RenderSkillIcon = TRUE;
+	g_RenderBladeIcon = TRUE;
+	g_RenderJumpIcon = TRUE;
+
 	g_flamebladeIconCountAnim = 0;
 	g_flamebladePatternAnim = 0;
 	g_skillEnabledCountAnim = 0;
@@ -195,9 +214,9 @@ HRESULT InitUI(void)
 	g_UI[UI_FLAMEBLADE_ICON].height = TEXTURE_FLAMEBLADE_ICON_HEIGHT;
 	g_UI[UI_FLAMEBLADE_ICON].pos = XMFLOAT3(UI_FLAMEBLADE_ICON_POS_X, UI_FLAMEBLADE_ICON_POS_Y, 0.0f);
 
-	g_UI[UI_SYSTEM_MENU_BOX].width = TEXTURE_SYSTEM_MENU_BOX_TITLE_WIDTH;
-	g_UI[UI_SYSTEM_MENU_BOX].height = TEXTURE_SYSTEM_MENU_BOX_TITLE_HEIGHT;
-	g_UI[UI_SYSTEM_MENU_BOX].pos = XMFLOAT3(UI_SYSTEM_MENU_BOX_TITLE_POS_X, UI_SYSTEM_MENU_BOX_TITLE_POS_Y, 0.0f);
+	g_UI[UI_MESSAGEBOX_RETURN_TITLE].width = TEXTURE_SYSTEM_MENU_BOX_WIDTH;
+	g_UI[UI_MESSAGEBOX_RETURN_TITLE].height = TEXTURE_SYSTEM_MENU_BOX_HEIGHT;
+	g_UI[UI_MESSAGEBOX_RETURN_TITLE].pos = XMFLOAT3(UI_SYSTEM_MENU_BOX_POS_X, UI_SYSTEM_MENU_BOX_POS_Y, 0.0f);
 
 	g_UI[UI_BUTTON_NEW_GAME].width = TEXTURE_BUTTON_TITLE_WIDTH;
 	g_UI[UI_BUTTON_NEW_GAME].height = TEXTURE_BUTTON_TITLE_HEIGHT;
@@ -218,6 +237,14 @@ HRESULT InitUI(void)
 	g_UI[UI_BUTTON_NO].width = TEXTURE_BUTTON_PAUSE_WIDTH;
 	g_UI[UI_BUTTON_NO].height = TEXTURE_BUTTON_PAUSE_HEIGHT;
 	g_UI[UI_BUTTON_NO].pos = XMFLOAT3(UI_PAUSE_BUTTON_POS_X + UI_PAUSE_BUTTON_OFFSET_X, UI_PAUSE_BUTTON_POS_Y, 0.0f);
+
+	if (GetMode() == MODE_MESSAGEBOX)
+	{
+		g_Cursor = UI_BUTTON_YES;
+		g_messageboxCurretTime = 0;
+		g_messageboxActionTime = 0;
+	}
+
 
 	g_Load = TRUE;
 	return S_OK;
@@ -261,9 +288,66 @@ void UpdateUI(void)
 		g_Cursor = GetTitleCursor();
 		break;
 	}
+	case MODE_MESSAGEBOX:
+	{
+		int deltaTime = g_messageboxCurretTime - g_messageboxActionTime;
+		if ((GetKeyboardTrigger(DIK_LEFT) || GetKeyboardTrigger(DIK_RIGHT)) && deltaTime >= MESSAGEBOX_DELTA_TIME)
+		{
+			g_messageboxActionTime = g_messageboxCurretTime;
+			g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+		}
+
+
+		if (GetKeyboardRelease(DIK_RETURN) && deltaTime >= MESSAGEBOX_DELTA_TIME)
+		{
+			g_messageboxActionTime = g_messageboxCurretTime;
+			if (g_Cursor == UI_BUTTON_YES)
+			{
+				SetCurrentMap(TUTORIAL_01);
+				InitPlayerInitPos(TUTORIAL_01);
+				SetPlayerInitPos(TUTORIAL_01, INITPOS_01);
+				SetFade(FADE_OUT, MODE_TUTORIAL);
+			}
+			else
+			{
+				SetCurrentMap(MAP_01);
+				InitPlayerInitPos(MAP_01);
+				SetPlayerInitPos(MAP_01, INITPOS_01);
+				SetFade(FADE_OUT, MODE_GAME);
+
+			}
+		}
+
+		g_messageboxCurretTime++;
+		break;
+	}
+	case MODE_TUTORIAL:
 	case MODE_GAME:
 	{
-		if (GetKeyboardRelease(DIK_P))
+		if (g_PlayerRespawnMsg == TRUE)
+		{
+			if (GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT) )
+			{
+				g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+			}
+
+
+			if (GetKeyboardRelease(DIK_RETURN))
+			{
+				if (g_Cursor == UI_BUTTON_YES)
+				{
+					int score = GetScore();
+					score *= 0.7f;
+					SetScore(score);
+					SetRespawn(TRUE);
+					SetFade(FADE_OUT, MODE_GAME);
+				}
+				else
+					SetFade(FADE_OUT, MODE_TITLE);
+			}
+		}
+
+		if (GetKeyboardRelease(DIK_P) && g_PlayerRespawnMsg == FALSE)
 		{
 			BOOL pause = GetPause() == TRUE ? FALSE : TRUE;
 			SetPause(pause);
@@ -305,12 +389,18 @@ void UpdateUI(void)
 		else
 		{
 			if (GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT))
+			{
 				g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+			}
+
 
 			if (GetKeyboardRelease(DIK_RETURN))
 			{
 				if (g_Cursor == UI_BUTTON_YES)
+				{
 					SetFade(FADE_OUT, MODE_TITLE);
+				}
+					
 				SetPause(FALSE);
 			}
 		}
@@ -349,10 +439,16 @@ void DrawUI(void)
 	case MODE_TITLE:
 		DrawTitleUI();
 		break;
+	case MODE_MESSAGEBOX:
+		DrawMessageBox();
+		break;
+	case MODE_TUTORIAL:
 	case MODE_GAME:
 		DrawInGameUI();
 
-		if (GetPause())
+		if (g_PlayerRespawnMsg == TRUE)
+			DrawMessageBox();
+		else if (GetPause())
 			DrawPauseUI();
 		break;
 	default:
@@ -362,15 +458,6 @@ void DrawUI(void)
 
 void DrawTitleUI(void)
 {
-	// システムメニューボックス
-	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SYSTEM_MENU_BOX]);
-	SetSpriteColor(g_VertexBuffer, 
-		g_UI[UI_SYSTEM_MENU_BOX].pos.x, g_UI[UI_SYSTEM_MENU_BOX].pos.y, 
-		g_UI[UI_SYSTEM_MENU_BOX].width, g_UI[UI_SYSTEM_MENU_BOX].height, 
-		0.0f, 0.0f, 1.0f, 1.0f,
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-	GetDeviceContext()->Draw(4, 0);
-
 	// ボタン
 	BOOL selected = g_Cursor == 0;
 	DrawButton(UI_BUTTON_NEW_GAME, selected);
@@ -384,10 +471,14 @@ void DrawTitleUI(void)
 
 void DrawInGameUI(void)
 {
-	DrawPlayerGauge();
-	DrawPlayerJumpIcon();
-	DrawSkillIcon();
-	DrawFlamebladeIcon();
+	if (g_RenderGauge == TRUE)
+		DrawPlayerGauge();
+	if (g_RenderJumpIcon == TRUE)
+		DrawPlayerJumpIcon();
+	if (g_RenderSkillIcon == TRUE)
+		DrawSkillIcon();
+	if (g_RenderBladeIcon == TRUE)
+		DrawFlamebladeIcon();
 }
 
 void DrawPlayerGauge(void)
@@ -634,6 +725,70 @@ void DrawFlamebladeIcon(void)
 	GetDeviceContext()->Draw(4, 0);
 }
 
+void DrawMessageBox(void)
+{
+	// マテリアル設定
+	MATERIAL material;
+	ZeroMemory(&material, sizeof(material));
+	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	SetMaterial(material);
+
+	if (GetMode() == MODE_MESSAGEBOX)
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[BG_FADE]);
+		SetSpriteColor(g_VertexBuffer,
+			SCREEN_CENTER_X, SCREEN_CENTER_Y,
+			SCREEN_WIDTH, SCREEN_HEIGHT,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		GetDeviceContext()->Draw(4, 0);
+
+		// システムメニューボックス
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_MESSAGEBOX_TUTORIAL]);
+		SetSpriteColor(g_VertexBuffer,
+			UI_SYSTEM_MENU_BOX_POS_X, UI_SYSTEM_MENU_BOX_POS_Y,
+			TEXTURE_SYSTEM_MENU_BOX_WIDTH, TEXTURE_SYSTEM_MENU_BOX_HEIGHT,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		GetDeviceContext()->Draw(4, 0);
+	}
+	else
+	{
+		// システムメニューボックス
+		float px, py, tw, th;
+		int texNo;
+		px = UI_SYSTEM_MENU_BOX_POS_X;
+		if (g_PlayerRespawnMsg == TRUE)
+		{
+			texNo = UI_MESSAGEBOX_RESPAWN;
+			py = UI_SYSTEM_MENU_BOX_POS_Y + UI_RESPAWN_MESSAGE_OFFSET_Y;
+		}
+		else
+		{
+			texNo = UI_MESSAGEBOX_TUTORIAL;
+			py = UI_SYSTEM_MENU_BOX_POS_Y;
+		}
+
+		tw = TEXTURE_SYSTEM_MENU_BOX_WIDTH;
+		th = TEXTURE_SYSTEM_MENU_BOX_HEIGHT;
+
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[texNo]);
+		SetSpriteColor(g_VertexBuffer,
+			px, py,
+			tw, th,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+	// ボタン
+	BOOL selected = g_Cursor == UI_BUTTON_YES;
+	DrawButton(UI_BUTTON_YES, selected);
+
+	selected = g_Cursor == UI_BUTTON_NO;
+	DrawButton(UI_BUTTON_NO, selected);
+}
+
 void DrawPauseUI(void)
 {
 	// マテリアル設定
@@ -642,19 +797,19 @@ void DrawPauseUI(void)
 	material.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	SetMaterial(material);
 
-	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[BG_PAUSE_TEXTURE]);
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[BG_FADE]);
 	SetSpriteColor(g_VertexBuffer,
 		SCREEN_CENTER_X, SCREEN_CENTER_Y,
 		SCREEN_WIDTH, SCREEN_HEIGHT,
 		0.0f, 0.0f, 1.0f, 1.0f,
-		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f));
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.8f));
 	GetDeviceContext()->Draw(4, 0);
 
 	// システムメニューボックス
-	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SYSTEM_MENU_BOX]);
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_MESSAGEBOX_RETURN_TITLE]);
 	SetSpriteColor(g_VertexBuffer,
-		UI_SYSTEM_MENU_BOX_PAUSE_POS_X, UI_SYSTEM_MENU_BOX_PAUSE_POS_Y,
-		TEXTURE_SYSTEM_MENU_BOX_PAUSE_WIDTH, TEXTURE_SYSTEM_MENU_BOX_PAUSE_HEIGHT,
+		UI_SYSTEM_MENU_BOX_POS_X, UI_SYSTEM_MENU_BOX_POS_Y,
+		TEXTURE_SYSTEM_MENU_BOX_WIDTH, TEXTURE_SYSTEM_MENU_BOX_HEIGHT,
 		0.0f, 0.0f, 1.0f, 1.0f,
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 	GetDeviceContext()->Draw(4, 0);
@@ -682,10 +837,42 @@ void DrawButton(int button, BOOL selected)
 		buttonWidth = g_UI[button].width;
 		buttonHeight = g_UI[button].height;
 	}
+	float buttonPosX, buttonPosY;
+	buttonPosX = g_UI[button].pos.x;
+	if (g_PlayerRespawnMsg == TRUE)
+		buttonPosY = g_UI[button].pos.y + UI_RESPAWN_MESSAGE_OFFSET_Y;
+	else
+		buttonPosY = g_UI[button].pos.y;
+
 	SetSpriteColor(g_VertexBuffer,
-		g_UI[button].pos.x, g_UI[button].pos.y,
+		buttonPosX, buttonPosY,
 		buttonWidth, buttonHeight,
 		0.0f, 0.0f, 1.0f, 1.0f,
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 	GetDeviceContext()->Draw(4, 0);
+}
+
+void SetRespawnMessageBox(BOOL render)
+{
+	g_PlayerRespawnMsg = render;
+	if (render == TRUE)
+		g_Cursor = UI_BUTTON_YES;
+}
+
+void SetRenderGauge(BOOL render)
+{
+	g_RenderGauge = render;
+}
+void SetRenderSkillIcon(BOOL render)
+{
+	g_RenderSkillIcon = render;
+}
+void SetRenderJumpIcon(BOOL render)
+{
+	g_RenderJumpIcon = render;
+}
+
+void SetRenderBladeIcon(BOOL render)
+{
+	g_RenderBladeIcon = render;
 }

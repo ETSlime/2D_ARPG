@@ -35,12 +35,15 @@ enum
 	UI_MAGIC_FIRE_BALL,
 	UI_FLAMEBLADE_ICON,
 	UI_SKILL_ENABLED,
-	UI_SYSTEM_MENU_BOX,
+	UI_MESSAGEBOX_RETURN_TITLE,
 	UI_BUTTON_NEW_GAME,
 	UI_BUTTON_TUTORIAL,
 	UI_BUTTON_EXIT_GAME,
 	UI_BUTTON_YES,
 	UI_BUTTON_NO,
+	UI_MESSAGEBOX_TUTORIAL,
+	UI_MESSAGEBOX_RESPAWN,
+	BG_FADE,
 	UI_NONE,
 };
 
@@ -53,6 +56,7 @@ void UninitUI(void);
 void UpdateUI(void);
 void DrawUI(void);
 void DrawTitleUI(void);
+void DrawMessageBox(void);
 void DrawInGameUI(void);
 void DrawPauseUI(void);
 void DrawButton(int button, BOOL selected);
@@ -61,3 +65,9 @@ void DrawPlayerJumpIcon(void);
 void DrawSkillIcon(void);
 void DrawFlamebladeIcon(void);
 
+void SetRespawnMessageBox(BOOL render);
+
+void SetRenderGauge(BOOL render);
+void SetRenderSkillIcon(BOOL render);
+void SetRenderJumpIcon(BOOL render);
+void SetRenderBladeIcon(BOOL render);

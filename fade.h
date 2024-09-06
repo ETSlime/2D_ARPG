@@ -34,4 +34,5 @@ void SetFade(int fade, int modeNext);
 int GetFade(void);
 
 
-
+void SetRespawn(BOOL respawn);
+void ChangeMapFade(int map, int pos);

@@ -28,4 +28,6 @@ void AddScore(int add);
 int GetScore(void);
 void SetScore(int score);
 
+void SetRenderScore(int render);
+
 

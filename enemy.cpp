@@ -11,7 +11,7 @@
 #include "collision.h"
 #include "score.h"
 #include "magic.h"
-
+#include "tutorial.h"
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -57,26 +57,6 @@
 #define ANIM_WAIT_DIE				(150)
 #define IDLE_WAIT					(50)
 
-// battle
-#define ENEMY_VISION_RADIUS			(500.0f)
-#define CYCLOPS_ATTACK_RADIUS		(100.0f)
-#define GARGOYLE_ATTACK_RADIUS		(100.0f)
-#define GNOLL_ATTACK_RADIUS			(100.0f)
-#define GOBLIN_ATTACK_RADIUS		(100.0f)
-#define GOLEM_ATTACK_RADIUS			(100.0f)
-#define IMP_ATTACK_RADIUS			(100.0f)
-#define MUMMY_ATTACK_RADIUS			(100.0f)
-#define OGRE_ATTACK_RADIUS			(100.0f)
-#define SKELL_ATTACK_RADIUS			(100.0f)
-#define	ENEMY_HIT_TIMER				(5.0f)
-#define	ENEMY_HIT_CD				(35.0f)
-#define ENEMY_STAGGER_RECOVERY_TIME (80)
-#define MAX_CHASE_DISTANCE			(800.0f)	// 最大追跡距離
-#define MIN_RETURN_DISTANCE			(600.0f)	// 最小の戻り距離（バッファゾーン）
-#define RETREAT_SPEED_RATE			(0.5f)		// 倒退時の速度
-#define ENEMY_STUN_TIME				(35)
-#define ENEMY_FALL_SPEED			(6.5f)
-#define ENEMY_FALL_CNT_MAX			(30)
 
 // lightpoint
 #define TEXTURE_WIDTH_LIGHTPOINT	(150.0f)
@@ -128,6 +108,7 @@ static LightPoint 	g_LightPoint[LIGHTPOINT_MAX];
 
 static int		g_EnemyCount = ENEMY_MAX;
 static int		g_LightPointInterval = 10;
+static BOOL		g_Update = TRUE;
 
 static EnemyAttributes cyclopsAttributes = {
 	100.0f,	// float hp
@@ -169,13 +150,13 @@ static EnemyAttributes gnollAttributes = {
 };
 
 static EnemyAttributes goblinAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
-	15,			// int damage
-	25,			// int staggerResistance
+	130.0f,	// float hp
+	130.0f,	// float maxhp
+	5,			// int damage
+	5,			// int staggerResistance
 	80,			// int staggerRecoveryTime
 	35,			// int stunTime
-	100.0f,		// float attackRange
+	75.0f,		// float attackRange
 	100,		// int attackCooldown
 	FALSE,		// BOOL canFly
 	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
@@ -249,6 +230,7 @@ static EnemyAttributes skellAttributes = {
 static EnemyAttributes* attributesTbl[] =
 {
 	&cyclopsAttributes,
+	&gargoyleAttributes,
 	&gnollAttributes,
 	&goblinAttributes,
 	&golemAttributes,
@@ -304,15 +286,15 @@ static AttackAABBTBL gnollAttackTbl[MAX_ATTACK_AABB * ANIM_ATTACK_PATTERN_NUM] =
 };
 
 static AttackAABBTBL goblinAttackTbl[MAX_ATTACK_AABB * ANIM_ATTACK_PATTERN_NUM] = {
-	{XMFLOAT3(55.0f, 0.0f, 0.0f), 45.0f, 85.0f},
+	{XMFLOAT3(55.0f, 0.0f, 0.0f), 31.0f, 85.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 
-	{XMFLOAT3(-55.0f, 10.0f, 0.0f), 45.0f, 85.0f},
+	{XMFLOAT3(-55.0f, 10.0f, 0.0f), 31.0f, 85.0f},
 	{XMFLOAT3(0.0f, -40.0f, 0.0f), 130.0f, 45.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 
-	{XMFLOAT3(-55.0f, 10.0f, 0.0f), 45.0f, 85.0f},
+	{XMFLOAT3(-55.0f, 10.0f, 0.0f), 31.0f, 85.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 };
@@ -416,6 +398,8 @@ HRESULT InitEnemy(void)
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
+	g_Update = TRUE;
+
 	EnemyConfig* enemyConfig = GetEnemyConfig(GetCurrentMap());
 	// エネミー構造体の初期化
 	g_EnemyCount = 0;
@@ -427,8 +411,8 @@ HRESULT InitEnemy(void)
 
 		g_Enemy[i].enemyType = enemyConfig[i].enemyType;
 		g_Enemy[i].time = 0.0f;		// 線形補間用のタイマーをクリア
-		g_Enemy[i].tblNo = 0;		// 再生するアニメデータの先頭アドレスをセット
-		g_Enemy[i].tblMax = sizeof(*enemyConfig[i].moveTbl) / sizeof(INTERPOLATION_DATA);	// 再生するアニメデータのレコード数をセット
+		g_Enemy[i].tblNo = i;		// 再生するアニメデータの先頭アドレスをセット
+		g_Enemy[i].tblMax = enemyConfig[i].moveTblSize;	// 再生するアニメデータのレコード数をセット
 		g_Enemy[i].pos = enemyConfig[i].moveTbl[0].pos;
 		g_Enemy[i].returnPos = g_Enemy[i].pos;
 
@@ -444,8 +428,8 @@ HRESULT InitEnemy(void)
 
 		g_Enemy[i].idleCount = 0;
 		g_Enemy[i].state = ENEMY_IDLE;
-		g_Enemy[i].dir = CHAR_DIR_LEFT;
-		g_Enemy[i].oldDir = CHAR_DIR_LEFT;
+		g_Enemy[i].dir = CHAR_DIR_RIGHT;
+		g_Enemy[i].oldDir = CHAR_DIR_RIGHT;
 		g_Enemy[i].stepBack = FALSE;
 		g_Enemy[i].onAirCnt = 0;
 		g_Enemy[i].isFalling = FALSE;
@@ -645,7 +629,7 @@ void UpdateEnemy(void)
 				{
 				case ENEMY_CHASE:
 				{
-					if (distanceToPlayer < g_Enemy[i].attributes.attackRange)
+					if (distanceToPlayer < g_Enemy[i].attributes.attackRange && player->state != DIE)
 					{
 						g_Enemy[i].stateOld = g_Enemy[i].state;
 						g_Enemy[i].state = ENEMY_ATTACK;
@@ -665,7 +649,7 @@ void UpdateEnemy(void)
 						// プレイヤーが視野範囲外に出た場合、元の位置に戻るためWALK_BACK状態に移行
 						g_Enemy[i].state = ENEMY_WALK_BACK;
 					}
-					else
+					else if (player->state != DIE)
 					{
 						// 追跡を行う
 						g_Enemy[i].stepBack = FALSE;
@@ -679,6 +663,8 @@ void UpdateEnemy(void)
 							SET_ENEMY_POS((&g_Enemy[i]), newPos);
 						
 					}
+					else
+						g_Enemy[i].state = ENEMY_WALK_BACK;
 					break;
 				}
 
@@ -690,7 +676,7 @@ void UpdateEnemy(void)
 						g_Enemy[i].state = ENEMY_WALK_BACK;  // プレイヤーが視野範囲外なら元のパスに戻る
 					}
 					// プレイヤーが最大追跡距離内に戻った場合、CHASE状態に遷移
-					else if (CheckChasingPlayer(&g_Enemy[i]))
+					else if (player->state != DIE && CheckChasingPlayer(&g_Enemy[i]))
 					{
 						g_Enemy[i].state = ENEMY_CHASE;  // 最大追跡距離内にプレイヤーがいる場合、再び追跡する
 					}
@@ -732,7 +718,9 @@ void UpdateEnemy(void)
 						g_Enemy[i].state = ENEMY_RETREAT;  // 倒退状態に移行
 						g_Enemy[i].patternAnim = ANIM_WALK_PATTERN_NUM - 1;
 					}
-					else if (distanceToPlayer > g_Enemy[i].attributes.attackRange && distanceToReturnPos < MAX_CHASE_DISTANCE)
+					else if (distanceToPlayer > g_Enemy[i].attributes.attackRange 
+						&& distanceToReturnPos < MAX_CHASE_DISTANCE
+						&& player->state != DIE)
 					{
 						// 攻撃範囲外なら追跡を続ける
 						g_Enemy[i].stepBack = FALSE;
@@ -753,7 +741,7 @@ void UpdateEnemy(void)
 					if (g_Enemy[i].attributes.attackCooldown <= 0)
 					{
 						// クールダウン終了後、再び敵の行動を決定
-						if (distanceToPlayer < g_Enemy[i].attributes.attackRange)
+						if (distanceToPlayer < g_Enemy[i].attributes.attackRange && player->state != DIE)
 						{
 							g_Enemy[i].stateOld = g_Enemy[i].state;
 							g_Enemy[i].state = ENEMY_ATTACK;  // プレイヤーが攻撃範囲内にいる場合
@@ -762,7 +750,7 @@ void UpdateEnemy(void)
 							g_Enemy[i].countAnim = 0.0f;
 							g_Enemy[i].finishAttack = FALSE;
 						}
-						else if (CheckChasingPlayer(&g_Enemy[i]))
+						else if (CheckChasingPlayer(&g_Enemy[i]) && player->state != DIE)
 						{
 							g_Enemy[i].state = ENEMY_CHASE;   // プレイヤーが視野内にいる場合
 						}
@@ -779,7 +767,9 @@ void UpdateEnemy(void)
 				case ENEMY_WALK:
 				{
 					// プレイヤーが視野内にいて、敵がプレイヤーを向いている場合にCHASE状態に遷移
-					if (distanceToPlayer < ENEMY_VISION_RADIUS && CheckChasingPlayer(&g_Enemy[i]))
+					if (player->state != DIE 
+						&& distanceToPlayer < ENEMY_VISION_RADIUS 
+						&& CheckChasingPlayer(&g_Enemy[i]))
 					{
 						g_Enemy[i].state = ENEMY_CHASE;
 						g_Enemy[i].returnPos = g_Enemy[i].pos;  // 行動パスから離れる前の位置を記録
@@ -792,7 +782,8 @@ void UpdateEnemy(void)
 						int nowNo = (int)g_Enemy[i].time;			// 整数分であるテーブル番号を取り出している
 						int maxNo = g_Enemy[i].tblMax;				// 登録テーブル数を数えている
 						int nextNo = (nowNo + 1) % maxNo;			// 移動先テーブルの番号を求めている
-						INTERPOLATION_DATA* tbl = g_MoveTblAdr[g_Enemy[i].tblNo];	// 行動テーブルのアドレスを取得
+						INTERPOLATION_DATA* tbl = g_MoveTblAdr[i];	// 行動テーブルのアドレスを取得
+						//if (nowNo != 0)
 
 						if (g_Enemy[i].state == ENEMY_IDLE)
 						{
@@ -806,6 +797,7 @@ void UpdateEnemy(void)
 						}
 						else
 						{
+							
 							XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);	// XMVECTORへ変換
 							XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);	// XMVECTORへ変換
 							XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);	// XMVECTORへ変換
@@ -860,10 +852,11 @@ void UpdateEnemy(void)
 				}
 
 				case ENEMY_WALK_BACK:
-				{
-					
+				{	
 					// プレイヤーが視野内にいるかをチェック
-					if (distanceToPlayer < ENEMY_VISION_RADIUS && CheckChasingPlayer(&g_Enemy[i]))
+					if (player->state != DIE 
+						&& distanceToPlayer < ENEMY_VISION_RADIUS 
+						&& CheckChasingPlayer(&g_Enemy[i]))
 					{
 						// プレイヤーが再び視野内に入った場合、CHASE状態に遷移
 						g_Enemy[i].state = ENEMY_CHASE;
@@ -908,13 +901,13 @@ void UpdateEnemy(void)
 					break;
 				}
 
-
-
 				// 敵が右に移動しているか、左に移動しているかを判断	
 				if (oldPosX < g_Enemy[i].pos.x)
 					g_Enemy[i].dir = g_Enemy[i].stepBack == TRUE ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 				else if (oldPosX > g_Enemy[i].pos.x)
 					g_Enemy[i].dir = g_Enemy[i].stepBack == TRUE ? CHAR_DIR_RIGHT : CHAR_DIR_LEFT;
+
+				g_Enemy[i].invertTex = g_Enemy[i].dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 			}
 
 			UpdateEnemyGroundCollision(&g_Enemy[i]);
@@ -1078,6 +1071,18 @@ void UpdateEnemyGroundCollision(ENEMY* enemy)
 
 }
 
+void UpdateEnemyMoveTbl(ENEMY* enemy, float newPosY)
+{
+	int size = enemy->tblMax;
+
+	INTERPOLATION_DATA* moveTbl = g_MoveTblAdr[enemy->tblNo];
+
+	for (int i = 0; i < size; ++i) 
+	{
+		moveTbl[i].pos.y = newPosY;
+	}
+}
+
 void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 {
 	PLAYER* player = GetPlayer();
@@ -1093,8 +1098,8 @@ void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 			enemy->hitCD = ENEMY_HIT_CD * 0.5f;
 
 
-		enemy->attributes.staggerResistance -= 10;
-		enemy->attributes.hp -= player->ATK;
+		enemy->attributes.staggerResistance -= GetPoiseDamage();
+		enemy->attributes.hp -= GetPlayerDamage();
 	}
 	else
 	{
@@ -1453,7 +1458,6 @@ BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
 		float wallW = walls[i].w;
 		float wallH = walls[i].h;
 
-
 		// 衝突確認
 		switch (dir)
 		{
@@ -1489,10 +1493,11 @@ BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
 		{
 			if (CollisionBB(newPos, enemy->bodyAABB.w, enemy->bodyAABB.h, wallPos, wallW, wallH))
 			{
-				// プレイヤーが上に移動していて、壁が下側にある場合
+				// エネミーが上に移動していて、壁が下側にある場合
 				XMFLOAT3 enemyPos = enemy->pos;
 				enemyPos.y = wallPos.y - wallH / 2 - enemy->bodyAABB.h / 2 - 0.01f;
 				SET_ENEMY_POS(enemy, enemyPos); // 下への進行を停止
+				UpdateEnemyMoveTbl(enemy, enemyPos.y);
 				return false;
 			}
 			break;
@@ -1553,6 +1558,11 @@ void PlayEnemyWalkAnim(ENEMY* enemy)
 
 void PlayEnemyAttackAnim(ENEMY* enemy)
 {
+	if (enemy->patternAnim == ANIM_ATTACK_OFFSET && GetTutorialPause() == PAUSE_ENEMY)
+	{
+		g_Update = FALSE;
+	}
+
 	PLAYER* player = GetPlayer();
 
 	enemy->invertTex = enemy->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
@@ -1941,8 +1951,8 @@ void ClearEnemy(ENEMY* enemy)
 
 	enemy->idleCount = 0;
 	enemy->state = ENEMY_IDLE;
-	enemy->dir = CHAR_DIR_LEFT;
-	enemy->oldDir = CHAR_DIR_LEFT;
+	enemy->dir = CHAR_DIR_RIGHT;
+	enemy->oldDir = CHAR_DIR_RIGHT;
 	enemy->stepBack = FALSE;
 	enemy->onAirCnt = 0;
 	enemy->isFalling = FALSE;
@@ -1968,4 +1978,14 @@ void ClearEnemy(ENEMY* enemy)
 		enemy->attackAABB[j].h = 0.0f;
 		enemy->attackAABB[j].tag = ENEMY_ATTACK_AABB;
 	}
+}
+
+BOOL GetUpdateEnemy(void)
+{
+	return g_Update;
+
+}
+void SetUpdateEnemy(BOOL update)
+{
+	g_Update = update;
 }

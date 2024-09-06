@@ -12,8 +12,8 @@
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-#define TEXTURE_WIDTH				(16)	// キャラサイズ
-#define TEXTURE_HEIGHT				(32)	// 
+#define TEXTURE_WIDTH				(24)	// キャラサイズ
+#define TEXTURE_HEIGHT				(40)	// 
 #define TEXTURE_MAX					(1)		// テクスチャの数
 
 
@@ -29,7 +29,7 @@ static ID3D11Buffer				*g_VertexBuffer = NULL;		// 頂点情報
 static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char *g_TexturName[] = {
-	"data/TEXTURE/number16x32.png",
+	"data/TEXTURE/number.png",
 };
 
 
@@ -39,6 +39,7 @@ static XMFLOAT3					g_Pos;						// ポリゴンの座標
 static int						g_TexNo;					// テクスチャ番号
 
 static int						g_Score;					// スコア
+static BOOL						g_RenderScore;
 
 //=============================================================================
 // 初期化処理
@@ -78,7 +79,7 @@ HRESULT InitScore(void)
 	g_TexNo = 0;
 
 	g_Score = 0;	// スコアの初期化
-
+	g_RenderScore = TRUE;
 	return S_OK;
 }
 
@@ -124,6 +125,8 @@ void UpdateScore(void)
 //=============================================================================
 void DrawScore(void)
 {
+	if (g_RenderScore == FALSE) return;
+
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -202,3 +205,7 @@ void SetScore(int score)
 }
 
 
+void SetRenderScore(int render)
+{
+	g_RenderScore = render;
+}

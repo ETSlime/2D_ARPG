@@ -74,6 +74,7 @@ struct INTERPOLATION_DATA
 enum
 {
 	MODE_TITLE = 0,			// タイトル画面
+	MODE_MESSAGEBOX,
 	MODE_TUTORIAL,			// ゲーム説明画面
 	MODE_GAME,				// ゲーム画面
 	MODE_RESULT,			// リザルト画面
@@ -103,5 +104,3 @@ int GetRand(int min, int max);
 
 XMFLOAT3 AddXMFLOAT3(const XMFLOAT3& v1, const XMFLOAT3& v2);
 
-int GetCurrentMap();
-void SetCurrentMap(int map);

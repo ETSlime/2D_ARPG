@@ -9,6 +9,7 @@
 #include "fade.h"
 #include "sound.h"
 #include "sprite.h"
+#include "player.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -45,6 +46,8 @@ int								g_ModeNext;					// 次のモード
 XMFLOAT4						g_Color;					// フェードのカラー（α値）
 
 static BOOL						g_Load = FALSE;
+static BOOL						g_Respawn = FALSE;
+static BOOL						g_ChangePos = FALSE;
 
 //=============================================================================
 // 初期化処理
@@ -128,8 +131,11 @@ void UpdateFade(void)
 			g_Color.w += FADE_RATE;		// α値を加算して画面を消していく
 			if (g_Color.w >= 1.0f)
 			{
-				// 鳴っている曲を全部止める
-				StopSound();
+				if (g_ModeNext != GetMode())
+				{
+					// 鳴っている曲を全部止める
+					StopSound();
+				}
 
 				// フェードイン処理に切り替え
 				g_Color.w = 1.0f;
@@ -137,6 +143,18 @@ void UpdateFade(void)
 
 				// モードを設定
 				SetMode(g_ModeNext);
+
+				if (g_Respawn == TRUE)
+				{
+					PlayerRespawn();
+					g_Respawn = FALSE;
+				}
+
+				if (g_ChangePos == TRUE)
+				{
+
+					g_ChangePos = FALSE;
+				}
 			}
 
 		}
@@ -226,4 +244,16 @@ int GetFade(void)
 }
 
 
+void SetRespawn(BOOL respawn)
+{
+	g_Respawn = respawn;
+}
 
+void ChangeMapFade(int map, int pos)
+{
+	SetCurrentMap(map);
+	InitPlayerInitPos(map);
+	SetPlayerInitPos(map, pos);
+	SetFade(FADE_OUT, MODE_GAME);
+	g_ChangePos = TRUE;
+}

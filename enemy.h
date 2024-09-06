@@ -17,6 +17,27 @@
 #define ENEMY_MAX							(11)			// エネミーのMax人数
 #define LIGHTPOINT_MAX						(80)
 
+// battle
+#define ENEMY_VISION_RADIUS			(500.0f)
+#define CYCLOPS_ATTACK_RADIUS		(100.0f)
+#define GARGOYLE_ATTACK_RADIUS		(100.0f)
+#define GNOLL_ATTACK_RADIUS			(100.0f)
+#define GOBLIN_ATTACK_RADIUS		(100.0f)
+#define GOLEM_ATTACK_RADIUS			(100.0f)
+#define IMP_ATTACK_RADIUS			(100.0f)
+#define MUMMY_ATTACK_RADIUS			(100.0f)
+#define OGRE_ATTACK_RADIUS			(100.0f)
+#define SKELL_ATTACK_RADIUS			(100.0f)
+#define	ENEMY_HIT_TIMER				(5.0f)
+#define	ENEMY_HIT_CD				(35.0f)
+#define ENEMY_STAGGER_RECOVERY_TIME (80)
+#define MAX_CHASE_DISTANCE			(800.0f)	// 最大追跡距離
+#define MIN_RETURN_DISTANCE			(600.0f)	// 最小の戻り距離（バッファゾーン）
+#define RETREAT_SPEED_RATE			(0.5f)		// 倒退時の速度
+#define ENEMY_STUN_TIME				(35)
+#define ENEMY_FALL_SPEED			(6.5f)
+#define ENEMY_FALL_CNT_MAX			(30)
+
 #define MAX_ATTACK_AABB						(3)
 #define ATTACK_COOLDOWN_TIME_CYCLOPS		(100)
 #define ATTACK_COOLDOWN_TIME_GARGOYLE		(100)
@@ -154,6 +175,7 @@ HRESULT InitEnemy(void);
 void UninitEnemy(void);
 void UpdateEnemy(void);
 void UpdateEnemyStates(ENEMY* enemy);
+void UpdateEnemyMoveTbl(ENEMY* enemy, float newPosY);
 void DrawEnemy(void);
 void DrawEnemySprite(const ENEMY* enemy, BOOL die = FALSE);
 void DrawEnemyHPGauge(const ENEMY* enemy);
@@ -184,3 +206,6 @@ float GetCurrentTextureSizeW(int enemyType);
 float GetCurrentTextureSizeH(int enemyType);
 
 void ClearEnemy(ENEMY* enemy);
+
+BOOL GetUpdateEnemy(void);
+void SetUpdateEnemy(BOOL update);

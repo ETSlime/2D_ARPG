@@ -12,6 +12,8 @@
 #include "collision.h"
 #include "score.h"
 #include "file.h"
+#include "UI.h"
+#include "tutorial.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -87,7 +89,7 @@
 #define ANIM_WAIT_KNOCKDOWN						(18)
 #define ANIM_WAIT_REBOUND						(6)
 #define ANIM_WAIT_DEFEND						(25)
-#define ANIM_DASH_FRAME							(10)
+#define ANIM_DASH_FRAME							(13)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
 #define ANIM_KNOCKDOWN_FRAME					(4)
@@ -100,6 +102,7 @@
 #define	ANIM_DASH_ATTACK_FRAME					(8)
 #define ANIM_FLAME_ATTACK1_FRAME				(8)
 #define	ANIM_FLAME_ATTACK2_FRAME				(8)
+#define ANIM_FADE_OUT_FRAME						(55)
 
 
 #define	NORMAL_ATTACK4_DROP_FRAME				(9)
@@ -164,6 +167,14 @@
 #define	MP_COST_HEALING				(500.0f)
 #define MP_COST_FLAMEBLADE			(2.5f)
 
+// die
+#define DIE_FADE_OUT_TEXTURE		(22)
+#define DIE_LOGO_TEXTURE			(23)
+#define TEXTURE_DIE_LOGO_WIDTH		(420.0f)
+#define TEXTURE_DIE_LOGO_HEIGHT		(210.0f)
+#define TEXTURE_DIE_LOGO_POS_X		(485.0f)
+#define TEXTURE_DIE_LOGO_POS_Y		(155.0f)
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -204,12 +215,15 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/char/jump_effect.png",
 	"data/TEXTURE/char/heal_effect.png",
 	"data/TEXTURE/char/fire_ball_effect.png",
+	"data/TEXTURE/fade_black.png",
+	"data/TEXTURE/die_logo.png",
 };
 
 
 static BOOL		g_Load = FALSE;				// 初期化を行ったかのフラグ
 static PLAYER	g_Player[PLAYER_MAX];		// プレイヤー構造体
 static int		g_PlayerCount = PLAYER_MAX;	// 生きてるプレイヤーの数
+static XMFLOAT3 g_InitPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 static int      g_jumpCnt = 0;
 static int		g_jump[PLAYER_JUMP_CNT_MAX] =
@@ -218,8 +232,20 @@ static int		g_jump[PLAYER_JUMP_CNT_MAX] =
 	  1,   2,   3,   4,   5,   6,  7,  8,  9, 10, 11,12,13,14,15
 };
 
+static BOOL		g_Update = TRUE;
+
 static BOOL		noGravity = FALSE;
 static BOOL		allowAirJump = FALSE;
+static BOOL		g_LimitPlayerMove = FALSE;
+static BOOL		g_DisableMoveLeft = FALSE;
+static BOOL		g_DisableMoveRight = FALSE;
+static BOOL		g_DisableRun = FALSE;
+static BOOL		g_DisableDash = FALSE;
+static BOOL		g_DisableJump = FALSE;
+static BOOL		g_DisableMagic = FALSE;
+static BOOL		g_DisableAttack = FALSE;
+static BOOL		g_DisableDefend = FALSE;
+
 
 static AttackAABBTBL normalAttack1Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK1_FRAME] = {
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
@@ -490,98 +516,19 @@ HRESULT InitPlayer(void)
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
+	g_Update = TRUE;
+
 	g_PlayerCount = 0;						// 生きてるプレイヤーの数
+	g_LimitPlayerMove = FALSE;
+	g_DisableRun = FALSE;
+	g_DisableDash = FALSE;
+	g_DisableJump = FALSE;
+	g_DisableMagic = FALSE;
+	g_DisableAttack = FALSE;
+	g_DisableDefend = FALSE;
 
 	// プレイヤー構造体の初期化
-	for (int i = 0; i < PLAYER_MAX; i++)
-	{
-		g_PlayerCount++;
-		g_Player[i].use = TRUE;
-		g_Player[i].pos = XMFLOAT3(PLAYER_INIT_POS_X, PLAYER_INIT_POS_Y, 0.0f);	// 中心点から表示
-		g_Player[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_Player[i].w = TEXTURE_IDLE_WIDTH;
-		g_Player[i].h = TEXTURE_IDLE_HEIGHT;
-		g_Player[i].shadowY = g_Player[i].pos.y;
-		g_Player[i].texNo = 0;
-		g_Player[i].state = IDLE;
-		g_Player[i].invertTex = FALSE;
-
-		g_Player[i].countAnim = 0;
-		g_Player[i].patternAnim = 0;
-		g_Player[i].patternAnimOld = 0;
-		g_Player[i].animFrameCount = 0;
-		g_Player[i].animFrameCountCast = 0;
-		g_Player[i].dashCount = 0;
-		g_Player[i].dashCD = 0;
-		g_Player[i].airDashCount = 0;
-		g_Player[i].maxDashCount = MAX_DASH_COUNT;
-		g_Player[i].dashInterval = 0;
-
-		g_Player[i].move = XMFLOAT3(PLAYER_WALK_SPEED, 0.0f, 0.0f);		// 移動量
-
-		g_Player[i].dir = CHAR_DIR_RIGHT;					// 右向きにしとくか
-		g_Player[i].defendDir = CHAR_DIR_RIGHT;
-		g_Player[i].playAnim = FALSE;
-		g_Player[i].dashOnAir = FALSE;
-		g_Player[i].knockDownFall = FALSE;
-		g_Player[i].jumpOnAir = TRUE;
-		g_Player[i].isRunning = FALSE;
-		g_Player[i].isDefending = FALSE;
-		g_Player[i].isParrying = FALSE;
-		g_Player[i].wasRunningExhausted = FALSE;
-		g_Player[i].wasDefendingExhausted = FALSE;
-		g_Player[i].jumpOnAirCnt = 0;
-		g_Player[i].defendCnt = 0;
-		g_Player[i].jumpEffectCnt = 0;
-		g_Player[i].patternAnimCast = 0;
-		g_Player[i].magicCasting = MAGIC_NONE;
-		g_Player[i].patternAnim = CHAR_IDLE;
-		g_Player[i].airJumpPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-		g_Player[i].HP = 200;
-		g_Player[i].maxHP = 200;
-		g_Player[i].MP = 1800;
-		g_Player[i].maxMP = 1800;
-		g_Player[i].ST = 1000;
-		g_Player[i].maxST = 1000;
-		g_Player[i].ATK = 20;
-		g_Player[i].DEF = 10;
-		g_Player[i].isInvincible = FALSE;
-		g_Player[i].attackPattern = NONE;
-		g_Player[i].magic = MAGIC_HEALING;
-		g_Player[i].healingCD = 0;
-		g_Player[i].fireBallCD = 0;
-		g_Player[i].flameblade = FALSE;
-
-		g_Player[i].actionQueueStart = 0;
-		g_Player[i].actionQueueEnd = 0;
-		g_Player[i].actionQueueClearTime = 0;
-
-		// ジャンプの初期化
-		g_Player[i].jump = FALSE;
-		g_Player[i].jumpCnt = 0;
-		g_Player[i].jumpYMax = PLAYER_JUMP_Y_MAX;
-
-		g_Player[i].onAirCnt = 0;
-		g_Player[i].attackInterval = 0;
-
-		for (int j = 0; j < ACTION_QUEUE_SIZE; j++)
-		{
-			g_Player[i].actionQueue[j] = 0;
-		}
-
-		// 分身用
-		for (int j = 0; j < PLAYER_OFFSET_CNT; j++)
-		{
-			g_Player[i].offset[j] = g_Player[i].pos;
-		}
-
-		// AABB
-		g_Player[i].bodyAABB.pos = g_Player[i].pos;
-		g_Player[i].bodyAABB.w = g_Player[i].w * 0.7f;
-		g_Player[i].bodyAABB.h = g_Player[i].h;
-		g_Player[i].bodyAABB.tag = PLAYER_BODY_AABB;
-	}
+	InitPlayerStatus();
 
 #ifdef _DEBUG	
 	{
@@ -643,6 +590,8 @@ void UpdatePlayer(void)
 
 	for (int i = 0; i < PLAYER_MAX; i++)
 	{
+		if (g_Player[i].update == FALSE) continue;
+
 		// 生きてるプレイヤーだけ処理をする
 		if (g_Player[i].use == TRUE)
 		{
@@ -759,6 +708,8 @@ void UpdatePlayer(void)
 			case CAST:
 				PlayCastAnim();
 				break;
+			case DIE:
+				PlayDieAnim();
 			default:
 				break;
 			}
@@ -852,17 +803,27 @@ void HandlePlayerMove(float speed, int direction)
 			CHANGE_PLAYER_POS_X(speed);
 
 		// 走る
-		if (GetKeyboardTrigger(DIK_LSHIFT) && g_Player->ST - ST_COST_RUN >= 0 && g_Player->isDefending == FALSE)
+		if (GetKeyboardTrigger(DIK_LSHIFT) 
+			&& g_DisableRun == FALSE
+			&& g_Player->ST - ST_COST_RUN >= 0 
+			&& g_Player->isDefending == FALSE)
 		{
 			HandlePlayerRun(speed);
 			g_Player->wasRunningExhausted = FALSE;
 		}
-		else if (GetKeyboardPress(DIK_LSHIFT) && g_Player->ST > ST_RUN_THRESHOLD && g_Player->wasRunningExhausted && g_Player->isDefending == FALSE)
+		else if (GetKeyboardPress(DIK_LSHIFT) 
+			&& g_DisableRun == FALSE
+			&& g_Player->ST > ST_RUN_THRESHOLD 
+			&& g_Player->wasRunningExhausted 
+			&& g_Player->isDefending == FALSE)
 		{
 			HandlePlayerRun(speed);
 			g_Player->wasRunningExhausted = FALSE;
 		}
-		else if (GetKeyboardPress(DIK_LSHIFT) && g_Player->wasRunningExhausted == FALSE && g_Player->isDefending == FALSE)
+		else if (GetKeyboardPress(DIK_LSHIFT) 
+			&& g_DisableRun == FALSE
+			&& g_Player->wasRunningExhausted == FALSE 
+			&& g_Player->isDefending == FALSE)
 		{
 			HandlePlayerRun(speed);
 			if (g_Player->ST <= 0.0f)
@@ -880,6 +841,9 @@ void HandlePlayerMove(float speed, int direction)
 
 void HandlePlayerRun(float speed)
 {
+	if (GetTutorialPause() == PAUSE_RUN)
+		SetTutorialPause(PAUSE_NONE);
+
 	// プレイヤーを「走行」状態にし、状態を「走る」に変更
 	g_Player->isRunning = TRUE;
 	g_Player->state = RUN;
@@ -891,6 +855,9 @@ void HandlePlayerRun(float speed)
 
 void HandlePlayerDash(void)
 {
+	if (GetTutorialPause() == PAUSE_DASH)
+		SetTutorialPause(PAUSE_NONE);
+
 	if (g_Player->ST < ST_COST_DASH)
 		return;
 	// もしアイドル状態なら、すぐにアクションを実行
@@ -1223,44 +1190,55 @@ void UpdateKeyboardInput(void)
 	}
 #endif
 
-	if (GetKeyboardPress(DIK_RIGHT) && g_Player->playAnim == FALSE)
+	if (GetKeyboardPress(DIK_RIGHT) 
+		&& g_DisableMoveRight == FALSE
+		&& g_Player->playAnim == FALSE)
 	{
 		// 右移動処理
 		HandlePlayerMove(speed, CHAR_DIR_RIGHT);
 	}
-	else if (GetKeyboardPress(DIK_LEFT) && g_Player->playAnim == FALSE)
+	else if (GetKeyboardPress(DIK_LEFT) 
+		&& g_DisableMoveLeft == FALSE
+		&& g_Player->playAnim == FALSE)
 	{
 		// 左移動処理
 		HandlePlayerMove(-speed, CHAR_DIR_LEFT);
 	}
 
-	if (GetKeyboardPress(DIK_LCONTROL) && g_Player->playAnim == FALSE && g_Player->onAirCnt == 0)
+	if (GetKeyboardPress(DIK_LCONTROL) 
+		&& g_DisableDefend == FALSE
+		&& g_Player->playAnim == FALSE 
+		&& g_Player->onAirCnt == 0)
 	{
 		// 防御処理
 		HandlePlayerDefend();
 	}
-	else if (GetKeyboardTrigger(DIK_C) && g_Player->dashCount < g_Player->maxDashCount)
+	else if (GetKeyboardTrigger(DIK_C) 
+		&& g_DisableDash == FALSE
+		&& g_Player->dashCount < g_Player->maxDashCount)
 	{
 		// ダッシュ処理
 		HandlePlayerDash();
 	}
-	else if (GetKeyboardTrigger(DIK_SPACE) && g_Player->jumpOnAirCnt == 0)
+	else if (GetKeyboardTrigger(DIK_SPACE) 
+		&& g_DisableJump == FALSE
+		&& g_Player->jumpOnAirCnt == 0)
 	{
 		// ジャンプ処理
 		HandlePlayerJump();
 	}
-	else if (GetKeyboardTrigger(DIK_X))
+	else if (GetKeyboardTrigger(DIK_X) && g_DisableAttack == FALSE)
 	{
 		// 攻撃処理
 		HandlePlayerAttack();
 	}
 
-	if (GetKeyboardRelease(DIK_Q))
+	if (GetKeyboardRelease(DIK_Q) && g_DisableMagic == FALSE)
 		g_Player->magic = (g_Player->magic + 2) % MAGIC_NUM_MAX;
-	if (GetKeyboardRelease(DIK_E))
+	if (GetKeyboardRelease(DIK_E) && g_DisableMagic == FALSE)
 		g_Player->magic = (g_Player->magic + 1) % MAGIC_NUM_MAX;
 
-	if (GetKeyboardRelease(DIK_F))
+	if (GetKeyboardRelease(DIK_F) && g_DisableMagic == FALSE)
 	{
 		switch (g_Player->magic)
 		{
@@ -1451,12 +1429,22 @@ void UpdateBackGroundScroll(void)
 	float leftLimitX = SCREEN_WIDTH / 3;
 	float rightLimitX = SCREEN_WIDTH * 2 / 3;
 
+	if (g_LimitPlayerMove == TRUE)
+	{
+		if (g_Player->pos.x < bg->pos.x + leftLimitX)
+			SET_PLAYER_POS_X(bg->pos.x + leftLimitX);
+		else if (g_Player->pos.x > bg->pos.x + rightLimitX)
+			SET_PLAYER_POS_X(bg->pos.x + rightLimitX);
+	}
+
 	// プレイヤーが画面内の移動範囲内かどうかを確認
-	if (g_Player->pos.x < bg->pos.x + leftLimitX) {
+	if (g_Player->pos.x < bg->pos.x + leftLimitX) 
+	{
 		// プレイヤーが左の制限範囲を越えた場合は、背景を左にスクロール
 		bg->pos.x = g_Player->pos.x - leftLimitX;
 	}
-	else if (g_Player->pos.x > bg->pos.x + rightLimitX) {
+	else if (g_Player->pos.x > bg->pos.x + rightLimitX) 
+	{
 		// プレイヤーが右の制限範囲を越えた場合は、背景を右にスクロール
 		bg->pos.x = g_Player->pos.x - rightLimitX;
 	}
@@ -1470,11 +1458,13 @@ void UpdateBackGroundScroll(void)
 	float bottomLimitY = SCREEN_HEIGHT * 2 / 3;
 
 	// プレイヤーが画面内の移動範囲内かどうかを確認
-	if (g_Player->pos.y < bg->pos.y + topLimitY) {
+	if (g_Player->pos.y < bg->pos.y + topLimitY) 
+	{
 		// プレイヤーが上の制限範囲を越えた場合は、背景を上にスクロール
 		bg->pos.y = g_Player->pos.y - topLimitY;
 	}
-	else if (g_Player->pos.y > bg->pos.y + bottomLimitY) {
+	else if (g_Player->pos.y > bg->pos.y + bottomLimitY) 
+	{
 		// プレイヤーが下の制限範囲を越えた場合は、背景を下にスクロール
 		bg->pos.y = g_Player->pos.y - bottomLimitY;
 	}
@@ -1621,7 +1611,7 @@ void UpdateActionQueue(void)
 
 void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 {
-	int dir;
+	int dir = 0;
 	if (enemy)
 	{
 		dir = g_Player->pos.x - enemy->pos.x >= 0 ? 1 : -1;
@@ -1644,8 +1634,9 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 			// 無敵状態を開始する
 			g_Player->isInvincible = TRUE;
 		}
-		else
+		else if (enemy)
 		{
+			g_Player->HP -= enemy->attributes.damage * 5;
 			int moveDir = g_Player->defendDir == CHAR_DIR_RIGHT ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 			if (CheckMoveCollision(1.0f * dir, moveDir))
 				CHANGE_PLAYER_POS_X(1.0f * dir);
@@ -1657,13 +1648,23 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 		if (enemy)
 		{
 			g_Player->move.x = (float)dir * enemy->attributes.damage;
+			g_Player->HP -= enemy->attributes.damage * 15;
 		}
 		else if (magic)
 		{
 			g_Player->move.x = dir * magic->damage;
+			g_Player->HP -= magic->damage * 10;
 		}
 
-		if (g_Player->onAirCnt > 0 || g_Player->state == JUMP || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
+		if (g_Player->HP <= 0)
+		{
+			g_Player->jumpCnt = 0;
+			g_Player->onAirCnt = 0;
+			g_Player->state = KNOCKDOWN;
+			g_Player->die = TRUE;
+
+		}
+		else if (g_Player->onAirCnt > 0 || g_Player->state == JUMP || fabs(g_Player->move.x) > KNOCKDOWN_THRESHOLD)
 		{
 			g_Player->jumpCnt = 0;
 			g_Player->onAirCnt = 0;
@@ -1719,14 +1720,17 @@ void DrawPlayer(void)
 			if (g_Player->jumpEffectCnt > 0)
 				DrawJumpEffect();
 
-			if (g_Player->state == CAST)
-				DrawCastEffect();
+
 
 			// プレイヤーの分身を描画
 			if (g_Player[i].state == DASH)
 			{	// ダッシュ中だけ分身処理
 				DrawPlayerOffset(i);
 			}
+			else if (g_Player->state == CAST)
+				DrawCastEffect();
+			else if (g_Player->state == DIE)
+				DrawDieFadeOut();
 
 			DrawPlayerSprite();
 
@@ -1882,7 +1886,8 @@ void PlayAttackAnim(void)
 			g_Player->attackPattern = FLAME_ATTACK1;
 	}
 
-		
+	if (g_Player->attackPattern == NORMAL_ATTACK4 && GetTutorialPause() == PAUSE_ATTACK)
+		SetTutorialPause(NONE);
 
 	// 攻撃時のテクスチャサイズを調整
 	AdjustAttackTextureSize();
@@ -1979,6 +1984,21 @@ void PlayAttackAnim(void)
 
 	if (g_Player->animFrameCount >= attackFrame)
 	{
+		if (GetTutorialPause() == TUTORIAL_COMBO)
+		{
+			if (g_Player->attackPattern != NORMAL_ATTACK4)
+			{
+				SetUpdateEnemy(FALSE);
+				g_Update = FALSE;
+			}
+			else
+			{
+				SetTutorialPause(TUTORIAL_COMBO);
+			}
+
+		}
+			
+
 		g_Player->animFrameCount = 0;
 
 		if (g_Player->attackPattern == PARRY)
@@ -2249,11 +2269,18 @@ void PlayKnockDownAnim(void)
 	//}
 	if (g_Player->animFrameCount >= ANIM_KNOCKDOWN_FRAME)
 	{
-		// 反動状態に変更
-		g_Player->state = REBOUND;
-		g_Player->move.x = PLAYER_WALK_SPEED; // 移動速度を通常に戻す
 		g_Player->animFrameCount = 0;
-		g_Player->patternAnim = 0;
+		if (g_Player->die == TRUE)
+		{
+			g_Player->state = DIE;
+		}
+		else
+		{
+			g_Player->patternAnim = 0;
+			// 反動状態に変更
+			g_Player->state = REBOUND;
+			g_Player->move.x = PLAYER_WALK_SPEED; // 移動速度を通常に戻す
+		}
 
 	}
 }
@@ -2358,6 +2385,17 @@ void PlayCastAnim(void)
 		}
 	}
 
+}
+
+void PlayDieAnim(void)
+{
+	g_Player->countAnim += 1.0f;
+
+	if (g_Player->countAnim == ANIM_FADE_OUT_FRAME)
+	{
+		g_Player->update = FALSE;
+		SetRespawnMessageBox(TRUE);
+	}
 }
 
 //=============================================================================
@@ -2559,6 +2597,28 @@ void DrawCastEffect(void)
 		color);
 
 	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawDieFadeOut(void)
+{
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	color.w = g_Player->countAnim / ANIM_FADE_OUT_FRAME * 0.8f;
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[DIE_FADE_OUT_TEXTURE]);
+	SetSpriteColor(g_VertexBuffer,
+		SCREEN_CENTER_X, SCREEN_CENTER_Y,
+		SCREEN_WIDTH, SCREEN_HEIGHT,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		color);
+	GetDeviceContext()->Draw(4, 0);
+
+	color.w = g_Player->countAnim / ANIM_FADE_OUT_FRAME;
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[DIE_LOGO_TEXTURE]);
+	SetSpriteColor(g_VertexBuffer,
+		TEXTURE_DIE_LOGO_POS_X, TEXTURE_DIE_LOGO_POS_Y,
+		TEXTURE_DIE_LOGO_WIDTH, TEXTURE_DIE_LOGO_HEIGHT,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		color);
 	GetDeviceContext()->Draw(4, 0);
 }
 
@@ -2963,4 +3023,251 @@ void AdjustAttackPlayerPos(void)
 	default:
 		break;
 	}
+}
+
+float GetPlayerDamage(void)
+{
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+		return g_Player->ATK * NORMAL_ATTACK1_DAMAGE_RATE;
+	case NORMAL_ATTACK2:
+		return g_Player->ATK * NORMAL_ATTACK2_DAMAGE_RATE;
+	case NORMAL_ATTACK3:
+		return g_Player->ATK * NORMAL_ATTACK3_DAMAGE_RATE;
+	case NORMAL_ATTACK4:
+		return g_Player->ATK * NORMAL_ATTACK4_DAMAGE_RATE;
+	case DASH_ATTACK:
+		return g_Player->ATK * DASH_ATTACK_DAMAGE_RATE;
+	case PARRY:
+		return g_Player->ATK * PARRY_DAMAGE_RATE;
+	case FLAME_ATTACK1:
+		return g_Player->ATK * FLAME_ATTACK1_DAMAGE_RATE;
+	case FLAME_ATTACK2:
+		return g_Player->ATK * FLAME_ATTACK2_DAMAGE_RATE;
+	default:
+		return 0.0f;
+	}
+}
+float GetPoiseDamage(void)
+{
+	switch (g_Player->attackPattern)
+	{
+	case NORMAL_ATTACK1:
+		return g_Player->ATK * NORMAL_ATTACK1_POISE_RATE;
+	case NORMAL_ATTACK2:
+		return g_Player->ATK * NORMAL_ATTACK2_POISE_RATE;
+	case NORMAL_ATTACK3:
+		return g_Player->ATK * NORMAL_ATTACK3_POISE_RATE;
+	case NORMAL_ATTACK4:
+		return g_Player->ATK * NORMAL_ATTACK4_POISE_RATE;
+	case DASH_ATTACK:
+		return g_Player->ATK * DASH_ATTACK_POISE_RATE;
+	case PARRY:
+		return g_Player->ATK * PARRY_POISE_RATE;
+	case FLAME_ATTACK1:
+		return g_Player->ATK * FLAME_ATTACK1_POISE_RATE;
+	case FLAME_ATTACK2:
+		return g_Player->ATK * FLAME_ATTACK2_POISE_RATE;
+	default:
+		return 0.0f;
+	}
+}
+
+void SetPlayerInitPos(int map, int idx)
+{
+	XMFLOAT3 initPos = GetPlayerInitPos(map, idx);
+	g_InitPos.x = initPos.x;
+	g_InitPos.y = initPos.y;
+}
+
+void InitPlayerStatus(void)
+{
+	for (int i = 0; i < PLAYER_MAX; i++)
+	{
+		g_PlayerCount++;
+		g_Player[i].use = TRUE;
+		g_Player[i].update = TRUE;
+		g_Player[i].die = FALSE;
+		g_Player[i].pos = g_InitPos;
+		g_Player[i].rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_Player[i].w = TEXTURE_IDLE_WIDTH;
+		g_Player[i].h = TEXTURE_IDLE_HEIGHT;
+		g_Player[i].shadowY = g_Player[i].pos.y;
+		g_Player[i].texNo = 0;
+		g_Player[i].state = IDLE;
+		g_Player[i].invertTex = FALSE;
+
+		g_Player[i].countAnim = 0;
+		g_Player[i].patternAnim = 0;
+		g_Player[i].patternAnimOld = 0;
+		g_Player[i].animFrameCount = 0;
+		g_Player[i].animFrameCountCast = 0;
+		g_Player[i].dashCount = 0;
+		g_Player[i].dashCD = 0;
+		g_Player[i].airDashCount = 0;
+		g_Player[i].maxDashCount = MAX_DASH_COUNT;
+		g_Player[i].dashInterval = 0;
+
+		g_Player[i].move = XMFLOAT3(PLAYER_WALK_SPEED, 0.0f, 0.0f);		// 移動量
+
+		g_Player[i].dir = CHAR_DIR_RIGHT;					// 右向きにしとくか
+		g_Player[i].defendDir = CHAR_DIR_RIGHT;
+		g_Player[i].playAnim = FALSE;
+		g_Player[i].dashOnAir = FALSE;
+		g_Player[i].knockDownFall = FALSE;
+		g_Player[i].jumpOnAir = TRUE;
+		g_Player[i].isRunning = FALSE;
+		g_Player[i].isDefending = FALSE;
+		g_Player[i].isParrying = FALSE;
+		g_Player[i].wasRunningExhausted = FALSE;
+		g_Player[i].wasDefendingExhausted = FALSE;
+		g_Player[i].jumpOnAirCnt = 0;
+		g_Player[i].defendCnt = 0;
+		g_Player[i].jumpEffectCnt = 0;
+		g_Player[i].patternAnimCast = 0;
+		g_Player[i].magicCasting = MAGIC_NONE;
+		g_Player[i].patternAnim = CHAR_IDLE;
+		g_Player[i].airJumpPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+		g_Player[i].HP = PLAYER_MAX_HP;
+		g_Player[i].maxHP = PLAYER_MAX_HP;
+		g_Player[i].MP = PLAYER_MAX_MP;
+		g_Player[i].maxMP = PLAYER_MAX_MP;
+		g_Player[i].ST = PLAYER_MAX_ST;
+		g_Player[i].maxST = PLAYER_MAX_ST;
+		g_Player[i].ATK = 20;
+		g_Player[i].DEF = 10;
+		g_Player[i].isInvincible = FALSE;
+		g_Player[i].attackPattern = NONE;
+		g_Player[i].magic = MAGIC_HEALING;
+		g_Player[i].healingCD = 0;
+		g_Player[i].fireBallCD = 0;
+		g_Player[i].flameblade = FALSE;
+
+		g_Player[i].actionQueueStart = 0;
+		g_Player[i].actionQueueEnd = 0;
+		g_Player[i].actionQueueClearTime = 0;
+
+		// ジャンプの初期化
+		g_Player[i].jump = FALSE;
+		g_Player[i].jumpCnt = 0;
+		g_Player[i].jumpYMax = PLAYER_JUMP_Y_MAX;
+
+		g_Player[i].onAirCnt = 0;
+		g_Player[i].attackInterval = 0;
+
+		for (int j = 0; j < ACTION_QUEUE_SIZE; j++)
+		{
+			g_Player[i].actionQueue[j] = 0;
+		}
+
+		// 分身用
+		for (int j = 0; j < PLAYER_OFFSET_CNT; j++)
+		{
+			g_Player[i].offset[j] = g_Player[i].pos;
+		}
+
+		// AABB
+		g_Player[i].bodyAABB.pos = g_Player[i].pos;
+		g_Player[i].bodyAABB.w = g_Player[i].w * 0.7f;
+		g_Player[i].bodyAABB.h = g_Player[i].h;
+		g_Player[i].bodyAABB.tag = PLAYER_BODY_AABB;
+	}
+}
+
+void PlayerRespawn(void)
+{
+	SetRespawnMessageBox(FALSE);
+	InitPlayerStatus();
+}
+
+void SetLimitPlayerMove(BOOL limit)
+{
+	g_LimitPlayerMove = limit;
+}
+
+void SetPlayerHP(int HP)
+{
+	g_Player->HP = HP;
+}
+
+void SetPlayerMP(int MP)
+{
+	g_Player->MP = MP;
+}
+
+void SetPlayerST(int ST)
+{
+	g_Player->ST = ST;
+}
+
+void SetPlayerDir(int dir)
+{
+	g_Player->dir = dir;
+}
+
+void SetPlayerPosX(float posX)
+{
+	SET_PLAYER_POS_X(posX);
+}
+
+void SetPlayerPosY(float posY)
+{
+	SET_PLAYER_POS_Y(posY);
+}
+
+void SetPlayerInvincible(BOOL invincible)
+{
+	g_Player->isInvincible = invincible;
+}
+
+BOOL GetUpdatePlayer(void)
+{
+	return g_Update;
+}
+
+void SetUpdatePlayer(BOOL update)
+{
+	g_Update = update;
+}
+
+void DisablePlayerAttack(BOOL disable)
+{
+	g_DisableAttack = disable;
+}
+
+void DisablePlayerJump(BOOL disable)
+{
+	g_DisableJump = disable;
+}
+
+void DisablePlayerMagic(BOOL disable)
+{
+	g_DisableMagic = disable;
+}
+
+void DisablePlayerDash(BOOL disable)
+{
+	g_DisableDash = disable;
+}
+
+void DisablePlayerDefend(BOOL disable)
+{
+	g_DisableDefend = disable;
+}
+
+void DisablePlayerRun(BOOL disable)
+{
+	g_DisableRun = disable;
+}
+
+void DisablePlayerLeftMove(BOOL disable)
+{
+	g_DisableMoveLeft = disable;
+}
+
+void DisablePlayerRightMove(BOOL disable)
+{
+	g_DisableMoveRight = disable;
 }

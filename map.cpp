@@ -12,6 +12,11 @@
 //*****************************************************************************
 
 
+#define TUTORIAL_01_GROUND_WIDTH	(TEXTURE_BG_WIDTH + 800.0f)
+#define TUTORIAL_01_GROUND_HEIGHT	(250)
+#define TUTORIAL_01_GROUND_POS_X	(TEXTURE_BG_WIDTH * 0.5f - 50)
+#define TUTORIAL_01_GROUND_POS_Y	(TEXTURE_BG_HEIGHT)
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -42,35 +47,15 @@ static char *g_TexturName[TEXTURE_MAX] = {
 static BOOL	g_Load = FALSE;		// 初期化を行ったかのフラグ
 static BG	g_BG;
 static AABB g_AABB[MAP_GROUND_MAX];
+static int	g_MapNo = MAP_01;
 
-static INTERPOLATION_DATA g_MoveTbl0[] = {
-	//座標									回転率							拡大率					時間
-	{ XMFLOAT3(1500.0f, 1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-	{ XMFLOAT3(450.0f,  1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-};
+static INTERPOLATION_DATA g_MoveTbl0[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_MoveTbl1[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_MoveTbl2[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_Tutorial_01_MoveTbl_Goblin[MOVE_NUM_MAX];
 
-
-static INTERPOLATION_DATA g_MoveTbl1[] = {
-	//座標									回転率							拡大率					時間
-	{ XMFLOAT3(1200.0f, 534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-	{ XMFLOAT3(850.0f,  534.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 },
-};
-
-
-static INTERPOLATION_DATA g_MoveTbl2[] = {
-	//座標									回転率							拡大率							時間
-	{ XMFLOAT3(3000.0f, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
-	{ XMFLOAT3(3000 + SCREEN_WIDTH, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	60 },
-};
-
-static EnemyConfig	g_EnemyConfig[MAP_NUM_MAX][MAP_ENEMY_MAX] =
-{
-	{},
-	{},
-	{{GOLEM, g_MoveTbl0}, {CYCLOPS, g_MoveTbl1} },
-	{},
-	{},
-};
+static EnemyConfig	g_EnemyConfig[MAP_NUM_MAX][MAP_ENEMY_MAX];
+static XMFLOAT3 g_PlayerInitPos[MAP_NUM_MAX][PLAYER_INIT_POS_MAX];
 
 //=============================================================================
 // 初期化処理
@@ -102,17 +87,17 @@ HRESULT InitMap(void)
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
 	// 変数の初期化
-	g_BG.w     = TEXTURE_WIDTH;
-	g_BG.h     = TEXTURE_HEIGHT;
+	g_BG.w     = TEXTURE_BG_WIDTH;
+	g_BG.h     = TEXTURE_BG_HEIGHT;
 	g_BG.pos   = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_BG.texNo = 0;
 
 	g_BG.scrl  = 0.0f;		// TEXスクロール
 	g_BG.scrl2 = 0.0f;		// TEXスクロール
 
-	int map = GetCurrentMap();
-	InitMapCollisionBox(map);
-
+	InitMapCollisionBox(g_MapNo);
+	InitMoveTbl(g_MapNo);
+	InitEnemyConfig(g_MapNo);
 
 #ifdef _DEBUG	
 	// debug
@@ -171,23 +156,31 @@ void UninitMap(void)
 
 void InitMapCollisionBox(int map)
 {
+	// AABB
+	for (int i = 0; i < MAP_GROUND_MAX; i++)
+	{
+		g_AABB[i].pos.x = 0;
+		g_AABB[i].pos.y = 0;
+		g_AABB[i].w = 0;
+		g_AABB[i].h = 0;
+		g_AABB[i].tag = WALL_AABB;
+	}
+
 	switch (map)
 	{
+	case TUTORIAL_01:
+	{
+		g_AABB[0].pos.x = TEXTURE_BG_WIDTH * 0.5f;
+		g_AABB[0].pos.y = 1340.0f + (TEXTURE_BG_HEIGHT - 1290.0f) * 0.5f;
+		g_AABB[0].w = TEXTURE_BG_WIDTH + 200.0f;
+		g_AABB[0].h = MAP01_GROUND_H * 0.5f;
+		break;
+	}
 	case MAP_01:
 	{
-		// AABB
-		for (int i = 0; i < MAP_GROUND_MAX; i++)
-		{
-			g_AABB[i].pos.x = 0;
-			g_AABB[i].pos.y = 0;
-			g_AABB[i].w = 0;
-			g_AABB[i].h = 0;
-			g_AABB[i].tag = WALL_AABB;
-		}
-
-		g_AABB[0].pos.x = TEXTURE_WIDTH * 0.5f;
-		g_AABB[0].pos.y = 1290.0f + (TEXTURE_HEIGHT - 1290.0f) * 0.5f;
-		g_AABB[0].w = TEXTURE_WIDTH;
+		g_AABB[0].pos.x = TEXTURE_BG_WIDTH * 0.5f;
+		g_AABB[0].pos.y = 1290.0f + (TEXTURE_BG_HEIGHT - 1290.0f) * 0.5f;
+		g_AABB[0].w = TEXTURE_BG_WIDTH;
 		g_AABB[0].h = MAP01_GROUND_H * 0.5f;
 
 		g_AABB[1].pos.x = 685;
@@ -207,6 +200,61 @@ void InitMapCollisionBox(int map)
 
 		break;
 	}
+	default:
+		break;
+	}
+}
+
+void InitMoveTbl(int map)
+{
+	switch (map)
+	{
+	case TUTORIAL_01:
+		g_Tutorial_01_MoveTbl_Goblin[0] = { XMFLOAT3(-50.0f, 1349.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+		g_Tutorial_01_MoveTbl_Goblin[1] = { XMFLOAT3(938.0f, PLAYER_INIT_POS_Y_TUTORIAL01_0, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+		break;
+	case MAP_01:
+		//座標									回転率							拡大率					時間
+		g_MoveTbl0[0] = { XMFLOAT3(1200.0f, 523.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+		g_MoveTbl0[1] = { XMFLOAT3(1850.0f,  523.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+
+		g_MoveTbl1[0] = { XMFLOAT3(1500.0f, 1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+		g_MoveTbl1[1] = { XMFLOAT3(450.0f,  1284.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+
+		g_MoveTbl2[0] = {XMFLOAT3(3000.0f, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),		XMFLOAT3(1.0f, 1.0f, 1.0f),	60};
+		g_MoveTbl2[1] = { XMFLOAT3(3000 + SCREEN_WIDTH, 100.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 6.28f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	60 };
+		break;
+	default:
+		break;
+	}
+}
+
+void InitPlayerInitPos(int map)
+{
+	switch (map)
+	{
+	case TUTORIAL_01:
+		g_PlayerInitPos[TUTORIAL_01][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_TUTORIAL01_0, PLAYER_INIT_POS_Y_TUTORIAL01_0, 0.0f);
+		break;
+	case MAP_01:
+		g_PlayerInitPos[MAP_01][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP01_0, PLAYER_INIT_POS_Y_MAP01_0, 0.0f);
+		break;
+	default:
+		break;
+	}
+}
+
+void InitEnemyConfig(int map)
+{
+	switch (map)
+	{
+	case TUTORIAL_01:
+		g_EnemyConfig[TUTORIAL_01][0] = { GOBLIN, g_Tutorial_01_MoveTbl_Goblin, 2 };
+		break;
+	case MAP_01:
+		g_EnemyConfig[MAP_01][0] = {GOLEM, g_MoveTbl0, 2};
+		g_EnemyConfig[MAP_01][1] = {CYCLOPS, g_MoveTbl1, 2};
+		break;
 	default:
 		break;
 	}
@@ -269,6 +317,7 @@ void DrawMap(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
+	//DrawMapWalls(g_MapNo);
 
 	// 空を描画
 	//{
@@ -319,29 +368,32 @@ void DrawMap(void)
 		}
 #endif
 
-
-	// なんちゃって多重スクロール
-	//{
-	//	// テクスチャ設定
-	//	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
-
-	//	// １枚のポリゴンの頂点とテクスチャ座標を設定
-	//	float	tx = (g_BG.pos.x - g_BG.old_pos.x) * ((float)SCREEN_WIDTH / TEXTURE_WIDTH);
-	//	g_BG.scrl2 += tx * 0.01f;
-	//	//g_BG.scrl2 += 0.003f;
-
-	//	SetSpriteLTColor(g_VertexBuffer,
-	//		0.0f, SKY_H/2, SCREEN_WIDTH, SKY_H,
-	//		g_BG.scrl2, 0.0f, 1.0f, 1.0f,
-	//		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-
-	//	// ポリゴン描画
-	//	GetDeviceContext()->Draw(4, 0);
-	//}
-
-
 }
 
+void DrawMapWalls(int map)
+{
+	switch (map)
+	{
+	case TUTORIAL_01:
+	{
+		// テクスチャ設定
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01]);
+
+		// １枚のポリゴンの頂点とテクスチャ座標を設定
+		SetSpriteColor(g_VertexBuffer,
+			TUTORIAL_01_GROUND_POS_X - g_BG.pos.x, TUTORIAL_01_GROUND_POS_Y - g_BG.pos.y,
+			TUTORIAL_01_GROUND_WIDTH, TUTORIAL_01_GROUND_HEIGHT,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
+		break;
+	}
+	default:
+		break;
+	}
+}
 
 //=============================================================================
 // BG構造体の先頭アドレスを取得
@@ -361,4 +413,18 @@ AABB* GetMap01AABB(void)
 EnemyConfig* GetEnemyConfig(int map)
 {
 	return g_EnemyConfig[map];
+}
+
+XMFLOAT3 GetPlayerInitPos(int map, int idx)
+{
+	return g_PlayerInitPos[map][idx];
+}
+
+int GetCurrentMap()
+{
+	return g_MapNo;
+}
+void SetCurrentMap(int map)
+{
+	g_MapNo = map;
 }

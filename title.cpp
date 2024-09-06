@@ -8,14 +8,26 @@
 #include "input.h"
 #include "fade.h"
 #include "map.h"
+#include "player.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 #define TEXTURE_WIDTH				(SCREEN_WIDTH)	// 背景サイズ
-#define TEXTURE_HEIGHT				(SCREEN_HEIGHT)	// 
+#define TEXTURE_HEIGHT				(SCREEN_HEIGHT)
+#define TEXTURE_TITLE_WIDTH			(850)
+#define TEXTURE_TITLE_HEIGHT		(333)
 #define TEXTURE_MAX					(3)				// テクスチャの数
 
+
+#define	TITLE_POS_X					(45.0f)
+#define TITLE_POS_Y					(-10.0f)
+
+#define ANIM_WAIT_BG				(5)
+#define	ANIM_WAIT_TITLE				(5)
+#define ANIM_BG_PATTERN_DIVID_X		(6)
+#define ANIM_BG_PATTERN_DIVID_Y		(5)
+#define	ANIM_TITLE_PATTERN_DIVID_X	(5)
 #define	BUTTON_NUM					(3)
 
 //*****************************************************************************
@@ -30,7 +42,8 @@ static ID3D11Buffer				*g_VertexBuffer = NULL;				// 頂点情報
 static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char *g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/bg000.jpg",
+	"data/TEXTURE/title_bg.png",
+	"data/TEXTURE/title.png",
 };
 
 
@@ -39,14 +52,15 @@ static float					g_w, g_h;					// 幅と高さ
 static XMFLOAT3					g_Pos;						// ポリゴンの座標
 static int						g_TexNo;					// テクスチャ番号
 static int						g_Cursor;
+static int						g_BG_patternAnim;
+static int						g_BG_countAnim;
+static int						g_title_patternAnim;
+static int						g_title_countAnim;
 
 float	alpha;
 BOOL	flag_alpha;
 
 static BOOL						g_Load = FALSE;
-
-static float	effect_dx;
-static float	effect_dy;
 
 
 //=============================================================================
@@ -87,6 +101,12 @@ HRESULT InitTitle(void)
 	g_TexNo = 0;
 	g_Cursor = 0;
 	g_Load = TRUE;
+
+	g_BG_countAnim = 0;
+	g_BG_patternAnim = 0;
+	g_title_patternAnim = 0;
+	g_title_countAnim = 0;
+
 	return S_OK;
 }
 
@@ -128,16 +148,12 @@ void UpdateTitle(void)
 	// ゲームパッドで入力処理
 	else if (IsButtonTriggered(0, BUTTON_START))
 	{
-		SetFade(FADE_OUT, MODE_GAME);
+		HandleButtonPressed();
 	}
 	else if (IsButtonTriggered(0, BUTTON_B))
 	{
-		SetFade(FADE_OUT, MODE_GAME);
+		HandleButtonPressed();
 	}
-
-
-	// テストでエフェクトの発生場所を移動させる
-	float speed = 4.0f;
 
 	if (GetKeyboardRelease(DIK_UP))
 	{
@@ -146,6 +162,20 @@ void UpdateTitle(void)
 	else if (GetKeyboardRelease(DIK_DOWN))
 	{
 		g_Cursor = (g_Cursor + 1) % BUTTON_NUM;
+	}
+
+	g_BG_countAnim++;
+	if (g_BG_countAnim == ANIM_WAIT_BG)
+	{
+		g_BG_countAnim = 0;
+		g_BG_patternAnim = (g_BG_patternAnim + 1) % (ANIM_BG_PATTERN_DIVID_X * ANIM_BG_PATTERN_DIVID_Y);
+	}
+
+	g_title_countAnim++;
+	if (g_title_countAnim == ANIM_WAIT_TITLE)
+	{
+		g_title_countAnim = 0;
+		g_title_patternAnim = (g_title_patternAnim + 1) % ANIM_TITLE_PATTERN_DIVID_X;
 	}
 
 #ifdef _DEBUG	// デバッグ情報を表示する
@@ -182,8 +212,42 @@ void DrawTitle(void)
 		// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[0]);
 
+		float px = 0.0f;
+		float py = 0.0f;
+		float pw = TEXTURE_WIDTH;
+		float ph = TEXTURE_HEIGHT;
+
+		float tw = 1.0f / ANIM_BG_PATTERN_DIVID_X;	// テクスチャの幅
+		float th = 1.0f / ANIM_BG_PATTERN_DIVID_Y;							// テクスチャの高さ
+
+		float tx = g_BG_patternAnim % ANIM_BG_PATTERN_DIVID_X * tw;
+		float ty = g_BG_patternAnim / ANIM_BG_PATTERN_DIVID_X * th;
+
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
-		SetSpriteLeftTop(g_VertexBuffer, 0.0f, 0.0f, TEXTURE_WIDTH, TEXTURE_HEIGHT, 0.0f, 0.0f, 1.0f, 1.0f);
+		SetSpriteLeftTop(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th);
+
+		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+	// タイトルを描画
+	{
+		// テクスチャ設定
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+
+		float px = TITLE_POS_X;
+		float py = TITLE_POS_Y;
+		float pw = TEXTURE_TITLE_WIDTH;
+		float ph = TEXTURE_TITLE_HEIGHT;
+
+		float tw = 1.0f / ANIM_TITLE_PATTERN_DIVID_X;	// テクスチャの幅
+		float th = 1.0f;								// テクスチャの高さ
+
+		float tx = g_title_patternAnim % ANIM_TITLE_PATTERN_DIVID_X * tw;
+		float ty = 0.0f;
+
+		// １枚のポリゴンの頂点とテクスチャ座標を設定
+		SetSpriteLeftTop(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th);
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
@@ -195,12 +259,13 @@ void HandleButtonPressed(void)
 	switch (g_Cursor)
 	{
 	case NEW_GANE:
-		SetFade(FADE_OUT, MODE_GAME);
-		SetCurrentMap(MAP_01);
+		SetFade(FADE_OUT, MODE_MESSAGEBOX);
 		break;
 	case TUTORIAL:
-		SetFade(FADE_OUT, MODE_GAME);
+		SetFade(FADE_OUT, MODE_TUTORIAL);
 		SetCurrentMap(TUTORIAL_01);
+		InitPlayerInitPos(TUTORIAL_01);
+		SetPlayerInitPos(TUTORIAL_01, INITPOS_01);
 		break;
 	case EXIT_GAME:
 		ExitGame();

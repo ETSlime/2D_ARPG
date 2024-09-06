@@ -21,6 +21,7 @@
 #include "fade.h"
 #include "UI.h"
 #include "file.h"
+#include "tutorial.h"
 
 #include "effect.h"
 
@@ -53,9 +54,8 @@ char	g_DebugStr[2048] = WINDOW_NAME;		// デバッグ文字表示用
 
 #endif
 
-int	g_Mode = MODE_TITLE;					// 起動時の画面を設定
+int	g_Mode = MODE_MAX;						// 起動時の画面を設定
 int g_Pause = FALSE;
-int g_Map = MAP_01;
 BOOL g_LoadGame = FALSE;					// NewGame
 
 
@@ -271,7 +271,7 @@ HRESULT Init(HINSTANCE hInstance, HWND hWnd, BOOL bWindow)
 	InitUI();
 
 	// 最初のモードをセット
-	SetMode(g_Mode);	// ここはSetModeのままで！
+	SetMode(MODE_TITLE);	// ここはSetModeのままで！
 
 	return S_OK;
 }
@@ -301,6 +301,9 @@ void Uninit(void)
 
 	// UIの終了処理
 	UninitUI();
+
+	// チュートリアルの終了処理
+	UninitTutorial();
 }
 
 //=============================================================================
@@ -320,7 +323,24 @@ void Update(void)
 	case MODE_TITLE:		// タイトル画面の更新
 		UpdateTitle();
 		break;
+	case MODE_MESSAGEBOX:
+		UpdateUI();
+		break;
+	case MODE_TUTORIAL:
+		if (g_Pause == FALSE)
+		{
+			UpdateTutorial();
+			UpdateMap();
+			if (GetUpdatePlayer() == TRUE)
+				UpdatePlayer();
+			if (GetUpdateEnemy() == TRUE)
+				UpdateEnemy();
+			UpdateMagic();
+			UpdateEffect();
+			UpdateScore();
+		}
 
+		break;
 	case MODE_GAME:			// ゲーム画面の更新
 		if (g_Pause == FALSE)
 		{
@@ -331,15 +351,15 @@ void Update(void)
 			UpdateEffect();
 			UpdateScore();
 
-			if (GetFade() == FADE_NONE)
-			{	// 全滅チェック
-				int ans = CheckGameClear();
-				if (ans != 0)
-				{
-					//SetMode(MODE_RESULT);
-					SetFade(FADE_OUT, MODE_RESULT);
-				}
-			}
+			//if (GetFade() == FADE_NONE)
+			//{	// 全滅チェック
+			//	int ans = CheckGameClear();
+			//	if (ans != 0)
+			//	{
+			//		//SetMode(MODE_RESULT);
+			//		SetFade(FADE_OUT, MODE_RESULT);
+			//	}
+			//}
 		}
 
 		break;
@@ -379,6 +399,15 @@ void Draw(void)
 		DrawTitle();
 		break;
 
+	case MODE_TUTORIAL:
+		DrawMap();
+		DrawTutorial();
+		DrawEnemy();
+		DrawPlayer();
+		DrawMagic();
+		DrawEffect();
+		DrawScore();
+		break;
 	case MODE_GAME:			// ゲーム画面の描画
 		DrawMap();
 		DrawEnemy();
@@ -432,79 +461,122 @@ char* GetDebugStr(void)
 //=============================================================================
 void SetMode(int mode)
 {
-	// モードを変える前に全部メモリを解放しちゃう
-	StopSound();			// まず曲を止める
-
-	// モードを変える前に全部メモリを解放しちゃう
-
-	// タイトル画面の終了処理
-	UninitTitle();
-
-	// BGの終了処理
-	UninitMap();
-
-	// プレイヤーの終了処理
-	UninitPlayer();
-
-	// エネミーの終了処理
-	UninitEnemy();
-
-	// バレットの終了処理
-	UninitBullet();
-
-	// スコアの終了処理
-	UninitScore();
-
-	// リザルトの終了処理
-	UninitResult();
-
-	// エフェクトの終了処理
-	UninitEffect();
-
-	// マジックの終了処理
-	UninitMagic();
-
-	// UIの終了処理
-	UninitUI();
-
-	g_Mode = mode;	// 次のモードをセットしている
-
-	switch (g_Mode)
+	if (mode == g_Mode)
 	{
-	case MODE_TITLE:
-		// タイトル画面の初期化
-		InitUI();
-		InitTitle();
-		PlaySound(SOUND_LABEL_BGM_maou);
-		break;
+		// エネミーの終了処理
+		UninitEnemy();
 
-	case MODE_GAME:
-		// ゲーム画面の初期化
-		InitUI();
-		InitMap();
-		InitPlayer();
-		InitEnemy();
-		InitMagic();
-		InitEffect();
-		InitScore();
+		// リザルトの終了処理
+		UninitResult();
 
-		// ロードゲームだったらすべての初期化が終わった後にセーブデータを読み込む
-		if (g_LoadGame == TRUE)
+		// エフェクトの終了処理
+		UninitEffect();
+
+		// マジックの終了処理
+		UninitMagic();
+
+		// Mapの終了処理
+		UninitMap();
+
+		switch (g_Mode)
 		{
-			LoadData();
-			g_LoadGame = FALSE;		// ロードしたからフラグをClearする
+		case MODE_GAME:
+			InitMap();
+			InitEnemy();
+			InitMagic();
+			InitEffect();
+			break;
 		}
 
-		PlaySound(SOUND_LABEL_BGM_sample001);
-		break;
+	}
+	else
+	{
+		// モードを変える前に全部メモリを解放しちゃう
+		StopSound();			// まず曲を止める
 
-	case MODE_RESULT:
-		InitResult();
-		PlaySound(SOUND_LABEL_BGM_sample002);
-		break;
+		// モードを変える前に全部メモリを解放しちゃう
 
-	case MODE_MAX:
-		break;
+		// タイトル画面の終了処理
+		UninitTitle();
+
+		// Mapの終了処理
+		UninitMap();
+
+		// プレイヤーの終了処理
+		UninitPlayer();
+
+		// エネミーの終了処理
+		UninitEnemy();
+
+		// スコアの終了処理
+		UninitScore();
+
+		// リザルトの終了処理
+		UninitResult();
+
+		// エフェクトの終了処理
+		UninitEffect();
+
+		// マジックの終了処理
+		UninitMagic();
+
+		// UIの終了処理
+		UninitUI();
+
+		// チュートリアルの終了処理
+		UninitTutorial();
+
+		g_Mode = mode;	// 次のモードをセットしている
+
+		switch (g_Mode)
+		{
+		case MODE_TITLE:
+			// タイトル画面の初期化
+			InitUI();
+			InitTitle();
+			PlaySound(SOUND_LABEL_BGM_maou);
+			break;
+		case MODE_MESSAGEBOX:
+			InitUI();
+			break;
+		case MODE_TUTORIAL:
+			InitUI();
+			InitMap();
+			InitPlayer();
+			InitEnemy();
+			InitMagic();
+			InitEffect();
+			InitScore();
+			InitTutorial();
+			break;
+		case MODE_GAME:
+			// ゲーム画面の初期化
+			InitUI();
+			InitMap();
+			InitPlayer();
+			InitEnemy();
+			InitMagic();
+			InitEffect();
+			InitScore();
+
+			// ロードゲームだったらすべての初期化が終わった後にセーブデータを読み込む
+			if (g_LoadGame == TRUE)
+			{
+				LoadData();
+				g_LoadGame = FALSE;		// ロードしたからフラグをClearする
+			}
+
+			PlaySound(SOUND_LABEL_BGM_sample001);
+			break;
+
+		case MODE_RESULT:
+			InitResult();
+			PlaySound(SOUND_LABEL_BGM_sample002);
+			break;
+
+		case MODE_MAX:
+			break;
+		}
 	}
 }
 
@@ -585,13 +657,4 @@ BOOL GetPause(void)
 void ExitGame(void)
 {
 	PostQuitMessage(0);
-}
-
-int GetCurrentMap()
-{
-	return g_Map;
-}
-void SetCurrentMap(int map)
-{
-	g_Map = map;
 }

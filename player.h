@@ -20,17 +20,19 @@
 #define PLAYER_MAX				(1)		// プレイヤーのMax人数
 #define MAX_ATTACK_AABB			(3)
 
+#define PLAYER_MAX_HP			(2000.0f)
+#define PLAYER_MAX_MP			(1800.0f)
+#define PLAYER_MAX_ST			(1000.0f)
+
 #define	PLAYER_OFFSET_CNT		(12)	// 12分身
 #define ACTION_QUEUE_SIZE		(4)
 #define ACTION_QUEUE_CLEAR_WAIT	(120)
 #define ATTACK_COMBO_WINDOW		(70)
 #define	PARRY_WINDOW			(15)
-#define DASH_CD_TIME			(50)
+#define DASH_CD_TIME			(60)
 #define MAX_DASH_COUNT			(2)
 #define ATTACK_PATTERN_MAX		(5)
 
-#define PLAYER_INIT_POS_X		(938.0f)
-#define PLAYER_INIT_POS_Y		(1306.5f)
 #define PLAYER_WALK_SPEED		(3.75f)
 #define FALLING_THRESHOLD		(3.0f)
 #define	KNOCKDOWN_THRESHOLD		(15)
@@ -40,6 +42,24 @@
 #define MAGIC_NUM_MAX			(3)
 #define	HEALING_CD_TIME			(100.0f)
 #define	FIRE_BALL_CD_TIME		(200.0f)
+
+#define NORMAL_ATTACK1_DAMAGE_RATE		(1.0f)
+#define NORMAL_ATTACK2_DAMAGE_RATE		(1.2f)
+#define NORMAL_ATTACK3_DAMAGE_RATE		(1.3f)
+#define NORMAL_ATTACK4_DAMAGE_RATE		(1.5f)
+#define DASH_ATTACK_DAMAGE_RATE			(1.4f)
+#define PARRY_DAMAGE_RATE				(1.7f)
+#define FLAME_ATTACK1_DAMAGE_RATE		(1.6f)
+#define FLAME_ATTACK2_DAMAGE_RATE		(2.0f)
+
+#define NORMAL_ATTACK1_POISE_RATE		(1.0f)
+#define NORMAL_ATTACK2_POISE_RATE		(1.1f)
+#define NORMAL_ATTACK3_POISE_RATE		(1.1f)
+#define NORMAL_ATTACK4_POISE_RATE		(1.8f)
+#define DASH_ATTACK_POISE_RATE			(1.8f)
+#define PARRY_POISE_RATE				(1.5f)
+#define FLAME_ATTACK1_POISE_RATE		(1.6f)
+#define FLAME_ATTACK2_POISE_RATE		(2.0f)
 
 #define SET_PLAYER_POS_Y(y_value) \
     do { \
@@ -105,6 +125,7 @@ enum
 	REBOUND,
 	DEFEND,
 	CAST,
+	DIE,
 };
 
 // attack pattern
@@ -152,9 +173,8 @@ struct PLAYER
 	int			dashInterval;
 
 	// state
-	int			state;
-	int			dir;			// 向き（0:上 1:右 2:下 3:左）
-	int			defendDir;
+	BOOL		die;
+	BOOL		update;
 	BOOL		playAnim;
 	BOOL		dashOnAir;
 	BOOL		jumpOnAir;
@@ -166,6 +186,9 @@ struct PLAYER
 	BOOL		isWalkingOnDefend;
 	BOOL		wasRunningExhausted;
 	BOOL		wasDefendingExhausted;
+	int			state;
+	int			dir;			// 向き（0:上 1:右 2:下 3:左）
+	int			defendDir;
 	int			jumpCnt;		// ジャンプ中のカウント
 	float		jumpYMax;		// 
 	int			jumpOnAirCnt;
@@ -210,6 +233,7 @@ struct PLAYER
 // プロトタイプ宣言
 //*****************************************************************************
 HRESULT InitPlayer(void);
+void InitPlayerStatus(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
@@ -217,6 +241,7 @@ void DrawPlayerSprite(void);
 void DrawPlayerShadow(void);
 void DrawJumpEffect(void);
 void DrawCastEffect(void);
+void DrawDieFadeOut(void);
 
 PLAYER* GetPlayer(void);
 
@@ -239,6 +264,7 @@ void PlayReboundAnim(void);
 void PlayHardLandingAnim(void);
 void PlayDefendAnim(void);
 void PlayCastAnim(void);
+void PlayDieAnim(void);
 void AdjustAttackTexturePos(float& px, float& py);
 void AdjustAttackTextureSize(void);
 void AdjustAttackPlayerPos(void);
@@ -253,6 +279,10 @@ void HandlePlayerDash(void);
 void HandlePlayerJump(void);
 void HandlePlayerAttack(void);
 void HandlePlayerDefend(void);
+
+float GetPlayerDamage(void);
+float GetPoiseDamage(void);
+
 // ゲームパッドでで移動
 void UpdateGamepadInput(void);
 // 当たり判定
@@ -267,3 +297,26 @@ BOOL CheckGroundCollision(PLAYER* g_Player, AABB* ground);
 BOOL CheckMoveCollision(float move, int dir, BOOL checkGround = FALSE);
 
 float GetActionStaminaCost(int action);
+
+void SetPlayerInitPos(int map, int idx);
+void SetPlayerHP(int HP);
+void SetPlayerMP(int MP);
+void SetPlayerST(int ST);
+void SetPlayerDir(int dir);
+void SetPlayerPosX(float posX);
+void SetPlayerPosY(float posY);
+void SetPlayerInvincible(BOOL invincible);
+void SetLimitPlayerMove(BOOL limit);
+void PlayerRespawn(void);
+
+BOOL GetUpdatePlayer(void);
+void SetUpdatePlayer(BOOL update);
+
+void DisablePlayerAttack(BOOL disable);
+void DisablePlayerJump(BOOL disable);
+void DisablePlayerMagic(BOOL disable);
+void DisablePlayerDash(BOOL disable);
+void DisablePlayerDefend(BOOL disable);
+void DisablePlayerRun(BOOL disable);
+void DisablePlayerLeftMove(BOOL disable);
+void DisablePlayerRightMove(BOOL disable);
