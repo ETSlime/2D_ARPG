@@ -120,6 +120,7 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/messagebox_tutorial.png",
 	"data/TEXTURE/UI/messagebox_respawn.png",
 	"data/TEXTURE/fade_black.png",
+	"data/TEXTURE/UI/messagebox_tutorial_respawn.png",
 
 };
 
@@ -334,16 +335,29 @@ void UpdateUI(void)
 
 			if (GetKeyboardRelease(DIK_RETURN))
 			{
-				if (g_Cursor == UI_BUTTON_YES)
+				if (GetMode() == MODE_GAME)
 				{
-					int score = GetScore();
-					score *= 0.7f;
-					SetScore(score);
-					SetRespawn(TRUE);
-					SetFade(FADE_OUT, MODE_GAME);
+					if (g_Cursor == UI_BUTTON_YES)
+					{
+						int score = GetScore();
+						score *= 0.7f;
+						SetScore(score);
+						SetRespawn(TRUE);
+						SetFade(FADE_OUT, MODE_GAME);
+					}
+					else
+						SetFade(FADE_OUT, MODE_TITLE);
 				}
-				else
-					SetFade(FADE_OUT, MODE_TITLE);
+				else if (GetMode() == MODE_TUTORIAL)
+				{
+					if (g_Cursor == UI_BUTTON_YES)
+					{
+						g_PlayerRespawnMsg = FALSE;
+						PlayerRespawnDirectly();
+					}
+					else
+						SetFade(FADE_OUT, MODE_TITLE);
+				}
 			}
 		}
 
@@ -607,14 +621,24 @@ void DrawSkillIcon(void)
 	float currentMagicCD = (currentMagic == UI_MAGIC_HEAL) ? healingCDProgress : (currentMagic == UI_MAGIC_FLAMEBLADE ? 1.0f : fireBallCDProgress);
 	float rightMagicCD = (rightMagic == UI_MAGIC_HEAL) ? healingCDProgress : (rightMagic == UI_MAGIC_FLAMEBLADE ? 1.0f : fireBallCDProgress);
 
+	XMFLOAT4 leftColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4 middleColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4 rightColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	if (IsSkillIconActive(leftMagic) == FALSE)
+		leftColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	if (IsSkillIconActive(currentMagic) == FALSE)
+		middleColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	if (IsSkillIconActive(rightMagic) == FALSE)
+		rightColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+
 	// 中央のマジックアイコン
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[currentMagic]);
-	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
 		UI_MAGIC_ICON_MIDDLE_POS_X, UI_MAGIC_ICON_MIDDLE_POS_Y,
 		TEXTURE_MAGIC_ICON_SIZE, TEXTURE_MAGIC_ICON_SIZE, 
 		0.0f, 0.0f, 1.0f, 1.0f, 
-		color, currentMagicCD);
+		middleColor, currentMagicCD);
 	GetDeviceContext()->Draw(4, 0);
 	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
 		UI_MAGIC_ICON_MIDDLE_POS_X, UI_MAGIC_ICON_MIDDLE_POS_Y,
@@ -629,7 +653,7 @@ void DrawSkillIcon(void)
 		UI_MAGIC_ICON_LEFT_POS_X, UI_MAGIC_ICON_LEFT_POS_Y,
 		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 
 		0.0f, 0.0f, 1.0f, 1.0f, 
-		color, leftMagicCD);
+		leftColor, leftMagicCD);
 	GetDeviceContext()->Draw(4, 0);
 	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
 		UI_MAGIC_ICON_LEFT_POS_X, UI_MAGIC_ICON_LEFT_POS_Y,
@@ -644,7 +668,7 @@ void DrawSkillIcon(void)
 		UI_MAGIC_ICON_RIGHT_POS_X, UI_MAGIC_ICON_RIGHT_POS_Y,
 		TEXTURE_MAGIC_ICON_SMALL_SIZE, TEXTURE_MAGIC_ICON_SMALL_SIZE, 
 		0.0f, 0.0f, 1.0f, 1.0f, 
-		color, rightMagicCD);
+		rightColor, rightMagicCD);
 	GetDeviceContext()->Draw(4, 0);
 	SetSpriteTopToBottomRevealColor(g_VertexBuffer, 
 		UI_MAGIC_ICON_RIGHT_POS_X, UI_MAGIC_ICON_RIGHT_POS_Y,
@@ -760,7 +784,10 @@ void DrawMessageBox(void)
 		px = UI_SYSTEM_MENU_BOX_POS_X;
 		if (g_PlayerRespawnMsg == TRUE)
 		{
-			texNo = UI_MESSAGEBOX_RESPAWN;
+			if (GetMode() == MODE_TUTORIAL)
+				texNo = UI_MESSAGEBOX_TUTORIAL_RESPAWN;
+			else if (GetMode() == MODE_GAME)
+				texNo = UI_MESSAGEBOX_RESPAWN;
 			py = UI_SYSTEM_MENU_BOX_POS_Y + UI_RESPAWN_MESSAGE_OFFSET_Y;
 		}
 		else
@@ -850,6 +877,16 @@ void DrawButton(int button, BOOL selected)
 		0.0f, 0.0f, 1.0f, 1.0f,
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 	GetDeviceContext()->Draw(4, 0);
+}
+
+BOOL IsSkillIconActive(int magic)
+{
+	if (magic == UI_MAGIC_HEAL && GetMagicActive(MAGIC_HEALING) == FALSE
+		|| magic == UI_MAGIC_FIRE_BALL && GetMagicActive(MAGIC_FIRE_BALL) == FALSE
+		|| magic == UI_MAGIC_FLAMEBLADE && GetMagicActive(MAGIC_FLAMEBLADE) == FALSE)
+		return FALSE;
+	else
+		return TRUE;
 }
 
 void SetRespawnMessageBox(BOOL render)

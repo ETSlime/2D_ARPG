@@ -20,7 +20,7 @@
 #define PLAYER_MAX				(1)		// プレイヤーのMax人数
 #define MAX_ATTACK_AABB			(3)
 
-#define PLAYER_MAX_HP			(2000.0f)
+#define PLAYER_MAX_HP			(1200.0f)
 #define PLAYER_MAX_MP			(1800.0f)
 #define PLAYER_MAX_ST			(1000.0f)
 
@@ -305,18 +305,27 @@ void SetPlayerST(int ST);
 void SetPlayerDir(int dir);
 void SetPlayerPosX(float posX);
 void SetPlayerPosY(float posY);
+void SetPlayerCurrentMagic(int magic);
 void SetPlayerInvincible(BOOL invincible);
-void SetLimitPlayerMove(BOOL limit);
+void SetLimitPlayerMoveLeft(BOOL limit);
+void SetLimitPlayerMoveRight(BOOL limit);
+void SetLimitBGMove(BOOL limit);
 void PlayerRespawn(void);
+void PlayerRespawnDirectly(void);
 
+BOOL GetMagicActive(int magic);
 BOOL GetUpdatePlayer(void);
 void SetUpdatePlayer(BOOL update);
 
 void DisablePlayerAttack(BOOL disable);
 void DisablePlayerJump(BOOL disable);
-void DisablePlayerMagic(BOOL disable);
+void DisablePlayerMagicSwitch(BOOL disable);
+void DisablePlayerHealing(BOOL disable);
+void DisablePlayerFireBall(BOOL disable);
+void DisablePlayerFlameblade(BOOL disable);
 void DisablePlayerDash(BOOL disable);
 void DisablePlayerDefend(BOOL disable);
 void DisablePlayerRun(BOOL disable);
 void DisablePlayerLeftMove(BOOL disable);
 void DisablePlayerRightMove(BOOL disable);
+void DisablePlayerDefendCount(BOOL disable);

@@ -89,7 +89,7 @@
 #define ANIM_WAIT_KNOCKDOWN						(18)
 #define ANIM_WAIT_REBOUND						(6)
 #define ANIM_WAIT_DEFEND						(25)
-#define ANIM_DASH_FRAME							(13)
+#define ANIM_DASH_FRAME							(11)
 #define ANIM_HARDLANDING_FRAME					(4)
 #define ANIM_HIT_FRAME							(4)
 #define ANIM_KNOCKDOWN_FRAME					(4)
@@ -236,16 +236,22 @@ static BOOL		g_Update = TRUE;
 
 static BOOL		noGravity = FALSE;
 static BOOL		allowAirJump = FALSE;
-static BOOL		g_LimitPlayerMove = FALSE;
+static BOOL		g_LimitPlayerMoveLeft = FALSE;
+static BOOL		g_LimitPlayerMoveRight = FALSE;
 static BOOL		g_DisableMoveLeft = FALSE;
 static BOOL		g_DisableMoveRight = FALSE;
 static BOOL		g_DisableRun = FALSE;
 static BOOL		g_DisableDash = FALSE;
 static BOOL		g_DisableJump = FALSE;
-static BOOL		g_DisableMagic = FALSE;
+static BOOL		g_DisableMagicSwitch = FALSE;
+static BOOL		g_DisableHealing = FALSE;
+static BOOL		g_DisableFireBall = FALSE;
+static BOOL		g_DisableFlameblade = FALSE;
 static BOOL		g_DisableAttack = FALSE;
 static BOOL		g_DisableDefend = FALSE;
+static BOOL		g_DisableDefendCount = FALSE;
 
+static BOOL		g_LimitBGMove = TRUE;
 
 static AttackAABBTBL normalAttack1Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK1_FRAME] = {
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
@@ -517,15 +523,21 @@ HRESULT InitPlayer(void)
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
 	g_Update = TRUE;
+	g_LimitBGMove = TRUE;
 
 	g_PlayerCount = 0;						// 生きてるプレイヤーの数
-	g_LimitPlayerMove = FALSE;
+	g_LimitPlayerMoveLeft = FALSE;
+	g_LimitPlayerMoveRight = FALSE;
 	g_DisableRun = FALSE;
 	g_DisableDash = FALSE;
 	g_DisableJump = FALSE;
-	g_DisableMagic = FALSE;
+	g_DisableMagicSwitch = FALSE;
+	g_DisableHealing = FALSE;
+	g_DisableFireBall = FALSE;
+	g_DisableFlameblade = FALSE;
 	g_DisableAttack = FALSE;
 	g_DisableDefend = FALSE;
+	g_DisableDefendCount = FALSE;
 
 	// プレイヤー構造体の初期化
 	InitPlayerStatus();
@@ -1061,6 +1073,14 @@ void HandlePlayerAttack(void)
 
 void HandlePlayerDefend(void)
 {
+	if (GetTutorialPause() == PAUSE_DEFEND)
+	{
+		if (GetKeyboardPress(DIK_LCONTROL) || GetKeyboardTrigger(DIK_LCONTROL))
+			SetUpdateEnemy(TRUE);
+		if (GetKeyboardRelease(DIK_LCONTROL))
+			SetUpdateEnemy(FALSE);
+	}
+
 	if (g_Player->state != WALK)
 		g_Player->isWalkingOnDefend = FALSE;
 
@@ -1233,17 +1253,19 @@ void UpdateKeyboardInput(void)
 		HandlePlayerAttack();
 	}
 
-	if (GetKeyboardRelease(DIK_Q) && g_DisableMagic == FALSE)
+	if (GetKeyboardRelease(DIK_Q) && g_DisableMagicSwitch == FALSE)
 		g_Player->magic = (g_Player->magic + 2) % MAGIC_NUM_MAX;
-	if (GetKeyboardRelease(DIK_E) && g_DisableMagic == FALSE)
+	if (GetKeyboardRelease(DIK_E) && g_DisableMagicSwitch == FALSE)
 		g_Player->magic = (g_Player->magic + 1) % MAGIC_NUM_MAX;
 
-	if (GetKeyboardRelease(DIK_F) && g_DisableMagic == FALSE)
+	if (GetKeyboardRelease(DIK_F))
 	{
 		switch (g_Player->magic)
 		{
 		case MAGIC_HEALING:
-			if (g_Player->healingCD <= 0 && g_Player->state == IDLE)
+			if (g_Player->healingCD <= 0 
+				&& g_DisableHealing == FALSE
+				&& g_Player->state == IDLE)
 			{
 				g_Player->state = CAST;
 				g_Player->patternAnim = 0;
@@ -1257,10 +1279,13 @@ void UpdateKeyboardInput(void)
 
 			break;
 		case MAGIC_FLAMEBLADE:
+			if (g_DisableFlameblade == FALSE)
 			g_Player->flameblade = g_Player->flameblade == TRUE ? FALSE : TRUE;
 			break;
 		case MAGIC_FIRE_BALL:
-			if (g_Player->fireBallCD <= 0 && g_Player->state == IDLE)
+			if (g_Player->fireBallCD <= 0 
+				&& g_DisableFireBall == FALSE
+				&& g_Player->state == IDLE)
 			{
 				g_Player->state = CAST;
 				g_Player->patternAnim = 0;
@@ -1340,7 +1365,8 @@ void UpdatePlayerStates(void)
 	{
 		g_Player->isDefending = TRUE;	// 防御中フラグを有効にする
 		g_Player->isRunning = FALSE;	// 走行中フラグを無効にする
-		g_Player->defendCnt++;	// 防御カウントを増加
+		if (g_DisableDefendCount == FALSE)
+			g_Player->defendCnt++;	// 防御カウントを増加
 		if (g_Player->isParrying == TRUE && g_Player->defendCnt >= PARRY_WINDOW * 2.5)
 		{
 			g_Player->isParrying = FALSE;
@@ -1360,7 +1386,8 @@ void UpdatePlayerStates(void)
 	// パリィ状態の場合
 	else if (g_Player->isParrying == TRUE)
 	{
-		g_Player->defendCnt++;
+		if (g_DisableDefendCount == FALSE)
+			g_Player->defendCnt++;
 		// 時間が一程度過ごしたら、パリィ状態フラグを無効にする
 		if (g_Player->defendCnt >= PARRY_WINDOW * 2.5)
 		{
@@ -1429,25 +1456,30 @@ void UpdateBackGroundScroll(void)
 	float leftLimitX = SCREEN_WIDTH / 3;
 	float rightLimitX = SCREEN_WIDTH * 2 / 3;
 
-	if (g_LimitPlayerMove == TRUE)
+	if (g_LimitPlayerMoveLeft == TRUE && g_Player->pos.x < bg->pos.x + leftLimitX)
 	{
-		if (g_Player->pos.x < bg->pos.x + leftLimitX)
-			SET_PLAYER_POS_X(bg->pos.x + leftLimitX);
-		else if (g_Player->pos.x > bg->pos.x + rightLimitX)
-			SET_PLAYER_POS_X(bg->pos.x + rightLimitX);
+		SET_PLAYER_POS_X(bg->pos.x + leftLimitX);
+	}
+	else if (g_LimitPlayerMoveRight == TRUE && g_Player->pos.x > bg->pos.x + rightLimitX)
+	{
+		SET_PLAYER_POS_X(bg->pos.x + rightLimitX);
 	}
 
-	// プレイヤーが画面内の移動範囲内かどうかを確認
-	if (g_Player->pos.x < bg->pos.x + leftLimitX) 
+	if (g_LimitBGMove == FALSE)
 	{
-		// プレイヤーが左の制限範囲を越えた場合は、背景を左にスクロール
-		bg->pos.x = g_Player->pos.x - leftLimitX;
+		// プレイヤーが画面内の移動範囲内かどうかを確認
+		if (g_Player->pos.x < bg->pos.x + leftLimitX)
+		{
+			// プレイヤーが左の制限範囲を越えた場合は、背景を左にスクロール
+			bg->pos.x = g_Player->pos.x - leftLimitX;
+		}
+		else if (g_Player->pos.x > bg->pos.x + rightLimitX)
+		{
+			// プレイヤーが右の制限範囲を越えた場合は、背景を右にスクロール
+			bg->pos.x = g_Player->pos.x - rightLimitX;
+		}
 	}
-	else if (g_Player->pos.x > bg->pos.x + rightLimitX) 
-	{
-		// プレイヤーが右の制限範囲を越えた場合は、背景を右にスクロール
-		bg->pos.x = g_Player->pos.x - rightLimitX;
-	}
+
 
 	// 背景のX座標を画面端で制限
 	if (bg->pos.x < 0) bg->pos.x = 0;
@@ -1457,17 +1489,21 @@ void UpdateBackGroundScroll(void)
 	float topLimitY = SCREEN_HEIGHT / 3;
 	float bottomLimitY = SCREEN_HEIGHT * 2 / 3;
 
-	// プレイヤーが画面内の移動範囲内かどうかを確認
-	if (g_Player->pos.y < bg->pos.y + topLimitY) 
+	if (g_LimitBGMove == FALSE)
 	{
-		// プレイヤーが上の制限範囲を越えた場合は、背景を上にスクロール
-		bg->pos.y = g_Player->pos.y - topLimitY;
+		// プレイヤーが画面内の移動範囲内かどうかを確認
+		if (g_Player->pos.y < bg->pos.y + topLimitY)
+		{
+			// プレイヤーが上の制限範囲を越えた場合は、背景を上にスクロール
+			bg->pos.y = g_Player->pos.y - topLimitY;
+		}
+		else if (g_Player->pos.y > bg->pos.y + bottomLimitY)
+		{
+			// プレイヤーが下の制限範囲を越えた場合は、背景を下にスクロール
+			bg->pos.y = g_Player->pos.y - bottomLimitY;
+		}
 	}
-	else if (g_Player->pos.y > bg->pos.y + bottomLimitY) 
-	{
-		// プレイヤーが下の制限範囲を越えた場合は、背景を下にスクロール
-		bg->pos.y = g_Player->pos.y - bottomLimitY;
-	}
+
 
 	// 背景のY座標を画面端で制限
 	if (bg->pos.y < 0) bg->pos.y = 0;
@@ -1633,6 +1669,12 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 			g_Player->defendCnt = 0;
 			// 無敵状態を開始する
 			g_Player->isInvincible = TRUE;
+
+			if (GetTutorialPause() == PAUSE_DEFEND)
+			{
+				SetTutorialPause(NONE);
+			}
+
 		}
 		else if (enemy)
 		{
@@ -1830,13 +1872,13 @@ void PlayDashAnim(void)
 	switch (g_Player->dir)
 	{
 	case CHAR_DIR_LEFT:
-		if (CheckMoveCollision(-speed * 2, g_Player->dir))
-			CHANGE_PLAYER_POS_X(-speed * 2);
+		if (CheckMoveCollision(-speed * 2.5f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(-speed * 2.5f);
 
 		break;
 	case CHAR_DIR_RIGHT:
-		if (CheckMoveCollision(speed * 2, g_Player->dir))
-			CHANGE_PLAYER_POS_X(speed * 2);
+		if (CheckMoveCollision(speed * 2.5f, g_Player->dir))
+			CHANGE_PLAYER_POS_X(speed * 2.5f);
 		break;
 	default:
 		break;
@@ -1887,7 +1929,16 @@ void PlayAttackAnim(void)
 	}
 
 	if (g_Player->attackPattern == NORMAL_ATTACK4 && GetTutorialPause() == PAUSE_ATTACK)
+	{
 		SetTutorialPause(NONE);
+	}
+
+	else if (g_Player->attackPattern == PARRY && GetTutorialPause() == PAUSE_PARRY)
+	{
+		SetUpdateEnemy(TRUE);
+		SetTutorialPause(NONE);
+	}
+		
 
 	// 攻撃時のテクスチャサイズを調整
 	AdjustAttackTextureSize();
@@ -1984,7 +2035,7 @@ void PlayAttackAnim(void)
 
 	if (g_Player->animFrameCount >= attackFrame)
 	{
-		if (GetTutorialPause() == TUTORIAL_COMBO)
+		if (GetTutorialPause() == PAUSE_COMBO)
 		{
 			if (g_Player->attackPattern != NORMAL_ATTACK4)
 			{
@@ -1993,7 +2044,7 @@ void PlayAttackAnim(void)
 			}
 			else
 			{
-				SetTutorialPause(TUTORIAL_COMBO);
+				SetTutorialPause(NONE);
 			}
 
 		}
@@ -2382,6 +2433,11 @@ void PlayCastAnim(void)
 			break;
 		default:
 			break;
+		}
+
+		if (g_Player->magicCasting == MAGIC_HEALING && GetTutorialPause() == PAUSE_MAGIC)
+		{
+			SetTutorialPause(NONE);
 		}
 	}
 
@@ -3182,9 +3238,30 @@ void PlayerRespawn(void)
 	InitPlayerStatus();
 }
 
-void SetLimitPlayerMove(BOOL limit)
+void PlayerRespawnDirectly(void)
 {
-	g_LimitPlayerMove = limit;
+	XMFLOAT3 pos = g_Player->pos;
+	InitPlayerStatus();
+	g_Player->state = REBOUND;
+	g_Player->playAnim = TRUE;
+	SET_PLAYER_POS_X(pos.x);
+	SET_PLAYER_POS_Y(pos.y);
+
+}
+
+void SetLimitPlayerMoveLeft(BOOL limit)
+{
+	g_LimitPlayerMoveLeft = limit;
+}
+
+void SetLimitPlayerMoveRight(BOOL limit)
+{
+	g_LimitPlayerMoveRight = limit;
+}
+
+void SetLimitBGMove(BOOL limit)
+{
+	g_LimitBGMove = limit;
 }
 
 void SetPlayerHP(int HP)
@@ -3222,9 +3299,29 @@ void SetPlayerInvincible(BOOL invincible)
 	g_Player->isInvincible = invincible;
 }
 
+void SetPlayerCurrentMagic(int magic)
+{
+	g_Player->magicCasting = magic;
+}
+
 BOOL GetUpdatePlayer(void)
 {
 	return g_Update;
+}
+
+BOOL GetMagicActive(int magic)
+{
+	switch (magic)
+	{
+	case MAGIC_HEALING:
+		return g_DisableHealing == TRUE ? FALSE : TRUE;
+	case MAGIC_FIRE_BALL:
+		return g_DisableFireBall == TRUE ? FALSE : TRUE;
+	case MAGIC_FLAMEBLADE:
+		return g_DisableFlameblade == TRUE ? FALSE : TRUE;
+	default:
+		return FALSE;
+	}
 }
 
 void SetUpdatePlayer(BOOL update)
@@ -3242,9 +3339,24 @@ void DisablePlayerJump(BOOL disable)
 	g_DisableJump = disable;
 }
 
-void DisablePlayerMagic(BOOL disable)
+void DisablePlayerMagicSwitch(BOOL disable)
 {
-	g_DisableMagic = disable;
+	g_DisableMagicSwitch = disable;
+}
+
+void DisablePlayerHealing(BOOL disable)
+{
+	g_DisableHealing = disable;
+}
+
+void DisablePlayerFireBall(BOOL disable)
+{
+	g_DisableFireBall = disable;
+}
+
+void DisablePlayerFlameblade(BOOL disable)
+{
+	g_DisableFlameblade = disable;
 }
 
 void DisablePlayerDash(BOOL disable)
@@ -3270,4 +3382,9 @@ void DisablePlayerLeftMove(BOOL disable)
 void DisablePlayerRightMove(BOOL disable)
 {
 	g_DisableMoveRight = disable;
+}
+
+void DisablePlayerDefendCount(BOOL disable)
+{
+	g_DisableDefendCount = disable;
 }

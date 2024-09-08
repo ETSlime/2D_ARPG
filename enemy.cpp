@@ -153,7 +153,7 @@ static EnemyAttributes goblinAttributes = {
 	130.0f,	// float hp
 	130.0f,	// float maxhp
 	5,			// int damage
-	5,			// int staggerResistance
+	8,			// int staggerResistance
 	80,			// int staggerRecoveryTime
 	35,			// int stunTime
 	75.0f,		// float attackRange
@@ -405,7 +405,7 @@ HRESULT InitEnemy(void)
 	g_EnemyCount = 0;
 	for (int i = 0; i < MAP_ENEMY_MAX; i++)
 	{
-		if (enemyConfig[i].moveTbl == nullptr) break;
+		if (enemyConfig[i].moveTbl == nullptr) continue;
 
 		g_MoveTblAdr[i] = enemyConfig[i].moveTbl;
 
@@ -426,6 +426,7 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].countAnim = 0;
 		g_Enemy[i].patternAnim = 0;
 
+		g_Enemy[i].update = TRUE;
 		g_Enemy[i].idleCount = 0;
 		g_Enemy[i].state = ENEMY_IDLE;
 		g_Enemy[i].dir = CHAR_DIR_RIGHT;
@@ -571,6 +572,8 @@ void UpdateEnemy(void)
 
 	for (int i = 0; i < ENEMY_MAX; i++)
 	{
+		if (g_Enemy[i].update == FALSE) continue;
+
 		// 生きてるエネミーだけ処理をする
 		if (g_Enemy[i].use == TRUE)
 		{
@@ -1562,6 +1565,12 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 	{
 		g_Update = FALSE;
 	}
+	else if (enemy->patternAnim == ANIM_ATTACK_OFFSET 
+		&& enemy->countAnim >= ANIM_WAIT_ATTACK * 1.5f
+		&& GetTutorialPause() == PAUSE_DEFEND)
+	{
+		g_Update = FALSE;
+	}
 
 	PLAYER* player = GetPlayer();
 
@@ -1600,6 +1609,9 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 
 void PlayEnemyHitAnim(ENEMY* enemy)
 {
+	if (GetTutorialStage() == TUTORIAL_PARRY && enemy->countAnim == GetEnemyAttributes(enemy)->stunTime * 0.6f)
+		g_Update = FALSE;
+
 	enemy->invertTex = enemy->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 	int dir = enemy->dir == CHAR_DIR_RIGHT ? -1 : 1;
 	enemy->patternAnim = ANIM_HIT_OFFSET;
@@ -1615,7 +1627,10 @@ void PlayEnemyHitAnim(ENEMY* enemy)
 		XMFLOAT3 rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		XMStoreFloat3(&enemy->rot, XMLoadFloat3(&rotation));
 		enemy->patternAnim = 0;
-		enemy->state = enemy->stateOld;
+		if (enemy->stateOld != ENEMY_HIT)
+			enemy->state = enemy->stateOld;
+		else
+			enemy->state = ENEMY_COOLDOWN;
 	}
 }
 
@@ -1634,6 +1649,9 @@ void PlayEnemyIdleAnim(ENEMY* enemy)
 
 void PlayEnemyDieAnim(ENEMY* enemy)
 {
+	if (GetTutorialPause() == PAUSE_ENEMY2 && enemy->enemyType == CYCLOPS)
+		SetTutorialPause(NONE);
+
 	enemy->patternAnim = ANIM_DIE_OFFSET;
 
 	float gravity = 0.1f;
@@ -1988,4 +2006,9 @@ BOOL GetUpdateEnemy(void)
 void SetUpdateEnemy(BOOL update)
 {
 	g_Update = update;
+}
+
+void SetUpdateEnemyByIdx(int index, BOOL update)
+{
+	g_Enemy[index].update = update;
 }

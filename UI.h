@@ -44,9 +44,16 @@ enum
 	UI_MESSAGEBOX_TUTORIAL,
 	UI_MESSAGEBOX_RESPAWN,
 	BG_FADE,
+	UI_MESSAGEBOX_TUTORIAL_RESPAWN,
 	UI_NONE,
 };
 
+enum
+{
+	SKILL_ICON_LEFT,
+	SKILL_ICON_MIDDLE,
+	SKILL_ICON_RIGHT,
+};
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -71,3 +78,5 @@ void SetRenderGauge(BOOL render);
 void SetRenderSkillIcon(BOOL render);
 void SetRenderJumpIcon(BOOL render);
 void SetRenderBladeIcon(BOOL render);
+
+BOOL IsSkillIconActive(int magic);

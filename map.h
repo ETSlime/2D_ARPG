@@ -20,19 +20,31 @@ struct BG
 	float		w, h;		// 幅と高さ
 	int			texNo;		// 使用しているテクスチャ番号
 
-	float		scrl;		// スクロール
+	BOOL		scroll;
+	float		scrollSpeedX;
+	float		scrollSpeedY;
+	float		scrollTime;
+
 	XMFLOAT3	old_pos;	// １フレ前のポリゴンの座標
-	float		scrl2;		// スクロール
+};
+
+struct Teleport
+{
+	XMFLOAT3	pos;
+	int			mapNo;
+	XMFLOAT3	nextPos;
+	int			nextMapNo;
 };
 
 #define TEXTURE_BG_WIDTH			(3770)//(3015)			// (SCREEN_WIDTH)	// 背景サイズ
 #define TEXTURE_BG_HEIGHT			(1504)//(1360)			// (SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(25)				// テクスチャの数
+#define TEXTURE_MAX					(35)				// テクスチャの数
 
 #define	MAP_NUM_MAX					(5)
 #define MAP_GROUND_MAX				(10)
 #define MAP_ENEMY_MAX				(10)
 #define MOVE_NUM_MAX				(5)
+#define TELEPORT_NUM_MAX			(4)
 #define PLAYER_INIT_POS_MAX			(4)
 #define MAP01_GROUND_H				(1504 - 1290)
 
@@ -41,6 +53,8 @@ struct BG
 
 #define	PLAYER_INIT_POS_X_TUTORIAL01_0 (475.0f)
 #define PLAYER_INIT_POS_Y_TUTORIAL01_0	(1356.5f)
+
+#define	TUTORIAL_CYCLOPS_ID			(3)
 
 enum
 {
@@ -77,11 +91,13 @@ void InitMapCollisionBox(int map);
 void InitMoveTbl(int map);
 void InitEnemyConfig(int map);
 void InitPlayerInitPos(int map);
+void InitTeleport(int map);
 void UninitMap(void);
 void UpdateMap(void);
 void DrawMap(void);
 
 BG* GetBG(void);
+void ScrollBG(float x, float y, float time);
 
 AABB* GetMap01AABB(void);
 EnemyConfig* GetEnemyConfig(int map);
@@ -91,3 +107,4 @@ int GetCurrentMap();
 void SetCurrentMap(int map);
 
 void DrawMapWalls(int map);
+void DrawTeleport(int map);

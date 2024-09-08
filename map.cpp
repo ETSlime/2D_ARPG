@@ -6,16 +6,30 @@
 //=============================================================================
 #include "map.h"
 #include "enemy.h"
+#include "tutorial.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
 
+#define TEXTURE_TELEPORT_WIDTH				(150.0f)
+#define TEXTURE_TELEPORT_HEIGHT				(150.0f)
+#define TEXTURE_TELEPORT_PATTERN_DIVIDE_X	(5)
+#define TEXTURE_TELEPORT_PATTERN_DIVIDE_Y	(2)
+#define	ANIM_WAIT_TELEPORT					(5)
 
 #define TUTORIAL_01_GROUND_WIDTH	(TEXTURE_BG_WIDTH + 800.0f)
 #define TUTORIAL_01_GROUND_HEIGHT	(250)
 #define TUTORIAL_01_GROUND_POS_X	(TEXTURE_BG_WIDTH * 0.5f - 50)
 #define TUTORIAL_01_GROUND_POS_Y	(TEXTURE_BG_HEIGHT)
+
+#define TUTORIAL_01_ROCK01_WIDTH	(1600)
+#define TUTORIAL_01_ROCK01_HEIGHT	(400)
+#define TUTORIAL_01_ROCK01_POS_X	(2550)
+#define TUTORIAL_01_ROCK01_POS_Y	(TEXTURE_BG_HEIGHT - 200)
+
+#define TUTORIAL_01_EXIT_POS_X		(3000.0f)
+#define TUTORIAL_01_EXIT_POS_Y		(800.0f)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -39,8 +53,7 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/map/map01.png",
 	"data/TEXTURE/map/rock01.png",
 	"data/TEXTURE/map/rock02.png",
-	"data/TEXTURE/map/rock03.png",
-	"data/TEXTURE/map/rock04.png",
+	"data/TEXTURE/map/teleport.png",
 };
 
 
@@ -48,11 +61,15 @@ static BOOL	g_Load = FALSE;		// 初期化を行ったかのフラグ
 static BG	g_BG;
 static AABB g_AABB[MAP_GROUND_MAX];
 static int	g_MapNo = MAP_01;
+static Teleport g_Teleport[MAP_NUM_MAX][TELEPORT_NUM_MAX];
 
 static INTERPOLATION_DATA g_MoveTbl0[MOVE_NUM_MAX];
 static INTERPOLATION_DATA g_MoveTbl1[MOVE_NUM_MAX];
 static INTERPOLATION_DATA g_MoveTbl2[MOVE_NUM_MAX];
-static INTERPOLATION_DATA g_Tutorial_01_MoveTbl_Goblin[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_Tutorial_01_MoveTbl_Goblin_01[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_Tutorial_01_MoveTbl_Goblin_02[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_Tutorial_01_MoveTbl_Goblin_03[MOVE_NUM_MAX];
+static INTERPOLATION_DATA g_Tutorial_01_MoveTbl_CYCLOPS_01[MOVE_NUM_MAX];
 
 static EnemyConfig	g_EnemyConfig[MAP_NUM_MAX][MAP_ENEMY_MAX];
 static XMFLOAT3 g_PlayerInitPos[MAP_NUM_MAX][PLAYER_INIT_POS_MAX];
@@ -92,12 +109,14 @@ HRESULT InitMap(void)
 	g_BG.pos   = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_BG.texNo = 0;
 
-	g_BG.scrl  = 0.0f;		// TEXスクロール
-	g_BG.scrl2 = 0.0f;		// TEXスクロール
+	g_BG.scroll = FALSE;
+	g_BG.scrollSpeedX = 0.0f;
+	g_BG.scrollSpeedY = 0.0f;
 
 	InitMapCollisionBox(g_MapNo);
 	InitMoveTbl(g_MapNo);
 	InitEnemyConfig(g_MapNo);
+	InitTeleport(g_MapNo);
 
 #ifdef _DEBUG	
 	// debug
@@ -174,6 +193,11 @@ void InitMapCollisionBox(int map)
 		g_AABB[0].pos.y = 1340.0f + (TEXTURE_BG_HEIGHT - 1290.0f) * 0.5f;
 		g_AABB[0].w = TEXTURE_BG_WIDTH + 200.0f;
 		g_AABB[0].h = MAP01_GROUND_H * 0.5f;
+
+		g_AABB[1].pos.x = TUTORIAL_01_ROCK01_POS_X * 0.99f;
+		g_AABB[1].pos.y = TUTORIAL_01_ROCK01_POS_Y;
+		g_AABB[1].w = TUTORIAL_01_ROCK01_WIDTH * 0.83f;
+		g_AABB[1].h = TUTORIAL_01_ROCK01_HEIGHT * 0.78f;
 		break;
 	}
 	case MAP_01:
@@ -210,8 +234,18 @@ void InitMoveTbl(int map)
 	switch (map)
 	{
 	case TUTORIAL_01:
-		g_Tutorial_01_MoveTbl_Goblin[0] = { XMFLOAT3(-50.0f, 1349.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
-		g_Tutorial_01_MoveTbl_Goblin[1] = { XMFLOAT3(938.0f, PLAYER_INIT_POS_Y_TUTORIAL01_0, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+		g_Tutorial_01_MoveTbl_Goblin_01[0] = { XMFLOAT3(-50.0f, 1349.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
+		g_Tutorial_01_MoveTbl_Goblin_01[1] = { XMFLOAT3(938.0f, PLAYER_INIT_POS_Y_TUTORIAL01_0, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+
+		g_Tutorial_01_MoveTbl_Goblin_02[0] = { XMFLOAT3(1675.0f, 1349.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
+		g_Tutorial_01_MoveTbl_Goblin_02[1] = { XMFLOAT3(2257.0f, PLAYER_INIT_POS_Y_TUTORIAL01_0, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+
+		g_Tutorial_01_MoveTbl_Goblin_03[0] = { XMFLOAT3(2454.0f, 1349.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
+		g_Tutorial_01_MoveTbl_Goblin_03[1] = { XMFLOAT3(1753, PLAYER_INIT_POS_Y_TUTORIAL01_0, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+
+		g_Tutorial_01_MoveTbl_CYCLOPS_01[0] = { XMFLOAT3(2805.0f, 1078.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	200 };
+		g_Tutorial_01_MoveTbl_CYCLOPS_01[1] = { XMFLOAT3(2105, 1078.0f, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
+
 		break;
 	case MAP_01:
 		//座標									回転率							拡大率					時間
@@ -249,7 +283,10 @@ void InitEnemyConfig(int map)
 	switch (map)
 	{
 	case TUTORIAL_01:
-		g_EnemyConfig[TUTORIAL_01][0] = { GOBLIN, g_Tutorial_01_MoveTbl_Goblin, 2 };
+		//g_EnemyConfig[TUTORIAL_01][0] = { GOBLIN, g_Tutorial_01_MoveTbl_Goblin_01, 2 };
+		//g_EnemyConfig[TUTORIAL_01][1] = { GOBLIN, g_Tutorial_01_MoveTbl_Goblin_02, 2 };
+		//g_EnemyConfig[TUTORIAL_01][2] = { GOBLIN, g_Tutorial_01_MoveTbl_Goblin_03, 2 };
+		g_EnemyConfig[TUTORIAL_01][TUTORIAL_CYCLOPS_ID] = { CYCLOPS, g_Tutorial_01_MoveTbl_CYCLOPS_01, 2 };
 		break;
 	case MAP_01:
 		g_EnemyConfig[MAP_01][0] = {GOLEM, g_MoveTbl0, 2};
@@ -260,6 +297,18 @@ void InitEnemyConfig(int map)
 	}
 }
 
+void InitTeleport(int map)
+{
+	switch (map)
+	{
+	case TUTORIAL_01:
+		break;
+	default:
+		break;
+	}
+}
+
+
 //=============================================================================
 // 更新処理
 //=============================================================================
@@ -269,7 +318,15 @@ void UpdateMap(void)
 
 	g_BG.texNo = GetCurrentMap();
 
-	//g_BG.scrl -= 0.0f;		// 0.005f;		// スクロール
+	if (g_BG.scroll == TRUE)
+	{
+		g_BG.pos.x += g_BG.scrollSpeedX;
+		g_BG.pos.y += g_BG.scrollSpeedY;
+		g_BG.scrollTime--;
+
+		if (g_BG.scrollTime <= 0.0f)
+			g_BG.scroll = FALSE;
+	}
 
 
 #ifdef _DEBUG	// デバッグ情報を表示する
@@ -317,7 +374,9 @@ void DrawMap(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
-	//DrawMapWalls(g_MapNo);
+	DrawMapWalls(g_MapNo);
+	DrawTeleport(g_MapNo);
+
 
 	// 空を描画
 	//{
@@ -376,6 +435,8 @@ void DrawMapWalls(int map)
 	{
 	case TUTORIAL_01:
 	{
+		std::cout << g_BG.pos.x << std::endl;
+
 		// テクスチャ設定
 		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01]);
 
@@ -388,10 +449,48 @@ void DrawMapWalls(int map)
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
+
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02]);
+		SetSpriteColor(g_VertexBuffer,
+			TUTORIAL_01_ROCK01_POS_X - g_BG.pos.x, TUTORIAL_01_ROCK01_POS_Y - g_BG.pos.y,
+			TUTORIAL_01_ROCK01_WIDTH, TUTORIAL_01_ROCK01_HEIGHT,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		GetDeviceContext()->Draw(4, 0);
+
 		break;
 	}
 	default:
 		break;
+	}
+}
+
+void DrawTeleport(int map)
+{
+	for (int i = 0; i < TELEPORT_NUM_MAX; i++)
+	{
+		float px, py, pw, ph, tx, ty, tw, th;
+		px = g_Teleport[map][i].pos.x;
+		py = g_Teleport[map][i].pos.y;
+
+		pw = TEXTURE_TELEPORT_WIDTH;
+		ph = TEXTURE_TELEPORT_HEIGHT;
+		tw = 1.0f / TEXTURE_TELEPORT_PATTERN_DIVIDE_X; 
+		th = 1.0f / TEXTURE_TELEPORT_PATTERN_DIVIDE_Y;
+
+		//ty = (float)(g_Magic[i].patternAnim / TEXTURE_TELEPORT_PATTERN_DIVIDE_X * th);
+
+		//tx = (float)(g_Magic[i].patternAnim % TEXTURE_TELEPORT_PATTERN_DIVIDE_X * tw):
+
+
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[map]);
+		SetSpriteColor(g_VertexBuffer,
+			px - g_BG.pos.x, py - g_BG.pos.y,
+			pw, ph,
+			tx, ty, tw, th,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+		GetDeviceContext()->Draw(4, 0);
+
 	}
 }
 
@@ -427,4 +526,13 @@ int GetCurrentMap()
 void SetCurrentMap(int map)
 {
 	g_MapNo = map;
+}
+
+void ScrollBG(float x, float y, float time)
+{
+	g_BG.scroll = TRUE;
+
+	g_BG.scrollTime = time;
+	g_BG.scrollSpeedX = x / time;
+	g_BG.scrollSpeedY = y / time;
 }

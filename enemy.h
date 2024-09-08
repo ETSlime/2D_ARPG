@@ -28,7 +28,7 @@
 #define MUMMY_ATTACK_RADIUS			(100.0f)
 #define OGRE_ATTACK_RADIUS			(100.0f)
 #define SKELL_ATTACK_RADIUS			(100.0f)
-#define	ENEMY_HIT_TIMER				(5.0f)
+#define	ENEMY_HIT_TIMER				(8.0f)
 #define	ENEMY_HIT_CD				(35.0f)
 #define ENEMY_STAGGER_RECOVERY_TIME (80)
 #define MAX_CHASE_DISTANCE			(800.0f)	// ç≈ëÂí«ê’ãóó£
@@ -128,6 +128,7 @@ struct ENEMY
 	BOOL		invertTex;
 
 	// state
+	BOOL		update;
 	int			dir;			// å¸Ç´
 	int			oldDir;
 	int			idleCount;
@@ -209,3 +210,5 @@ void ClearEnemy(ENEMY* enemy);
 
 BOOL GetUpdateEnemy(void);
 void SetUpdateEnemy(BOOL update);
+
+void SetUpdateEnemyByIdx(int index, BOOL update);
