@@ -12,6 +12,8 @@
 #include "score.h"
 #include "magic.h"
 #include "tutorial.h"
+#include "result.h"
+#include "sound.h"
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
@@ -34,7 +36,7 @@
 #define TEXTURE_HEIGHT_OGRE			(470/2)
 #define TEXTURE_WIDTH_SKELL			(390/2)
 #define TEXTURE_HEIGHT_SKELL		(297/2)
-#define TEXTURE_MAX					(15)		// テクスチャの数
+#define TEXTURE_MAX					(20)		// テクスチャの数
 
 #define	ENEMY_HP_GAUGE_TEXTURE		(9)
 #define ENEMY_SHADOW_TEXTURE		(11)
@@ -57,6 +59,26 @@
 #define ANIM_WAIT_DIE				(150)
 #define IDLE_WAIT					(50)
 
+// ボス
+#define ANIM_WAIT_BOSS_INIT						(25)
+#define ANIM_WAIT_BOSS_IDLE						(20)
+#define ANIM_WAIT_BOSS_ATTACK					(15)
+#define TEXTURE_BOSS_INIT_PATTERN_DIVIDE_X		(8)
+#define TEXTURE_BOSS_IDLE_PATTERN_DIVIDE_X		(16)
+#define TEXTURE_BOSS_ATTACK_PATTERN_DIVIDE_X	(3)
+#define TEXTURE_WIDTH_BOSS						(1120.0f)
+#define TEXTURE_HEIGHT_BOSS						(640)
+#define BOSS_INIT_TEXTURE_NO					(13)
+#define BOSS_IDLE_TEXTURE_NO					(14)
+#define BOSS_ATTACK_TEXTURE_NO					(15)
+#define BOSS_MAGIC_NUM_MAX						(3)
+#define BOSS_BARRAGE_RADIUS						(120.0f)
+
+#define BOSS_HP_GAUGE_TEXTURE_NO				(16)
+#define TEXTURE_BOSS_HP_GAUGE_WIDTH				(700.0f)
+#define TEXTURE_BOSS_HP_GAUGE_HEIGHT			(35.0f)
+#define TEXTURE_BOSS_HP_GAUGE_POS_X				(170.0f)
+#define TEXTURE_BOSS_HP_GAUGE_POS_Y				(420.0f)
 
 // lightpoint
 #define TEXTURE_WIDTH_LIGHTPOINT	(150.0f)
@@ -99,6 +121,10 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/monster/EnemyHPGauge_bg.png",
 	"data/TEXTURE/char/shadow000.jpg",
 	"data/TEXTURE/lightpoint.png",
+	"data/TEXTURE/monster/boss_init.png",
+	"data/TEXTURE/monster/boss_idle.png",
+	"data/TEXTURE/monster/boss_attack.png",
+	"data/TEXTURE/monster/EnemyHPGauge.png",
 };
 
 
@@ -106,15 +132,19 @@ static BOOL			g_Load = FALSE;			// 初期化を行ったかのフラグ
 static ENEMY		g_Enemy[ENEMY_MAX];		// エネミー構造体
 static LightPoint 	g_LightPoint[LIGHTPOINT_MAX];
 
-static int		g_EnemyCount = ENEMY_MAX;
-static int		g_LightPointInterval = 10;
-static BOOL		g_Update = TRUE;
+static int				g_EnemyCount = ENEMY_MAX;
+static int				g_LightPointInterval = 10;
+static BOOL				g_Update = TRUE;
+static int				g_BossFightCount = 0;
+static int				g_BossFightStage = BOSS_FIGHT_STAGE_01;
+static BossMagic		g_BossMagic[BOSS_MAGIC_NUM_MAX];
+static BOOL				g_RenderBossHP = FALSE;
 
 static EnemyAttributes cyclopsAttributes = {
-	100.0f,	// float hp
-	100.0f,	// float maxhp
+	300.0f,	// float hp
+	300.0f,	// float maxhp
 	15,			// int damage
-	25,			// int staggerResistance
+	110,			// int staggerResistance
 	80,			// int staggerRecoveryTime
 	35,			// int stunTime
 	100.0f,		// float attackRange
@@ -124,22 +154,22 @@ static EnemyAttributes cyclopsAttributes = {
 };
 
 static EnemyAttributes gargoyleAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
-	15,			// int damage
+	90.0f,	// float hp
+	90.0f,	// float maxhp
+	4,			// int damage
 	25,			// int staggerResistance
 	80,			// int staggerRecoveryTime
 	35,			// int stunTime
-	100.0f,		// float attackRange
-	100,		// int attackCooldown
+	60.0f,		// float attackRange
+	85,		// int attackCooldown
 	FALSE,		// BOOL canFly
 	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
 };
 
 static EnemyAttributes gnollAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
-	15,			// int damage
+	120.0f,	// float hp
+	120.0f,	// float maxhp
+	10,			// int damage
 	25,			// int staggerResistance
 	80,			// int staggerRecoveryTime
 	35,			// int stunTime
@@ -163,27 +193,27 @@ static EnemyAttributes goblinAttributes = {
 };
 
 static EnemyAttributes golemAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
-	15,			// int damage
-	25,			// int staggerResistance
+	600.0f,	// float hp
+	600.0f,	// float maxhp
+	16,			// int damage
+	155,			// int staggerResistance
 	80,			// int staggerRecoveryTime
-	35,			// int stunTime
-	100.0f,		// float attackRange
+	55,			// int stunTime
+	500.0f,		// float attackRange
 	100,		// int attackCooldown
 	FALSE,		// BOOL canFly
 	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
 };
 
 static EnemyAttributes impAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
-	15,			// int damage
+	140.0f,	// float hp
+	140.0f,	// float maxhp
+	9,			// int damage
 	25,			// int staggerResistance
 	80,			// int staggerRecoveryTime
 	35,			// int stunTime
-	100.0f,		// float attackRange
-	100,		// int attackCooldown
+	75.0f,		// float attackRange
+	70,		// int attackCooldown
 	FALSE,		// BOOL canFly
 	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
 };
@@ -202,8 +232,21 @@ static EnemyAttributes mummyAttributes = {
 };
 
 static EnemyAttributes ogreAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
+	500.0f,	// float hp
+	500.0f,	// float maxhp
+	15,			// int damage
+	135,			// int staggerResistance
+	80,			// int staggerRecoveryTime
+	45,			// int stunTime
+	100.0f,		// float attackRange
+	100,		// int attackCooldown
+	FALSE,		// BOOL canFly
+	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+};
+
+static EnemyAttributes skellAttributes = {
+	300.0f,	// float hp
+	3000.0f,	// float maxhp
 	15,			// int damage
 	25,			// int staggerResistance
 	80,			// int staggerRecoveryTime
@@ -214,17 +257,17 @@ static EnemyAttributes ogreAttributes = {
 	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
 };
 
-static EnemyAttributes skellAttributes = {
-	1000.0f,	// float hp
-	1000.0f,	// float maxhp
-	15,			// int damage
-	25,			// int staggerResistance
-	80,			// int staggerRecoveryTime
-	35,			// int stunTime
-	100.0f,		// float attackRange
-	100,		// int attackCooldown
-	FALSE,		// BOOL canFly
-	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
+static EnemyAttributes bossAttributes = {
+	1500.0f,	// float hp
+	1500.0f,	// float maxhp
+	0,			// int damage
+	99999,		// int staggerResistance
+	99999,		// int staggerRecoveryTime
+	0,			// int stunTime
+	999.0f,		// float attackRange
+	200,		// int attackCooldown
+	TRUE,		// BOOL canFly
+	XMFLOAT3(2.0f, 2.0f, 0.0f) // XMFLOAT3 move
 };
 
 static EnemyAttributes* attributesTbl[] =
@@ -237,7 +280,8 @@ static EnemyAttributes* attributesTbl[] =
 	&impAttributes,
 	&mummyAttributes,
 	&ogreAttributes,
-	&skellAttributes
+	&skellAttributes,
+	& bossAttributes
 };
 
 
@@ -399,8 +443,11 @@ HRESULT InitEnemy(void)
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
 	g_Update = TRUE;
+	g_BossFightCount = 0;
+	g_BossFightStage = BOSS_FIGHT_STAGE_01;
+	g_RenderBossHP = FALSE;
 
-	EnemyConfig* enemyConfig = GetEnemyConfig(GetCurrentMap());
+	EnemyConfig* enemyConfig = GetEnemyConfig();
 	// エネミー構造体の初期化
 	g_EnemyCount = 0;
 	for (int i = 0; i < MAP_ENEMY_MAX; i++)
@@ -429,11 +476,13 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].update = TRUE;
 		g_Enemy[i].idleCount = 0;
 		g_Enemy[i].state = ENEMY_IDLE;
+
 		g_Enemy[i].dir = CHAR_DIR_RIGHT;
 		g_Enemy[i].oldDir = CHAR_DIR_RIGHT;
 		g_Enemy[i].stepBack = FALSE;
 		g_Enemy[i].onAirCnt = 0;
 		g_Enemy[i].isFalling = FALSE;
+		g_Enemy[i].disableMoveTbl = FALSE;
 
 		// battle
 		g_Enemy[i].isHit = FALSE;
@@ -457,6 +506,14 @@ HRESULT InitEnemy(void)
 			g_Enemy[i].attackAABB[j].tag = ENEMY_ATTACK_AABB;
 		}
 
+		if (g_Enemy[i].enemyType == BOSS)
+		{
+			g_Enemy[i].state = ENEMY_INIT;
+			g_Enemy[i].update = FALSE;
+			g_Enemy[i].disableMoveTbl = TRUE;
+		}
+			
+
 	}
 
 	for (int i = 0; i < LIGHTPOINT_MAX; i++)
@@ -471,6 +528,12 @@ HRESULT InitEnemy(void)
 		g_LightPoint[i].distanceToPlayer = 0.0f;
 		g_LightPoint[i].timeToFly = 0.0f;
 		g_LightPoint[i].desiredToPlayerTime = LIGHTPOINT_REACH_PLAYER_TIME;
+	}
+
+	for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+	{
+		g_BossMagic[i].active = 0;
+		g_BossMagic[i].timeInterval = 0.0f;
 	}
 
 
@@ -570,8 +633,12 @@ void UpdateEnemy(void)
 	if (g_Load == FALSE) return;
 	g_EnemyCount = 0;			// 生きてるエネミーの数
 
+
 	for (int i = 0; i < ENEMY_MAX; i++)
 	{
+		if (g_Enemy[i].enemyType == BOSS)
+			UpdateBossFight(&g_Enemy[i]);
+
 		if (g_Enemy[i].update == FALSE) continue;
 
 		// 生きてるエネミーだけ処理をする
@@ -583,34 +650,51 @@ void UpdateEnemy(void)
 			XMFLOAT3 pos_old = g_Enemy[i].pos;
 
 			// アニメーション
-			switch (g_Enemy[i].state)
+			if (g_Enemy[i].enemyType == BOSS)
 			{
-			case ENEMY_IDLE:
-			case ENEMY_COOLDOWN:
-				PlayEnemyIdleAnim(&g_Enemy[i]);
-				break;
-			case ENEMY_WALK:
-			case ENEMY_CHASE:
-			case ENEMY_WALK_BACK:
-			case ENEMY_RETREAT:
-				PlayEnemyWalkAnim(&g_Enemy[i]);
-				break;
-			case ENEMY_ATTACK:
-				PlayEnemyAttackAnim(&g_Enemy[i]);
-				break;
-			case ENEMY_HIT:
-				PlayEnemyHitAnim(&g_Enemy[i]);
-				break;
-			case ENEMY_DIE:
-				PlayEnemyDieAnim(&g_Enemy[i]);
-				break;
-			default:
-				break;
+				PlayBossAnim(&g_Enemy[i]);
 			}
+			else
+			{
+				switch (g_Enemy[i].state)
+				{
+				case ENEMY_IDLE:
+				case ENEMY_COOLDOWN:
+					PlayEnemyIdleAnim(&g_Enemy[i]);
+					break;
+				case ENEMY_WALK:
+				case ENEMY_CHASE:
+				case ENEMY_WALK_BACK:
+				case ENEMY_RETREAT:
+					PlayEnemyWalkAnim(&g_Enemy[i]);
+					break;
+				case ENEMY_ATTACK:
+					PlayEnemyAttackAnim(&g_Enemy[i]);
+					break;
+				case ENEMY_HIT:
+					PlayEnemyHitAnim(&g_Enemy[i]);
+					break;
+				case ENEMY_DIE:
+					PlayEnemyDieAnim(&g_Enemy[i]);
+					break;
+				default:
+					break;
+				}
+			}
+			
+
 
 			UpdateEnemyStates(&g_Enemy[i]);
 
-			BOOL isMoveable = g_Enemy[i].state != ENEMY_HIT && g_Enemy[i].state != ENEMY_DIE && g_Enemy[i].onAirCnt < 5;
+			if (g_Enemy[i].enemyType == BOSS)
+			{
+				UpdateBossMove(&g_Enemy[i]);
+			}
+
+			BOOL isMoveable = g_Enemy[i].enemyType != BOSS 
+							&& g_Enemy[i].state != ENEMY_HIT 
+							&& g_Enemy[i].state != ENEMY_DIE 
+							&& g_Enemy[i].onAirCnt < 5;
 			// 移動処理
 			if (g_Enemy[i].tblMax > 0 && isMoveable)
 			{	
@@ -913,7 +997,8 @@ void UpdateEnemy(void)
 				g_Enemy[i].invertTex = g_Enemy[i].dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 			}
 
-			UpdateEnemyGroundCollision(&g_Enemy[i]);
+			if (g_Enemy[i].enemyType != BOSS)
+				UpdateEnemyGroundCollision(&g_Enemy[i]);
 
 			// 移動が終わったらエネミーとの当たり判定
 			PLAYER* player = GetPlayer();
@@ -998,20 +1083,7 @@ void UpdateEnemy(void)
 
 void UpdateEnemyStates(ENEMY* enemy)
 {
-	// 敵が攻撃状態ではなく、かつ攻撃が終了していない場合
-	if (enemy->state != ENEMY_ATTACK && enemy->finishAttack == FALSE)
-	{
-		// 攻撃判定のAABBをリセット
-		for (int j = 0; j < MAX_ATTACK_AABB; j++)
-		{
-			enemy->attackAABB[j].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-			enemy->attackAABB[j].w = 0.0f;
-			enemy->attackAABB[j].h = 0.0f;
-		}
-		enemy->finishAttack = TRUE;
-	}
-
-	if (enemy->hitCD > 0.0f) 
+	if (enemy->hitCD > 0.0f)
 	{
 		enemy->hitCD--;
 	}
@@ -1026,19 +1098,35 @@ void UpdateEnemyStates(ENEMY* enemy)
 		}
 	}
 
-	enemy->attributes.staggerRecoveryTime--;
-	if (enemy->attributes.staggerRecoveryTime <= 0)
-		enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance;
+	if (enemy->enemyType != BOSS)
+	{
+		// 敵が攻撃状態ではなく、かつ攻撃が終了していない場合
+		if (enemy->state != ENEMY_ATTACK && enemy->finishAttack == FALSE)
+		{
+			// 攻撃判定のAABBをリセット
+			for (int j = 0; j < MAX_ATTACK_AABB; j++)
+			{
+				enemy->attackAABB[j].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+				enemy->attackAABB[j].w = 0.0f;
+				enemy->attackAABB[j].h = 0.0f;
+			}
+			enemy->finishAttack = TRUE;
+		}
 
-	if (enemy->attributes.attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN && enemy->state != ENEMY_HIT && enemy->state != ENEMY_DIE)
-		enemy->state = ENEMY_COOLDOWN;
+		enemy->attributes.staggerRecoveryTime--;
+		if (enemy->attributes.staggerRecoveryTime <= 0)
+			enemy->attributes.staggerResistance = GetEnemyAttributes(enemy)->staggerResistance;
+
+		if (enemy->attributes.attackCooldown > 0 && enemy->state != ENEMY_COOLDOWN && enemy->state != ENEMY_HIT && enemy->state != ENEMY_DIE)
+			enemy->state = ENEMY_COOLDOWN;
+	}
 }
 
 void UpdateEnemyGroundCollision(ENEMY* enemy)
 {
 	if (enemy->attributes.canFly == TRUE) return;
 
-	AABB* grounds = GetMap01AABB();
+	AABB* grounds = GetMapAABB();
 
 	if (enemy->onAirCnt >= ENEMY_FALL_CNT_MAX)
 		enemy->attributes.move.y = ENEMY_FALL_SPEED;
@@ -1074,6 +1162,414 @@ void UpdateEnemyGroundCollision(ENEMY* enemy)
 
 }
 
+void UpdateBossMove(ENEMY* enemy)
+{
+	if (enemy->disableMoveTbl == FALSE && enemy->tblMax > 0)
+	{
+		// 線形補間の処理
+		int nowNo = (int)enemy->time;			// 整数分であるテーブル番号を取り出している
+		int maxNo = enemy->tblMax;				// 登録テーブル数を数えている
+		int nextNo = (nowNo + 1) % maxNo;			// 移動先テーブルの番号を求めている
+		INTERPOLATION_DATA* tbl = g_MoveTblAdr[enemy->tblNo];	// 行動テーブルのアドレスを取得
+
+		XMVECTOR nowPos = XMLoadFloat3(&tbl[nowNo].pos);	// XMVECTORへ変換
+		XMVECTOR nowRot = XMLoadFloat3(&tbl[nowNo].rot);	// XMVECTORへ変換
+		XMVECTOR nowScl = XMLoadFloat3(&tbl[nowNo].scl);	// XMVECTORへ変換
+
+		XMVECTOR Pos = XMLoadFloat3(&tbl[nextNo].pos) - nowPos;	// XYZ移動量を計算している
+		XMVECTOR Rot = XMLoadFloat3(&tbl[nextNo].rot) - nowRot;	// XYZ回転量を計算している
+		XMVECTOR Scl = XMLoadFloat3(&tbl[nextNo].scl) - nowScl;	// XYZ拡大率を計算している
+
+		float nowTime = enemy->time - nowNo;	// 時間部分である少数を取り出している
+
+		Pos *= nowTime;								// 現在の移動量を計算している
+		Rot *= nowTime;								// 現在の回転量を計算している
+		Scl *= nowTime;								// 現在の拡大率を計算している
+
+		XMVECTOR enemyPos = XMLoadFloat3(&enemy->pos);
+		enemyPos = nowPos + Pos;
+		XMFLOAT3 newPos;
+		XMStoreFloat3(&newPos, enemyPos);
+		// 計算して求めた移動量を現在の移動テーブルXYZに足している＝表示座標を求めている
+		SET_ENEMY_POS(enemy, newPos);
+
+		// 計算して求めた回転量を現在の移動テーブルに足している
+		XMStoreFloat3(&enemy->rot, nowRot + Rot);
+
+		// 計算して求めた拡大率を現在の移動テーブルに足している
+		XMStoreFloat3(&enemy->scl, nowScl + Scl);
+		enemy->w = GetCurrentTextureSizeW(enemy->enemyType) * enemy->scl.x;
+		enemy->h = GetCurrentTextureSizeH(enemy->enemyType) * enemy->scl.y;
+
+		// frameを使て時間経過処理をする
+		enemy->time += 1.0f / tbl[nowNo].frame;	// 時間を進めている
+		if ((int)enemy->time >= maxNo)			// 登録テーブル最後まで移動したか？
+		{
+			enemy->time -= maxNo;				// ０番目にリセットしつつも小数部分を引き継いでいる
+		}
+
+		if ((int)enemy->time - nowNo == 1)
+		{
+			enemy->disableMoveTbl = TRUE;
+		}
+	}
+}
+
+void UpdateBossFight(ENEMY* enemy)
+{
+	//if (GetCurrentMap() != MAP_BOSS) return;
+
+	PLAYER* player = GetPlayer();
+	switch (g_BossFightStage)
+	{
+	case BOSS_FIGHT_STAGE_01:
+	{
+		if (player->pos.x >= 950.0f)
+		{
+			SetLimitBGMove(FALSE);
+			DisableAllPlayerAction(TRUE);
+			ScrollBG(100.0f, -1800.0f, 300.0f);
+			g_BossFightStage++;
+		}
+		
+		break;
+	}
+	case BOSS_FIGHT_STAGE_02:
+	{
+		g_BossFightCount++;
+		if (g_BossFightCount == 350)
+		{
+			PlaySound(SOUND_LABEL_SE_BOSS_SCREAM);
+			SetUpdateEnemyByIdx(0, TRUE);
+			g_BossFightCount = 0;
+		}
+		break;
+	}
+	case BOSS_FIGHT_STAGE_03:
+	{
+		g_BossFightCount++;
+		ScrollBG(0.0f, 1800.0f, 300.0f);
+		if (g_BossFightCount == 300)
+		{
+			PlaySound(SOUND_LABEL_BGM_bossFight);
+			g_RenderBossHP = TRUE;
+			SetLimitBGMove(TRUE);
+			DisableAllPlayerAction(FALSE);
+			g_BossFightCount = 200;
+			g_BossFightStage++;
+		}
+		break;
+	}
+	case BOSS_FIGHT_STAGE_04:
+	{
+		HandleBossAction(enemy, BOSS_FIGHT_STAGE_04);
+
+		if (enemy->attributes.hp / enemy->attributes.maxHp <= 0.5f)
+		{
+			g_BossFightStage++;
+			enemy->disableMoveTbl = FALSE;
+		}
+
+		break;
+	}
+	case BOSS_FIGHT_STAGE_05:
+	{
+		HandleBossAction(enemy, BOSS_FIGHT_STAGE_05);
+
+		if (enemy->state == ENEMY_DIE)
+		{
+			g_BossFightStage = BOSS_FIGHT_STAGE_07;
+			g_BossFightCount = 0;
+		}
+		if (player->pos.x >= 820.0f && player->pos.y <= 990.0f)
+		{
+			g_BossFightStage++;
+		}
+		break;
+	}
+	case BOSS_FIGHT_STAGE_06:
+	{
+		HandleBossAction(enemy, BOSS_FIGHT_STAGE_06);
+		if (enemy->state == ENEMY_DIE)
+		{
+			g_BossFightStage = BOSS_FIGHT_STAGE_07;
+			g_BossFightCount = 0;
+		}
+		if (player->pos.y > 1000.0f)
+		{
+			g_BossFightStage--;
+		}
+		break;
+	}
+	case BOSS_FIGHT_STAGE_07:
+	{
+		g_BossFightCount++;
+		if (g_BossFightCount >= 400)
+		{
+			SetClearGame();
+			SetFade(FADE_OUT, MODE_RESULT);
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+void HandleBossAction(ENEMY* enemy, int stage)
+{
+	PLAYER* player = GetPlayer();
+	BG* bg = GetBG();
+	int minInterval = 0, maxInterval = 0;
+	switch (stage)
+	{
+	case BOSS_FIGHT_STAGE_04:
+	{
+		minInterval = 200;
+		maxInterval = 500;
+		g_BossFightCount--;
+		if (g_BossFightCount <= 0)
+		{
+			int magicType = GetRand(MAGIC_THUNDER, MAGIC_BARRAGE);
+			if (magicType == MAGIC_THUNDER)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (g_BossMagic[i].magicType == MAGIC_THUNDER && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						float leftPosX = bg->pos.x;
+						float rightPosX = bg->pos.x + SCREEN_WIDTH;
+						float width = 50.0f;
+						g_BossMagic[i].maxCount = SCREEN_WIDTH / width;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(leftPosX, player->pos.y - 228.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_THUNDER;
+						g_BossMagic[i].timeInterval = 15.0f;
+						g_BossMagic[i].currentTime = 15.0f;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+			else if (magicType == MAGIC_BARRAGE)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (g_BossMagic[i].magicType == MAGIC_BARRAGE && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						float leftPosX = bg->pos.x;
+						float rightPosX = bg->pos.x + SCREEN_WIDTH;
+						g_BossMagic[i].maxCount = 6;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(enemy->pos.x, enemy->pos.y - 120.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_BARRAGE;
+						g_BossMagic[i].timeInterval = 15.0f;
+						g_BossMagic[i].currentTime = 15.0f;
+						enemy->state = ENEMY_ATTACK;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+		}
+		break;
+	}
+	case BOSS_FIGHT_STAGE_05:
+	{
+		minInterval = 100;
+		maxInterval = 300;
+		g_BossFightCount--;
+		if (g_BossFightCount <= 0)
+		{
+			int rand = GetRand(0, 100);
+			int magicType = rand < 80 ? MAGIC_EARTH : MAGIC_THUNDER;
+			if (magicType == MAGIC_THUNDER)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (g_BossMagic[i].magicType == MAGIC_THUNDER && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						float leftPosX = bg->pos.x;
+						float rightPosX = bg->pos.x + SCREEN_WIDTH;
+						float width = 50.0f;
+						g_BossMagic[i].maxCount = SCREEN_WIDTH / width;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(leftPosX, player->pos.y - 228.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_THUNDER;
+						g_BossMagic[i].timeInterval = 10.0f;
+						g_BossMagic[i].currentTime = 10.0f;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+			else if (magicType == MAGIC_EARTH)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (player->onAirCnt > 0) continue;
+					if (g_BossMagic[i].magicType == MAGIC_BARRAGE && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						g_BossMagic[i].maxCount = 1;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(player->pos.x, player->pos.y - 20.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_EARTH;
+						g_BossMagic[i].timeInterval = 0.0f;
+						g_BossMagic[i].currentTime = 0.0f;
+						enemy->state = ENEMY_ATTACK;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+		}
+
+		break;
+	}
+	case BOSS_FIGHT_STAGE_06:
+	{
+		minInterval = 200;
+		maxInterval = 500;
+		g_BossFightCount--;
+		if (g_BossFightCount <= 0)
+		{
+			int magicType = GetRand(MAGIC_EARTH, MAGIC_BARRAGE);
+			if (magicType == MAGIC_THUNDER)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (g_BossMagic[i].magicType == MAGIC_THUNDER && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						float leftPosX = bg->pos.x;
+						float rightPosX = bg->pos.x + SCREEN_WIDTH;
+						float width = 30.0f;
+						g_BossMagic[i].maxCount = SCREEN_WIDTH / width * 2;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(leftPosX, player->pos.y - 228.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_THUNDER;
+						g_BossMagic[i].timeInterval = 13.0f;
+						g_BossMagic[i].currentTime = 13.0f;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+			else if (magicType == MAGIC_BARRAGE)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (g_BossMagic[i].magicType == MAGIC_BARRAGE && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						float leftPosX = bg->pos.x;
+						float rightPosX = bg->pos.x + SCREEN_WIDTH;
+						g_BossMagic[i].maxCount = 10;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(enemy->pos.x, enemy->pos.y - 120.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_BARRAGE;
+						g_BossMagic[i].timeInterval = 15.0f;
+						g_BossMagic[i].currentTime = 15.0f;
+						enemy->state = ENEMY_ATTACK;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+			else if (magicType == MAGIC_EARTH)
+			{
+				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+				{
+					if (player->onAirCnt > 0) continue;
+					if (g_BossMagic[i].magicType == MAGIC_BARRAGE && g_BossMagic[i].active == TRUE) continue;
+
+					if (g_BossMagic[i].active == FALSE)
+					{
+						g_BossMagic[i].active = TRUE;
+						g_BossMagic[i].maxCount = 1;
+						g_BossMagic[i].currentCount = 0;
+						g_BossMagic[i].initPos = XMFLOAT3(player->pos.x, player->pos.y - 20.0f, 0.0f);
+						g_BossMagic[i].magicType = MAGIC_EARTH;
+						g_BossMagic[i].timeInterval = 0.0f;
+						g_BossMagic[i].currentTime = 0.0f;
+						enemy->state = ENEMY_ATTACK;
+
+						g_BossFightCount = GetRand(minInterval, maxInterval);
+						break;
+					}
+				}
+			}
+		}
+		break;
+	}
+	default:
+		break;
+	}
+
+	for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
+	{
+		if (g_BossMagic[i].active == TRUE)
+		{
+			g_BossMagic[i].currentTime--;
+			if (g_BossMagic[i].currentTime <= 0.0f)
+			{
+				g_BossMagic[i].currentTime = g_BossMagic[i].timeInterval;
+				
+				XMFLOAT3 pos = g_BossMagic[i].initPos;
+				if (g_BossMagic[i].magicType == MAGIC_THUNDER)
+				{
+					if (stage == BOSS_FIGHT_STAGE_06)
+					{
+						if (i <= g_BossMagic[i].maxCount * 0.5)
+							pos.x += g_BossMagic[i].currentCount * 30.0f;
+						else
+							pos.x += (g_BossMagic[i].maxCount - g_BossMagic[i].currentCount) * 30.0f;
+					}
+					else
+						pos.x += g_BossMagic[i].currentCount * 50.0f;
+				}
+
+				else if (g_BossMagic[i].magicType == MAGIC_BARRAGE)
+				{
+					float angleStep = 360.0f / g_BossMagic[i].maxCount;
+					float theta = (g_BossMagic[i].currentCount * angleStep) * (PI / 180.0f);
+					pos.x += + BOSS_BARRAGE_RADIUS * cos(theta);
+					pos.y += + BOSS_BARRAGE_RADIUS * sin(theta);
+				}
+				TriggerMagic(g_BossMagic[i].magicType, pos);
+
+				g_BossMagic[i].currentCount++;
+				if (g_BossMagic[i].currentCount == g_BossMagic[i].maxCount)
+					g_BossMagic[i].active = FALSE;
+			}
+		}
+		
+	}
+
+}
+
 void UpdateEnemyMoveTbl(ENEMY* enemy, float newPosY)
 {
 	int size = enemy->tblMax;
@@ -1094,13 +1590,14 @@ void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 	enemy->hitTimer = ENEMY_HIT_TIMER;
 	enemy->hitCD = ENEMY_HIT_CD;
 	enemy->attributes.staggerRecoveryTime = GetEnemyAttributes(enemy)->staggerRecoveryTime;
-
 	if (magic == nullptr)
 	{
 		if (player->attackPattern == PARRY)
 			enemy->hitCD = ENEMY_HIT_CD * 0.5f;
 
-
+		player->MP += 30.0f;
+		if (player->MP > player->maxMP)
+			player->MP = player->maxMP;
 		enemy->attributes.staggerResistance -= GetPoiseDamage();
 		enemy->attributes.hp -= GetPlayerDamage();
 	}
@@ -1108,16 +1605,16 @@ void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 	{
 		switch (magic->magicType)
 		{
-		case MAGIC_FIRE_BALL:
-			enemy->attributes.staggerResistance -= 20;
-			enemy->attributes.hp -= 15;
+		case MAGIC_BOOM:
+			enemy->attributes.staggerResistance -= GetMagicPoiseDamage(magic->magicType);
+			enemy->attributes.hp -= GetMagicDamage(magic->magicType);
 			break;
 		default:
 			return;
 		}
 	}
 
-	if (enemy->attributes.staggerResistance <= 0)
+	if (enemy->attributes.staggerResistance <= 0 && enemy->enemyType != BOSS)
 	{
 		if (enemy->state != ENEMY_ATTACK)
 			enemy->stateOld = enemy->state;
@@ -1168,21 +1665,29 @@ void DrawEnemy(void)
 		if (g_Enemy[i].use == TRUE)			// このエネミーが使われている？
 		{									// Yes
 
-			// 敵の影
-			DrawEnemyShadow(&g_Enemy[i]);
-
-			// テクスチャ設定
-			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_Enemy[i].enemyType]);
-
-			DrawEnemySprite(&g_Enemy[i]);
-			if (g_Enemy[i].state == ENEMY_DIE)
+			if (g_Enemy[i].enemyType != BOSS)
 			{
-				g_Enemy[i].patternAnim = ANIM_DIE_OFFSET + 1;
-				DrawEnemySprite(&g_Enemy[i], TRUE);
-			}
+				// 敵の影
+				DrawEnemyShadow(&g_Enemy[i]);
 
-			// 敵のHPゲージ
-			DrawEnemyHPGauge(&g_Enemy[i]);
+				// テクスチャ設定
+				GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_Enemy[i].enemyType]);
+				DrawEnemySprite(&g_Enemy[i]);
+				if (g_Enemy[i].state == ENEMY_DIE)
+				{
+					g_Enemy[i].patternAnim = ANIM_DIE_OFFSET + 1;
+					DrawEnemySprite(&g_Enemy[i], TRUE);
+				}
+
+				// 敵のHPゲージ
+				DrawEnemyHPGauge(&g_Enemy[i]);
+			}
+			else
+			{
+				DrawBossSprite(&g_Enemy[i]);
+				// ボスのHPゲージ
+				DrawBossHPGauge(&g_Enemy[i]);
+			}
 
 		}
 	}
@@ -1355,6 +1860,85 @@ void DrawEnemyHPGauge(const ENEMY* enemy)
 	GetDeviceContext()->Draw(4, 0);
 }
 
+void DrawBossHPGauge(const ENEMY* enemy)
+{
+	if (g_RenderBossHP == FALSE) return;
+
+	float ratio = 1.0f - enemy->attributes.hp / enemy->attributes.maxHp;
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[BOSS_HP_GAUGE_TEXTURE_NO]);
+
+	SetSpriteRightToLeftDisappearColor(g_VertexBuffer,
+		TEXTURE_BOSS_HP_GAUGE_POS_X, TEXTURE_BOSS_HP_GAUGE_POS_Y,
+		TEXTURE_BOSS_HP_GAUGE_WIDTH, TEXTURE_BOSS_HP_GAUGE_HEIGHT,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), ratio);
+	GetDeviceContext()->Draw(4, 0);
+	SetSpriteRightToLeftDisappearColor(g_VertexBuffer,
+		TEXTURE_BOSS_HP_GAUGE_POS_X, TEXTURE_BOSS_HP_GAUGE_POS_Y,
+		TEXTURE_BOSS_HP_GAUGE_WIDTH, TEXTURE_BOSS_HP_GAUGE_HEIGHT,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 0.3f), 0.0f);
+	GetDeviceContext()->Draw(4, 0);
+}
+
+void DrawBossSprite(const ENEMY* enemy)
+{
+	BG* bg = GetBG();
+
+	int dividX = 1, dividY = 1;
+	int texNo = 0;
+	switch (enemy->state)
+	{
+	case ENEMY_INIT:
+		dividX = TEXTURE_BOSS_INIT_PATTERN_DIVIDE_X;
+		texNo = BOSS_INIT_TEXTURE_NO;
+		break;
+	case ENEMY_ATTACK:
+		dividX = TEXTURE_BOSS_ATTACK_PATTERN_DIVIDE_X;
+		texNo = BOSS_ATTACK_TEXTURE_NO;
+		break;
+	case ENEMY_DIE:
+	case ENEMY_IDLE:
+		dividX = TEXTURE_BOSS_IDLE_PATTERN_DIVIDE_X;
+		texNo = BOSS_IDLE_TEXTURE_NO;
+		break;
+	default:
+		return;
+	}
+
+	float px, py, pw, ph;
+	px = enemy->pos.x - bg->pos.x;	// エネミーの表示位置X
+	py = enemy->pos.y - bg->pos.y;	// エネミーの表示位置Y
+	pw = enemy->w;		// エネミーの表示幅
+	ph = enemy->h;		// エネミーの表示高さ
+
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[texNo]);
+
+	// アニメーション用
+	float tw, th, tx, ty;
+	tw = 1.0f / dividX; // テクスチャの幅
+	th = 1.0f / dividY;	// テクスチャの高さ
+	ty = (float)(enemy->patternAnim / dividX) * th;	// テクスチャの左上Y座標
+	tx = (float)(enemy->patternAnim % dividX) * tw;
+
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (enemy->isHit)
+	{
+		color = XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f);
+	}
+	if (enemy->state == ENEMY_DIE)
+	{
+		color.w = 1.0f - enemy->countAnim / ANIM_WAIT_DIE;
+	}
+	// １枚のポリゴンの頂点とテクスチャ座標を設定
+	SetSpriteColorRotation(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
+		color,
+		0.0f);
+
+	// ポリゴン描画
+	GetDeviceContext()->Draw(4, 0);
+}
+
 void DrawEnemyShadow(const ENEMY* enemy)
 {
 	BG* bg = GetBG();
@@ -1376,7 +1960,7 @@ void DrawEnemyShadow(const ENEMY* enemy)
 	float highestGroundY = FLT_MAX;  // 最も高い地面のY座標を保持
 
 	// 地面のAABB情報を取得
-	AABB* ground = GetMap01AABB();
+	AABB* ground = GetMapAABB();
 	BOOL isOnGround = false;
 
 	// プレイヤーが地面にいるかどうかを確認
@@ -1454,7 +2038,7 @@ void DrawLightPoint(void)
 BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
 {
 	// 壁のAABB情報を取得
-	AABB* walls = GetMap01AABB();
+	AABB* walls = GetMapAABB();
 	for (int i = 0; i < MAP_GROUND_MAX; i++)
 	{
 		XMFLOAT3 wallPos = walls[i].pos;
@@ -1674,6 +2258,54 @@ void PlayEnemyDieAnim(ENEMY* enemy)
 	}
 }
 
+void PlayBossAnim(ENEMY* enemy)
+{
+	int animWait = 0, texPatternNum = 0;
+	switch (enemy->state)
+	{
+	case ENEMY_INIT:
+		animWait = ANIM_WAIT_BOSS_INIT;
+		texPatternNum = TEXTURE_BOSS_INIT_PATTERN_DIVIDE_X;
+		break;
+	case ENEMY_ATTACK:
+		animWait = ANIM_WAIT_BOSS_ATTACK;
+		texPatternNum = TEXTURE_BOSS_ATTACK_PATTERN_DIVIDE_X;
+		break;
+	case ENEMY_DIE:
+	case ENEMY_IDLE:
+		animWait = ANIM_WAIT_BOSS_IDLE;
+		texPatternNum = TEXTURE_BOSS_IDLE_PATTERN_DIVIDE_X;
+		break;
+	default:
+		break;
+	}
+
+	enemy->countAnim++;
+	if (enemy->state == ENEMY_DIE)
+	{
+		if (enemy->countAnim > ANIM_WAIT_DIE)
+		{
+			enemy->use = FALSE;
+		}
+	}
+	else if (enemy->countAnim > animWait)
+	{
+		enemy->countAnim = 0.0f;
+		// パターンの切り替え
+		enemy->patternAnim = (enemy->patternAnim + 1) % texPatternNum;
+		if (enemy->patternAnim == (TEXTURE_BOSS_INIT_PATTERN_DIVIDE_X - 1) && enemy->state == ENEMY_INIT)
+		{
+			enemy->state = ENEMY_IDLE;
+			enemy->disableMoveTbl = FALSE;
+			g_BossFightStage++;
+		}
+		else if (enemy->patternAnim == (TEXTURE_BOSS_ATTACK_PATTERN_DIVIDE_X - 1) && enemy->state == ENEMY_ATTACK)
+		{
+			enemy->state = ENEMY_IDLE;
+		}	
+	}
+}
+
 float GetCurrentTextureSizeW(int enemyType)
 {
 	switch (enemyType)
@@ -1696,6 +2328,8 @@ float GetCurrentTextureSizeW(int enemyType)
 		return TEXTURE_WIDTH_OGRE;
 	case SKELL:
 		return TEXTURE_WIDTH_SKELL;
+	case BOSS:
+		return TEXTURE_WIDTH_BOSS;
 	default:
 		return -1;
 	}
@@ -1722,6 +2356,8 @@ float GetCurrentTextureSizeH(int enemyType)
 		return TEXTURE_HEIGHT_OGRE;
 	case SKELL:
 		return TEXTURE_HEIGHT_SKELL;
+	case BOSS:
+		return TEXTURE_HEIGHT_BOSS;
 	default:
 		return -1;
 	}
@@ -1920,6 +2556,9 @@ void UpdateLightPoint(void)
 			g_LightPoint[i].use = FALSE;
 			int score = GetRand(888, 999);
 			AddScore(score);
+			player->MP += 55.0f;
+			if (player->MP > player->maxMP)
+				player->MP = player->maxMP;
 		}
 	}
 }

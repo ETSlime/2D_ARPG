@@ -32,13 +32,34 @@ struct Teleport
 {
 	XMFLOAT3	pos;
 	int			mapNo;
-	XMFLOAT3	nextPos;
+	int			nextInitPos;
 	int			nextMapNo;
+	BOOL		use;
+	AABB		teleportAABB;
+
+	float		countAnim;
+	int			patternAnim;
 };
 
-#define TEXTURE_BG_WIDTH			(3770)//(3015)			// (SCREEN_WIDTH)	// 背景サイズ
-#define TEXTURE_BG_HEIGHT			(1504)//(1360)			// (SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(35)				// テクスチャの数
+struct EnemyConfig
+{
+	int enemyType;
+	INTERPOLATION_DATA* moveTbl;
+	int moveTblSize;
+};
+
+// 背景サイズ
+#define TEXTURE_BG_TUTORIAL_01_WIDTH		(3770.0f)			
+#define TEXTURE_BG_TUTORIAL_01_HEIGHT		(1504.0f)
+#define TEXTURE_BG_MAP_01_WIDTH				(4368.0f)			
+#define TEXTURE_BG_MAP_01_HEIGHT			(2448.0f)
+#define TEXTURE_BG_MAP_02_WIDTH				(3770.0f)			
+#define TEXTURE_BG_MAP_02_HEIGHT			(1504.0f)
+#define TEXTURE_BG_MAP_03_WIDTH				(3770.0f)			
+#define TEXTURE_BG_MAP_03_HEIGHT			(1504.0f)
+#define TEXTURE_BG_MAP_BOSS_WIDTH			(2000.0f)			
+#define TEXTURE_BG_MAP_BOSS_HEIGHT			(2000.0f)
+#define TEXTURE_MAX							(35)				// テクスチャの数
 
 #define	MAP_NUM_MAX					(5)
 #define MAP_GROUND_MAX				(10)
@@ -46,25 +67,36 @@ struct Teleport
 #define MOVE_NUM_MAX				(5)
 #define TELEPORT_NUM_MAX			(4)
 #define PLAYER_INIT_POS_MAX			(4)
-#define MAP01_GROUND_H				(1504 - 1290)
 
-#define PLAYER_INIT_POS_X_MAP01_0	(938.0f)
-#define PLAYER_INIT_POS_Y_MAP01_0	(1306.5f)
+#define TUTORIAL01_GROUND_H			(214.0f)
+#define MAP01_GROUND_H				(214.0f)
+#define MAP02_GROUND_H				(214.0f)
+#define MAP03_GROUND_H				(214.0f)
 
-#define	PLAYER_INIT_POS_X_TUTORIAL01_0 (475.0f)
-#define PLAYER_INIT_POS_Y_TUTORIAL01_0	(1356.5f)
+#define PLAYER_INIT_POS_X_MAP01_01	(566.0f)
+#define PLAYER_INIT_POS_Y_MAP01_01	(2051.0f)
+#define PLAYER_INIT_POS_X_MAP01_02	(4154.0f)
+#define PLAYER_INIT_POS_Y_MAP01_02	(2051.0f)
+#define PLAYER_INIT_POS_X_MAP02_01	(150.0f)
+#define PLAYER_INIT_POS_Y_MAP02_01	(1303.5f)
+#define PLAYER_INIT_POS_X_MAP02_02	(3603.0f)
+#define PLAYER_INIT_POS_Y_MAP02_02	(1303.5f)
+
+#define PLAYER_INIT_POS_X_MAP_BOSS_01	(182.0f)
+#define PLAYER_INIT_POS_Y_MAP_BOSS_01	(1810.5f)
+
+#define	PLAYER_INIT_POS_X_TUTORIAL01_01 (475.0f)
+#define PLAYER_INIT_POS_Y_TUTORIAL01_01	(1356.5f)
 
 #define	TUTORIAL_CYCLOPS_ID			(3)
 
 enum
 {
 	TUTORIAL_01,
-	TUTORIAL_02,
 	MAP_01,
-	ROCK_01,
-	ROCK_02,
-	ROCK_03,
-	ROCK_04,
+	MAP_02,
+	MAP_03,
+	MAP_BOSS,
 };
 
 enum
@@ -75,18 +107,12 @@ enum
 	INITPOS_04,
 };
 
-struct EnemyConfig
-{
-	int enemyType;
-	INTERPOLATION_DATA* moveTbl;
-	int moveTblSize;
-};
-
 
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
 HRESULT InitMap(void);
+void InitMapBG(int map);
 void InitMapCollisionBox(int map);
 void InitMoveTbl(int map);
 void InitEnemyConfig(int map);
@@ -94,17 +120,21 @@ void InitPlayerInitPos(int map);
 void InitTeleport(int map);
 void UninitMap(void);
 void UpdateMap(void);
+void UpdateMapDraw(void);
+void UpdateTeleport(void);
 void DrawMap(void);
+
+void DisableTeleport(int teleportNo, BOOL disable);
 
 BG* GetBG(void);
 void ScrollBG(float x, float y, float time);
 
-AABB* GetMap01AABB(void);
-EnemyConfig* GetEnemyConfig(int map);
+AABB* GetMapAABB(void);
+EnemyConfig* GetEnemyConfig(void);
 XMFLOAT3 GetPlayerInitPos(int map, int idx);
 
 int GetCurrentMap();
 void SetCurrentMap(int map);
 
 void DrawMapWalls(int map);
-void DrawTeleport(int map);
+void DrawTeleport(void);

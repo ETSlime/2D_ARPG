@@ -32,6 +32,7 @@ enum
 	ENEMY_ATTACK_AABB,
 	PLAYER_MAGIC_AABB,
 	ENEMY_MAGIC_AABB,
+	TELEPORT_AABB,
 };
 
 //*****************************************************************************
@@ -54,6 +55,12 @@ void SetSpriteLTColor(ID3D11Buffer* buf,
 
 
 void SetSpriteTopToBottomRevealColor(ID3D11Buffer* buf,
+	float X, float Y, float Width, float Height,
+	float U, float V, float UW, float VH,
+	XMFLOAT4 color, float progress);
+
+
+void SetSpriteRightToLeftDisappearColor(ID3D11Buffer* buf,
 	float X, float Y, float Width, float Height,
 	float U, float V, float UW, float VH,
 	XMFLOAT4 color, float progress);

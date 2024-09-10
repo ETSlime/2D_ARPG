@@ -312,6 +312,7 @@ void SetLimitPlayerMoveRight(BOOL limit);
 void SetLimitBGMove(BOOL limit);
 void PlayerRespawn(void);
 void PlayerRespawnDirectly(void);
+void ResetPlayerPos(void);
 
 BOOL GetMagicActive(int magic);
 BOOL GetUpdatePlayer(void);

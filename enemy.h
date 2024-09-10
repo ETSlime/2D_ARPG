@@ -66,12 +66,14 @@ enum
 	IMP,
 	MUMMY,
 	OGRE,
-	SKELL
+	SKELL,
+	BOSS,
 };
 
 // states
 enum
 {
+	ENEMY_INIT,
 	ENEMY_IDLE,		// 待機状態
 	ENEMY_WALK,		// 移動状態
 	ENEMY_CHASE,	// プレイヤーを追跡する状態
@@ -81,6 +83,17 @@ enum
 	ENEMY_RETREAT,	// 倒退状態
 	ENEMY_HIT,		// 硬直状態
 	ENEMY_DIE,		// 死んだ状態
+};
+
+enum
+{
+	BOSS_FIGHT_STAGE_01,
+	BOSS_FIGHT_STAGE_02,
+	BOSS_FIGHT_STAGE_03,
+	BOSS_FIGHT_STAGE_04,
+	BOSS_FIGHT_STAGE_05,
+	BOSS_FIGHT_STAGE_06,
+	BOSS_FIGHT_STAGE_07
 };
 
 //*****************************************************************************
@@ -115,6 +128,17 @@ struct LightPoint
 	BOOL flyingToPlayer;
 };
 
+struct BossMagic
+{
+	BOOL		active;
+	float		timeInterval;
+	float		currentTime;
+	int			maxCount;
+	int			currentCount;
+	XMFLOAT3	initPos;
+	int			magicType;
+};
+
 struct ENEMY
 {
 	XMFLOAT3	pos;			// ポリゴンの座標
@@ -139,6 +163,7 @@ struct ENEMY
 	BOOL		stepBack;
 	int			onAirCnt;
 	BOOL		isFalling;
+	BOOL		disableMoveTbl;
 
 	// battle
 	EnemyAttributes attributes;
@@ -177,13 +202,18 @@ void UninitEnemy(void);
 void UpdateEnemy(void);
 void UpdateEnemyStates(ENEMY* enemy);
 void UpdateEnemyMoveTbl(ENEMY* enemy, float newPosY);
+void UpdateBossMove(ENEMY* enmey);
+void UpdateBossFight(ENEMY* enemy);
 void DrawEnemy(void);
 void DrawEnemySprite(const ENEMY* enemy, BOOL die = FALSE);
+void DrawBossSprite(const ENEMY* enemy);
 void DrawEnemyHPGauge(const ENEMY* enemy);
+void DrawBossHPGauge(const ENEMY* enemy);
 void DrawEnemyShadow(const ENEMY*);
 void DrawLightPoint(void);
 
 void HandleEnemyMagic(ENEMY* enemy);
+void HandleBossAction(ENEMY* enemy, int stage);
 
 // anim
 void PlayEnemyWalkAnim(ENEMY* enemy);
@@ -191,6 +221,7 @@ void PlayEnemyAttackAnim(ENEMY* enemy);
 void PlayEnemyIdleAnim(ENEMY* enemy);
 void PlayEnemyHitAnim(ENEMY* enemy);
 void PlayEnemyDieAnim(ENEMY* enemy);
+void PlayBossAnim(ENEMY* enemy);
 void UpdateEnemyAttackAABB(ENEMY* enemy);
 void UpdateLightPoint(void);
 BOOL CheckChasingPlayer(const ENEMY* enemy);

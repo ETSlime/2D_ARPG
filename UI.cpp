@@ -10,6 +10,7 @@
 #include "player.h"
 #include "title.h"
 #include "score.h"
+#include "sound.h"
 
 //*****************************************************************************
 // É}ÉNÉçíËã`
@@ -296,6 +297,7 @@ void UpdateUI(void)
 		{
 			g_messageboxActionTime = g_messageboxCurretTime;
 			g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+			PlaySound(SOUND_LABEL_SE_CURSOR);
 		}
 
 
@@ -308,6 +310,7 @@ void UpdateUI(void)
 				InitPlayerInitPos(TUTORIAL_01);
 				SetPlayerInitPos(TUTORIAL_01, INITPOS_01);
 				SetFade(FADE_OUT, MODE_TUTORIAL);
+				PlaySound(SOUND_LABEL_SE_ENTER);
 			}
 			else
 			{
@@ -315,6 +318,7 @@ void UpdateUI(void)
 				InitPlayerInitPos(MAP_01);
 				SetPlayerInitPos(MAP_01, INITPOS_01);
 				SetFade(FADE_OUT, MODE_GAME);
+				PlaySound(SOUND_LABEL_SE_ENTER);
 
 			}
 		}
@@ -330,11 +334,13 @@ void UpdateUI(void)
 			if (GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT) )
 			{
 				g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+				PlaySound(SOUND_LABEL_SE_CURSOR);
 			}
 
 
 			if (GetKeyboardRelease(DIK_RETURN))
 			{
+				PlaySound(SOUND_LABEL_SE_ENTER);
 				if (GetMode() == MODE_GAME)
 				{
 					if (g_Cursor == UI_BUTTON_YES)
@@ -346,7 +352,7 @@ void UpdateUI(void)
 						SetFade(FADE_OUT, MODE_GAME);
 					}
 					else
-						SetFade(FADE_OUT, MODE_TITLE);
+						SetFade(FADE_OUT, MODE_RESULT);
 				}
 				else if (GetMode() == MODE_TUTORIAL)
 				{
@@ -366,6 +372,7 @@ void UpdateUI(void)
 			BOOL pause = GetPause() == TRUE ? FALSE : TRUE;
 			SetPause(pause);
 			g_Cursor = UI_BUTTON_NO;
+			PlaySound(SOUND_LABEL_SE_ENTER);
 		}
 		g_Pause = GetPause();
 
@@ -405,11 +412,13 @@ void UpdateUI(void)
 			if (GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT))
 			{
 				g_Cursor = g_Cursor == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+				PlaySound(SOUND_LABEL_SE_CURSOR);
 			}
 
 
 			if (GetKeyboardRelease(DIK_RETURN))
 			{
+				PlaySound(SOUND_LABEL_SE_ENTER);
 				if (g_Cursor == UI_BUTTON_YES)
 				{
 					SetFade(FADE_OUT, MODE_TITLE);

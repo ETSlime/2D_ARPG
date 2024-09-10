@@ -24,12 +24,10 @@
 #define TEXTURE_DIALOGUE_WIDTH			(570)
 #define TEXTURE_DIALOGUE_HEIGHT			(120)
 
-#define HIGHLIGHT_BOX_GAUGE_NO			(5)
 #define HIGHLIGHT_BOX_GAUGE_POS_X		(222.0f)
 #define HIGHLIGHT_BOX_GAUGE_POS_Y		(40.0f)
 #define HIGHLIGHT_BOX_GAUGE_WIDTH		(500.0f)
 #define HIGHLIGHT_BOX_GAUGE_HEIGHT		(100.0f)
-#define HIGHLIGHT_BOX_JUMP_ICON_NO		(9)
 #define HIGHLIGHT_BOX_JUMP_ICON_POS_X	(50.0f)
 #define HIGHLIGHT_BOX_JUMP_ICON_POS_Y	(90.0f)
 #define HIGHLIGHT_BOX_JUMP_ICON_WIDTH	(100.0f)
@@ -103,6 +101,7 @@ static int				g_DialogueTexNo;
 static int				g_Wait;
 static BOOL				g_DisplayHighlightBox;
 static int				g_TutorialPauseType = PAUSE_NONE;
+static BOOL				g_FinishTutorial = FALSE;
 
 //=============================================================================
 // 初期化処理
@@ -138,8 +137,8 @@ HRESULT InitTutorial(void)
 
 	int map = GetCurrentMap();
 
-	g_DialogueTexNo = DIALOGUE_21;
-	g_tutorialStage = TUTORIAL_EXPLORE;
+	g_DialogueTexNo = DIALOGUE_00;
+	g_tutorialStage = TUTORIAL_RUN;
 
 	g_Dialogue.fadeCount = 0;
 	g_Dialogue.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -152,6 +151,7 @@ HRESULT InitTutorial(void)
 	g_HighlightBox.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	g_HighlightBox.w = 0.0f;
 	g_HighlightBox.h = 0.0f;
+	g_FinishTutorial = FALSE;
 
 	g_NextDialogue = -1;
 
@@ -174,6 +174,8 @@ HRESULT InitTutorial(void)
 	SetUpdateEnemyByIdx(TUTORIAL_CYCLOPS_ID, FALSE);
 
 	SetUpdateEnemy(FALSE);
+
+	DisableTeleport(0, TRUE);
 
 	SetTutorialWait(100);
 	
@@ -213,6 +215,8 @@ void UninitTutorial(void)
 //=============================================================================
 void UpdateTutorial(void)
 {
+	if (g_FinishTutorial == TRUE) return;
+
 	if (GetKeyboardTrigger(DIK_RCONTROL))
 	{
 		g_DialogueDisplaySpeedRate = DISPLAY_DIALOGUE_RATE;
@@ -517,19 +521,22 @@ void UpdateTutorial(void)
 	case DIALOGUE_28:
 	{
 		DisableAllPlayerAction(FALSE);
-		if (g_Dialogue.fadeCount > DIALOGUE_DISPLAY_TIME * g_DialogueDisplaySpeedRate
+		if (g_Dialogue.fadeCount > DIALOGUE_DISPLAY_TIME * g_DialogueDisplaySpeedRate * 0.75f
 			&& g_tutorialStage == TUTORIAL_ENEMY2)
 		{
 			SetTutorialPause(PAUSE_ENEMY2);
 		}
+		break;
 	}
 	case DIALOGUE_29:
 	{
 		if (g_Dialogue.fadeCount > DIALOGUE_DISPLAY_TIME * g_DialogueDisplaySpeedRate
 			&& g_tutorialStage == TUTORIAL_FINAL)
 		{
-			SetTutorialPause(PAUSE_FINAL);
+			DisableTeleport(0, FALSE);
+			g_FinishTutorial = TRUE;
 		}
+		break;
 	}
 	default:
 		break;
@@ -539,6 +546,8 @@ void UpdateTutorial(void)
 
 void DrawTutorial(void)
 {
+	if (g_FinishTutorial == TRUE) return;
+
 	// 頂点バッファ設定
 	UINT stride = sizeof(VERTEX_3D);
 	UINT offset = 0;
@@ -655,8 +664,8 @@ void AdjustDialogueWH(float* w, float* h)
 		*h *= 1.0f;
 		break;
 	case DIALOGUE_15:
-		*w *= 0.7f;
-		*h *= 0.8f;
+		*w *= 1.1f;
+		*h *= 1.0f;
 		break;
 	case DIALOGUE_18:
 		*w *= 1.1f;

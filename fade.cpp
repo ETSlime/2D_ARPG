@@ -144,6 +144,8 @@ void UpdateFade(void)
 				// ÉÇÅ[ÉhÇê›íË
 				SetMode(g_ModeNext);
 
+				UpdateMapDraw();
+
 				if (g_Respawn == TRUE)
 				{
 					PlayerRespawn();
@@ -152,7 +154,7 @@ void UpdateFade(void)
 
 				if (g_ChangePos == TRUE)
 				{
-
+					ResetPlayerPos();
 					g_ChangePos = FALSE;
 				}
 			}

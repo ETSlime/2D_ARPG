@@ -19,7 +19,7 @@
 
 #define DIALOGUE_BG_TEX_NO			(0)
 #define HIGHLIGHT_BOX_TEX_NO		(1)
-#define DIALOGUE_START_TEX_NO		(4)
+#define DIALOGUE_START_TEX_NO		(2)
 
 enum
 {
@@ -40,7 +40,7 @@ enum
 
 enum
 {
-	DIALOGUE_00 = 2,
+	DIALOGUE_00 = DIALOGUE_START_TEX_NO,
 	DIALOGUE_00_2,
 	DIALOGUE_01,
 	DIALOGUE_02,
@@ -116,4 +116,4 @@ int GetTutorialStage(void);
 
 int GetNextStage(void);
 
-void DisableAllPlayerAction(BOOL enable);
+void DisableAllPlayerAction(BOOL disbale);

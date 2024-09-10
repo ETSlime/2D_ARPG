@@ -25,4 +25,4 @@ void UninitResult(void);
 void UpdateResult(void);
 void DrawResult(void);
 
-
+void SetClearGame(void);

@@ -272,3 +272,38 @@ void SetSpriteTopToBottomRevealColor(ID3D11Buffer* buf,
 
 	GetDeviceContext()->Unmap(buf, 0);
 }
+
+
+void SetSpriteRightToLeftDisappearColor(ID3D11Buffer* buf,
+	float X, float Y, float Width, float Height,
+	float U, float V, float UW, float VH,
+	XMFLOAT4 color, float progress)
+{
+	D3D11_MAPPED_SUBRESOURCE msr;
+	GetDeviceContext()->Map(buf, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+
+	VERTEX_3D* vertex = (VERTEX_3D*)msr.pData;
+
+	// 進捗に応じた現在の幅とテクスチャU座標を計算
+	float currentWidth = Width * (1.0f - progress);  // 幅は右から左へ縮小
+	float currentU = UW * (1.0f - progress);         // テクスチャU座標も右から左へ変化
+
+	// 頂点を定義する（左上、右上、左下、右下）
+	vertex[0].Position = XMFLOAT3(X, Y, 0.0f); // 左上
+	vertex[0].Diffuse = color;
+	vertex[0].TexCoord = XMFLOAT2(U, V);
+
+	vertex[1].Position = XMFLOAT3(X + currentWidth, Y, 0.0f); // 右上（幅が縮小）
+	vertex[1].Diffuse = color;
+	vertex[1].TexCoord = XMFLOAT2(U + currentU, V);
+
+	vertex[2].Position = XMFLOAT3(X, Y + Height, 0.0f); // 左下
+	vertex[2].Diffuse = color;
+	vertex[2].TexCoord = XMFLOAT2(U, V + VH);
+
+	vertex[3].Position = XMFLOAT3(X + currentWidth, Y + Height, 0.0f); // 右下（幅が縮小）
+	vertex[3].Diffuse = color;
+	vertex[3].TexCoord = XMFLOAT2(U + currentU, V + VH);
+
+	GetDeviceContext()->Unmap(buf, 0);
+}

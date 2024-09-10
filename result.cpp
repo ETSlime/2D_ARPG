@@ -14,10 +14,10 @@
 //*****************************************************************************
 #define TEXTURE_WIDTH				(SCREEN_WIDTH)	// 背景サイズ
 #define TEXTURE_HEIGHT				(SCREEN_HEIGHT)	// 
-#define TEXTURE_MAX					(3)				// テクスチャの数
+#define TEXTURE_MAX					(4)				// テクスチャの数
 
-#define TEXTURE_WIDTH_LOGO			(111)
-#define TEXTURE_HEIGHT_LOGO			(111)
+#define TEXTURE_WIDTH_LOGO			(811)
+#define TEXTURE_HEIGHT_LOGO			(211)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -31,9 +31,10 @@ static ID3D11Buffer				*g_VertexBuffer = NULL;		// 頂点情報
 static ID3D11ShaderResourceView	*g_Texture[TEXTURE_MAX] = { NULL };	// テクスチャ情報
 
 static char *g_TexturName[TEXTURE_MAX] = {
-	"data/TEXTURE/bg001.jpg",
-	"data/TEXTURE/result_logo.png",
-	"data/TEXTURE/number16x32.png",
+	"data/TEXTURE/bar_white.jpg",
+	"data/TEXTURE/gameclear.png",
+	"data/TEXTURE/gameover.png",
+	"data/TEXTURE/number.png",
 };
 
 
@@ -41,7 +42,7 @@ static BOOL						g_Use;						// TRUE:使っている  FALSE:未使用
 static float					g_w, g_h;					// 幅と高さ
 static XMFLOAT3					g_Pos;						// ポリゴンの座標
 static int						g_TexNo;					// テクスチャ番号
-
+static BOOL						g_GameClear;
 static BOOL						g_Load = FALSE;
 
 //=============================================================================
@@ -78,9 +79,10 @@ HRESULT InitResult(void)
 	g_Use   = TRUE;
 	g_w     = TEXTURE_WIDTH;
 	g_h     = TEXTURE_HEIGHT;
-	g_Pos   = { g_w / 2, 50.0f, 0.0f };
+	g_Pos   = { g_w / 2, 150.0f, 0.0f };
 	g_TexNo = 0;
 
+	g_GameClear = FALSE;
 	// BGM再生
 
 
@@ -174,10 +176,15 @@ void DrawResult(void)
 		GetDeviceContext()->Draw(4, 0);
 	}
 
+	int resultTexNo;
+	if (g_GameClear == TRUE)
+		resultTexNo = 1;
+	else
+		resultTexNo = 2;
 	// リザルトのロゴを描画
 	{
 		// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[resultTexNo]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		SetSprite(g_VertexBuffer, g_Pos.x, g_Pos.y, TEXTURE_WIDTH_LOGO, TEXTURE_HEIGHT_LOGO, 0.0f, 0.0f, 1.0f, 1.0f);
@@ -190,7 +197,7 @@ void DrawResult(void)
 	// スコア表示
 	{
 		// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[2]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[3]);
 
 		// 桁数分処理する
 		int number = GetScore();
@@ -222,9 +229,11 @@ void DrawResult(void)
 		}
 
 	}
+}
 
-
-
+void SetClearGame(void)
+{
+	g_GameClear = TRUE;
 }
 
 

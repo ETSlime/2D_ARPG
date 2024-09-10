@@ -14,6 +14,7 @@
 #include "file.h"
 #include "UI.h"
 #include "tutorial.h"
+#include "sound.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -79,7 +80,7 @@
 #define ANIM_WAIT_IDLE							(30)
 #define ANIM_WAIT_RUN							(5)
 #define ANIM_WAIT_DASH							(1)
-#define ANIM_WAIT_ATTACK						(5)
+#define ANIM_WAIT_ATTACK						(4)
 #define ANIM_WAIT_DASH_ATTACK					(8)
 #define ANIM_WAI_FLAME_ATTACK2					(7)
 #define ANIM_WAIT_PARRY							(10)
@@ -147,8 +148,8 @@
 #define TEXTURE_CAST_OFFSET_X					(2.1f)
 #define TEXTURE_CAST_OFFSET_Y					(-12.5f)
 
-#define ST_COST_RUN					(5.5f)
-#define	ST_COST_DEFEND				(4.5f)
+#define ST_COST_RUN					(6.5f)
+#define	ST_COST_DEFEND				(5.5f)
 #define	ST_COST_DASH				(125.0f)
 #define	ST_COST_NORMAL_ATTACK1		(150.0f)
 #define	ST_COST_NORMAL_ATTACK2		(135.0f)
@@ -160,11 +161,11 @@
 #define ST_COST_JUMP				(100.0f)
 #define ST_RUN_THRESHOLD			(150.0f)
 #define	ST_DEFEND_THRESHOLD			(100.0f)
-#define ST_RECOVERY_RATE			(3.5f)
+#define ST_RECOVERY_RATE			(4.5f)
 #define MP_RECOVERY_RATE			(0.5f)
 
-#define MP_COST_FIRE_BALL			(200.0f)
-#define	MP_COST_HEALING				(500.0f)
+#define MP_COST_FIRE_BALL			(400.0f)
+#define	MP_COST_HEALING				(700.0f)
 #define MP_COST_FLAMEBLADE			(2.5f)
 
 // die
@@ -1265,7 +1266,8 @@ void UpdateKeyboardInput(void)
 		case MAGIC_HEALING:
 			if (g_Player->healingCD <= 0 
 				&& g_DisableHealing == FALSE
-				&& g_Player->state == IDLE)
+				&& g_Player->state == IDLE
+				&& g_Player->MP >= MP_COST_HEALING)
 			{
 				g_Player->state = CAST;
 				g_Player->patternAnim = 0;
@@ -1285,7 +1287,8 @@ void UpdateKeyboardInput(void)
 		case MAGIC_FIRE_BALL:
 			if (g_Player->fireBallCD <= 0 
 				&& g_DisableFireBall == FALSE
-				&& g_Player->state == IDLE)
+				&& g_Player->state == IDLE
+				&& g_Player->MP >= MP_COST_FIRE_BALL)
 			{
 				g_Player->state = CAST;
 				g_Player->patternAnim = 0;
@@ -1465,7 +1468,7 @@ void UpdateBackGroundScroll(void)
 		SET_PLAYER_POS_X(bg->pos.x + rightLimitX);
 	}
 
-	if (g_LimitBGMove == FALSE)
+	if (g_LimitBGMove == TRUE)
 	{
 		// プレイヤーが画面内の移動範囲内かどうかを確認
 		if (g_Player->pos.x < bg->pos.x + leftLimitX)
@@ -1489,7 +1492,7 @@ void UpdateBackGroundScroll(void)
 	float topLimitY = SCREEN_HEIGHT / 3;
 	float bottomLimitY = SCREEN_HEIGHT * 2 / 3;
 
-	if (g_LimitBGMove == FALSE)
+	if (g_LimitBGMove == TRUE)
 	{
 		// プレイヤーが画面内の移動範囲内かどうかを確認
 		if (g_Player->pos.y < bg->pos.y + topLimitY)
@@ -1513,7 +1516,7 @@ void UpdateBackGroundScroll(void)
 void UpdateGroundCollision(void)
 {
 	// プレイヤーの位置を更新する前に接地を確認
-	AABB* grounds = GetMap01AABB();
+	AABB* grounds = GetMapAABB();
 	BOOL onGround = false;
 
 	if (g_Player->jumpCnt == 0)
@@ -1669,7 +1672,7 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 			g_Player->defendCnt = 0;
 			// 無敵状態を開始する
 			g_Player->isInvincible = TRUE;
-
+			PlaySound(SOUND_LABEL_SE_PARRY);
 			if (GetTutorialPause() == PAUSE_DEFEND)
 			{
 				SetTutorialPause(NONE);
@@ -1694,8 +1697,8 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 		}
 		else if (magic)
 		{
-			g_Player->move.x = dir * magic->damage;
-			g_Player->HP -= magic->damage * 10;
+			g_Player->move.x = dir * 7;
+			g_Player->HP -= magic->damage;
 		}
 
 		if (g_Player->HP <= 0)
@@ -1868,6 +1871,9 @@ void PlayDashAnim(void)
 	// キャラクターの向きに応じてテクスチャの反転設定
 	g_Player->invertTex = g_Player->dir == CHAR_DIR_RIGHT ? FALSE : TRUE;
 
+	if (g_Player->countAnim == 0)
+		PlaySound(SOUND_LABEL_SE_DASH);
+
 	// 移動衝突判定を行いながら位置を変更
 	switch (g_Player->dir)
 	{
@@ -1927,6 +1933,9 @@ void PlayAttackAnim(void)
 		if (g_Player->attackPattern == FLAME_ATTACK_PATTERN_MAX || g_Player->attackPattern == NONE)
 			g_Player->attackPattern = FLAME_ATTACK1;
 	}
+
+	if (g_Player->patternAnim == 2 && g_Player->countAnim == 0)
+		PlaySound(SOUND_LABEL_SE_ATTACK);
 
 	if (g_Player->attackPattern == NORMAL_ATTACK4 && GetTutorialPause() == PAUSE_ATTACK)
 	{
@@ -2162,7 +2171,7 @@ void PlayJumpAnim()
 		g_Player->actionQueue[g_Player->actionQueueStart] == JUMP);
 
 	// 上記の条件が両方とも満たされた場合、空中ジャンプを実行
-	if (isAtJumpPeak && hasJumpInQueue && g_Player->jumpOnAirCnt == 0)
+	if (isAtJumpPeak && hasJumpInQueue && g_Player->jumpOnAirCnt == 0 && g_Player->ST - ST_COST_JUMP >= 0.0f)
 	{
 		// アクションキューのスタートを次に進める
 		g_Player->actionQueueStart = (g_Player->actionQueueStart + 1) % ACTION_QUEUE_SIZE;
@@ -2174,6 +2183,7 @@ void PlayJumpAnim()
 		// ジャンプカウントと空中ジャンプ回数をリセット
 		g_Player->jumpCnt = 0;
 		g_Player->jumpEffectCnt = JUMP_EFFECT_TIME;
+		g_Player->ST -= ST_COST_JUMP;
 		g_Player->airJumpPos = g_Player->pos;
 		g_Player->jumpOnAirCnt = 1;
 	}
@@ -2405,6 +2415,9 @@ void PlayCastAnim(void)
 		break;
 	}
 
+	if (g_Player->countAnim == 0 && g_Player->patternAnim == 0)
+		PlaySound(SOUND_LABEL_SE_CAST);
+
 	g_Player->countAnim += 1.0f;
 	if (g_Player->countAnim > castAnimWait)
 	{
@@ -2426,10 +2439,17 @@ void PlayCastAnim(void)
 		switch (g_Player->magicCasting)
 		{
 		case MAGIC_HEALING:
+			PlaySound(SOUND_LABEL_SE_HEAL);
 			g_Player->healingCD = HEALING_CD_TIME;
+			g_Player->MP -= MP_COST_HEALING;
+			g_Player->HP += g_Player->maxHP * 0.7f;
+			if (g_Player->HP > g_Player->maxHP)
+				g_Player->HP = g_Player->maxHP;
 			break;
 		case MAGIC_FIRE_BALL:
+			PlaySound(SOUND_LABEL_SE_FIRE);
 			g_Player->fireBallCD = FIRE_BALL_CD_TIME;
+			g_Player->MP -= MP_COST_FIRE_BALL;
 			break;
 		default:
 			break;
@@ -2490,7 +2510,7 @@ void DrawPlayerShadow(void)
 	float highestGroundY = FLT_MAX;  // 最も高い地面のY座標を保持
 
 	// 地面のAABB情報を取得
-	AABB* ground = GetMap01AABB();
+	AABB* ground = GetMapAABB();
 	BOOL isOnGround = false;
 
 	// プレイヤーが地面にいるかどうかを確認
@@ -2771,7 +2791,7 @@ int GetTexturePatternDivideX()
 BOOL CheckMoveCollision(float move, int dir, BOOL checkGround)
 {
 	// 壁のAABB情報を取得
-	AABB* walls = GetMap01AABB();
+	AABB* walls = GetMapAABB();
 	for (int i = 0; i < MAP_GROUND_MAX; i++)
 	{
 		if (walls[i].tag == GROUND_AABB && checkGround == FALSE) continue;
@@ -3135,6 +3155,12 @@ void SetPlayerInitPos(int map, int idx)
 	XMFLOAT3 initPos = GetPlayerInitPos(map, idx);
 	g_InitPos.x = initPos.x;
 	g_InitPos.y = initPos.y;
+}
+
+void ResetPlayerPos(void)
+{
+	SET_PLAYER_POS_X(g_InitPos.x);
+	SET_PLAYER_POS_Y(g_InitPos.y);
 }
 
 void InitPlayerStatus(void)

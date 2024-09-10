@@ -33,6 +33,7 @@ struct Magic
 	XMFLOAT3 move;			// 魔法の移動量
 	int	countAnim;			// アニメーションカウント
 	int	patternAnim;		// アニメーションパターンナンバー
+	float delayMove;
 	AABB magicAABB;
 };
 
@@ -42,8 +43,10 @@ enum
 	MAGIC_FIRE_BALL,
 	MAGIC_FLAMEBLADE,
 	MAGIC_BOOM,
-	MAGIC_EARTH,
 	MAGIC_STOMP,
+	MAGIC_EARTH,
+	MAGIC_THUNDER,
+	MAGIC_BARRAGE,
 	MAGIC_NONE,
 };
 
@@ -56,6 +59,7 @@ void UninitMagic(void);
 void UpdateMagic(void);
 void DrawMagic(void);
 
+void InitializeMagicMove(Magic* magic, const XMFLOAT3& playerPos);
 void PlayMagicAnim(Magic* magic);
 int GetMagicTexturePatternDivideX(Magic* magic);
 int GetMagicTexturePatternDivideY(Magic* magic);
@@ -66,3 +70,5 @@ void SetUpMagicCollision(Magic* magic);
 void HandleMagicCollision(Magic* magic);
 
 Magic* GetMagic();
+float GetMagicDamage(int type);
+float GetMagicPoiseDamage(int type);

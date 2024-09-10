@@ -350,16 +350,6 @@ void Update(void)
 			UpdateMagic();
 			UpdateEffect();
 			UpdateScore();
-
-			//if (GetFade() == FADE_NONE)
-			//{	// 全滅チェック
-			//	int ans = CheckGameClear();
-			//	if (ans != 0)
-			//	{
-			//		//SetMode(MODE_RESULT);
-			//		SetFade(FADE_OUT, MODE_RESULT);
-			//	}
-			//}
 		}
 
 		break;
@@ -534,7 +524,7 @@ void SetMode(int mode)
 			// タイトル画面の初期化
 			InitUI();
 			InitTitle();
-			PlaySound(SOUND_LABEL_BGM_maou);
+			PlaySound(SOUND_LABEL_BGM_title);
 			break;
 		case MODE_MESSAGEBOX:
 			InitUI();

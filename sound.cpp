@@ -44,7 +44,22 @@ SOUNDPARAM g_aParam[SOUND_LABEL_MAX] =
 	{ (char*)"data/SE/shot000.wav", 0 },		// ’e”­ŽË‰¹
 	{ (char*)"data/SE/shot001.wav", 0 },		// ƒqƒbƒg‰¹
 
-	{ (char*)"data/BGM/maou.wav", -1 },			// BGM Maou
+	{ (char*)"data/BGM/bgm_title.wav", -1 },
+	{ (char*)"data/BGM/bgm_tutorial.wav", -1 },
+	{ (char*)"data/BGM/bossfight.wav", -1 },
+	{ (char*)"data/SE/maou_se_system_cursor.wav", 0 },
+	{ (char*)"data/SE/maou_se_system_enter.wav", 0 },
+	{ (char*)"data/SE/parry.wav", 0 },
+	{ (char*)"data/SE/maou_se_magical_heal.wav", 0 },
+	{ (char*)"data/SE/maou_se_magic_fire01.wav", 0 },
+	{ (char*)"data/SE/cast.wav", 0 },
+	{ (char*)"data/SE/boom.wav", 0 },
+	{ (char*)"data/SE/teleport.wav", 0 },
+	{ (char*)"data/SE/boss_scream.wav", 0 },
+	{ (char*)"data/SE/thunder.wav", 0 },
+	{ (char*)"data/SE/attack.wav", 0 },
+	{ (char*)"data/SE/dash.wav", 0 },
+
 
 };
 
