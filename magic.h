@@ -25,6 +25,7 @@ struct Magic
 	BOOL isCollision;
 	BOOL destroyAnim;
 	BOOL reverseAnim;
+	BOOL hitTarget;
 	float width, height;
 	float damage;
 	XMFLOAT3 pos;

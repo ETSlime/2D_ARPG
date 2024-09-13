@@ -162,7 +162,7 @@ static EnemyAttributes gargoyleAttributes = {
 	35,			// int stunTime
 	60.0f,		// float attackRange
 	85,		// int attackCooldown
-	FALSE,		// BOOL canFly
+	TRUE,		// BOOL canFly
 	XMFLOAT3(2.0f, 0.0f, 0.0f) // XMFLOAT3 move
 };
 
@@ -491,6 +491,7 @@ HRESULT InitEnemy(void)
 		g_Enemy[i].diePos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_Enemy[i].dieInitSpeedX = 0.0f;
 		g_Enemy[i].dieInitSpeedY = 0.0f;
+		g_Enemy[i].hitPlayer = FALSE;
 
 		// AABB
 		g_Enemy[i].bodyAABB.pos = g_Enemy[i].pos;
@@ -1125,8 +1126,6 @@ void UpdateEnemyStates(ENEMY* enemy)
 void UpdateEnemyGroundCollision(ENEMY* enemy)
 {
 	if (enemy->attributes.canFly == TRUE) return;
-
-	AABB* grounds = GetMapAABB();
 
 	if (enemy->onAirCnt >= ENEMY_FALL_CNT_MAX)
 		enemy->attributes.move.y = ENEMY_FALL_SPEED;
@@ -1960,16 +1959,18 @@ void DrawEnemyShadow(const ENEMY* enemy)
 	float highestGroundY = FLT_MAX;  // 最も高い地面のY座標を保持
 
 	// 地面のAABB情報を取得
-	AABB* ground = GetMapAABB();
+	MapWall* grounds = GetMapWall();
 	BOOL isOnGround = false;
 
 	// プレイヤーが地面にいるかどうかを確認
-	for (int j = 0; j < MAP_GROUND_MAX; j++)
+	for (int j = 0; j < MAP_WALL_MAX; j++)
 	{
-		float groundX = ground[j].pos.x;
-		float groundY = ground[j].pos.y;
-		float groundW = ground[j].w;
-		float groundH = ground[j].h;
+		if (grounds[j].use == FALSE) continue;
+
+		float groundX = grounds[j].wallAABB.pos.x;
+		float groundY = grounds[j].wallAABB.pos.y;
+		float groundW = grounds[j].wallAABB.w;
+		float groundH = grounds[j].wallAABB.h;
 
 		if (groundY < enemy->pos.y) continue;
 
@@ -2038,12 +2039,14 @@ void DrawLightPoint(void)
 BOOL CheckEnemyMoveCollision(ENEMY* enemy, XMFLOAT3 newPos, int dir)
 {
 	// 壁のAABB情報を取得
-	AABB* walls = GetMapAABB();
-	for (int i = 0; i < MAP_GROUND_MAX; i++)
+	MapWall* walls = GetMapWall();
+	for (int i = 0; i < MAP_WALL_MAX; i++)
 	{
-		XMFLOAT3 wallPos = walls[i].pos;
-		float wallW = walls[i].w;
-		float wallH = walls[i].h;
+		if (walls[i].use == FALSE) continue;
+
+		XMFLOAT3 wallPos = walls[i].wallAABB.pos;
+		float wallW = walls[i].wallAABB.w;
+		float wallH = walls[i].wallAABB.h;
 
 		// 衝突確認
 		switch (dir)
@@ -2154,6 +2157,11 @@ void PlayEnemyAttackAnim(ENEMY* enemy)
 		&& GetTutorialPause() == PAUSE_DEFEND)
 	{
 		g_Update = FALSE;
+	}
+
+	if (enemy->patternAnim == ANIM_ATTACK_OFFSET && enemy->countAnim == 0)
+	{
+		enemy->hitPlayer = FALSE;
 	}
 
 	PLAYER* player = GetPlayer();
@@ -2477,8 +2485,10 @@ void EnemyDieOnTrigger(ENEMY* enemy)
 		float speed = GetRand(LIGHPOINT_SPEED_MIN, LIGHTPOINT_SPEED_MAX);
 		XMFLOAT3 velocity(cosf(angle) * speed, sinf(angle) * speed, 0.0f);
 
-		g_LightPoint[i].timeToFly = LIGHTPOINT_FLY_TIME;
 		g_LightPoint[i].use = TRUE;
+		g_LightPoint[i].flyingToPlayer = FALSE;
+		g_LightPoint[i].timeToFly = LIGHTPOINT_FLY_TIME;
+		g_LightPoint[i].desiredToPlayerTime = LIGHTPOINT_REACH_PLAYER_TIME;
 		g_LightPoint[i].timeToPlayer = LIGHTPOINT_STAY_TIME;
 		g_LightPoint[i].move = velocity;
 		g_LightPoint[i].pos = enemy->bodyAABB.pos;

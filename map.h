@@ -43,9 +43,18 @@ struct Teleport
 
 struct EnemyConfig
 {
-	int enemyType;
+	int					enemyType;
 	INTERPOLATION_DATA* moveTbl;
-	int moveTblSize;
+	int					moveTblSize;
+};
+
+struct MapWall
+{
+	BOOL		use;
+	int			texNo;
+	float		w, h;
+	XMFLOAT3	pos;
+	AABB		wallAABB;
 };
 
 // 背景サイズ
@@ -62,7 +71,7 @@ struct EnemyConfig
 #define TEXTURE_MAX							(35)				// テクスチャの数
 
 #define	MAP_NUM_MAX					(5)
-#define MAP_GROUND_MAX				(10)
+#define MAP_WALL_MAX				(20)
 #define MAP_ENEMY_MAX				(10)
 #define MOVE_NUM_MAX				(5)
 #define TELEPORT_NUM_MAX			(4)
@@ -107,21 +116,36 @@ enum
 	INITPOS_04,
 };
 
+enum
+{
+	TEXTURE_TUTORIAL_01,
+	TEXTURE_MAP_01,
+	TEXTURE_MAP_02,
+	TEXTURE_MAP_03,
+	TEXTURE_MAP_BOSS,
+	TEXTURE_ROCK_01,
+	TEXTURE_ROCK_02,
+	TEXTURE_TELEPORT,
+	TEXTURE_NUMBER,
+	TEXTURE_NONE,
+};
+
 
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
 HRESULT InitMap(void);
 void InitMapBG(int map);
-void InitMapCollisionBox(int map);
 void InitMoveTbl(int map);
 void InitEnemyConfig(int map);
 void InitPlayerInitPos(int map);
 void InitTeleport(int map);
+void SetTeleport(Teleport* teleport, float initPosX, float initPosY, int nextMapNo, int nextPosIdx);
 void UninitMap(void);
 void UpdateMap(void);
 void UpdateMapDraw(void);
 void UpdateTeleport(void);
+void UpdateMapWall(int mapNo);
 void DrawMap(void);
 
 void DisableTeleport(int teleportNo, BOOL disable);
@@ -129,7 +153,7 @@ void DisableTeleport(int teleportNo, BOOL disable);
 BG* GetBG(void);
 void ScrollBG(float x, float y, float time);
 
-AABB* GetMapAABB(void);
+MapWall* GetMapWall(void);
 EnemyConfig* GetEnemyConfig(void);
 XMFLOAT3 GetPlayerInitPos(int map, int idx);
 

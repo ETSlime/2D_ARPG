@@ -649,7 +649,10 @@ void UpdatePlayer(void)
 			for (int j = 0; j < ENEMY_MAX; j++)
 			{
 				// 生きてるエネミーと当たり判定をする
-				if (enemy[j].use == TRUE && enemy[j].state == ENEMY_ATTACK && g_Player->isInvincible == FALSE)
+				if (enemy[j].use == TRUE 
+					&& enemy[j].state == ENEMY_ATTACK 
+					&& enemy[i].hitPlayer == FALSE
+					&& g_Player->isInvincible == FALSE)
 				{
 					// 攻撃用の包囲ボックスを取得
 					for (int k = 0; k < MAX_ATTACK_AABB; k++)
@@ -1516,7 +1519,7 @@ void UpdateBackGroundScroll(void)
 void UpdateGroundCollision(void)
 {
 	// プレイヤーの位置を更新する前に接地を確認
-	AABB* grounds = GetMapAABB();
+	MapWall* grounds = GetMapWall();
 	BOOL onGround = false;
 
 	if (g_Player->jumpCnt == 0)
@@ -1537,9 +1540,10 @@ void UpdateGroundCollision(void)
 		g_Player->onAirCnt++;
 
 		CHANGE_PLAYER_POS_Y(g_Player->move.y);
-		for (int j = 0; j < MAP_GROUND_MAX; j++)
+		for (int j = 0; j < MAP_WALL_MAX; j++)
 		{
-			if (CheckGroundCollision(g_Player, &grounds[j]))
+			if (grounds[j].use == FALSE) continue;
+			if (CheckGroundCollision(g_Player, &grounds[j].wallAABB))
 				onGround = TRUE;
 		}
 
@@ -1570,9 +1574,10 @@ void UpdateGroundCollision(void)
 	}
 	else
 	{
-		for (int j = 0; j < MAP_GROUND_MAX; j++)
+		for (int j = 0; j < MAP_WALL_MAX; j++)
 		{
-			CheckGroundCollision(g_Player, &grounds[j]);
+			if (grounds[j].use == FALSE) continue;
+			CheckGroundCollision(g_Player, &grounds[j].wallAABB);
 		}
 	}
 	//if (GetKeyboardPress(DIK_Z))
@@ -1654,6 +1659,7 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 	if (enemy)
 	{
 		dir = g_Player->pos.x - enemy->pos.x >= 0 ? 1 : -1;
+		enemy->hitPlayer = TRUE;
 	}
 	else if (magic)
 	{
@@ -1681,7 +1687,7 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 		}
 		else if (enemy)
 		{
-			g_Player->HP -= enemy->attributes.damage * 5;
+			g_Player->HP -= enemy->attributes.damage * 0.5f;
 			int moveDir = g_Player->defendDir == CHAR_DIR_RIGHT ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 			if (CheckMoveCollision(1.0f * dir, moveDir))
 				CHANGE_PLAYER_POS_X(1.0f * dir);
@@ -1692,13 +1698,14 @@ void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 	{
 		if (enemy)
 		{
-			g_Player->move.x = (float)dir * enemy->attributes.damage;
+			g_Player->move.x = (float)dir * enemy->attributes.damage * 0.7f;
 			g_Player->HP -= enemy->attributes.damage * 15;
 		}
 		else if (magic)
 		{
-			g_Player->move.x = dir * 7;
+			g_Player->move.x = dir * 5.0f;
 			g_Player->HP -= magic->damage;
+			magic->isCollision = FALSE;
 		}
 
 		if (g_Player->HP <= 0)
@@ -2510,16 +2517,18 @@ void DrawPlayerShadow(void)
 	float highestGroundY = FLT_MAX;  // 最も高い地面のY座標を保持
 
 	// 地面のAABB情報を取得
-	AABB* ground = GetMapAABB();
+	MapWall* ground = GetMapWall();
 	BOOL isOnGround = false;
 
 	// プレイヤーが地面にいるかどうかを確認
-	for (int j = 0; j < MAP_GROUND_MAX; j++)
+	for (int j = 0; j < MAP_WALL_MAX; j++)
 	{
-		float groundX = ground[j].pos.x;
-		float groundY = ground[j].pos.y;
-		float groundW = ground[j].w;
-		float groundH = ground[j].h;
+		if (ground[j].use == FALSE) continue;
+
+		float groundX = ground[j].wallAABB.pos.x;
+		float groundY = ground[j].wallAABB.pos.y;
+		float groundW = ground[j].wallAABB.w;
+		float groundH = ground[j].wallAABB.h;
 
 		if (groundY < g_Player->pos.y) continue;
 
@@ -2791,14 +2800,15 @@ int GetTexturePatternDivideX()
 BOOL CheckMoveCollision(float move, int dir, BOOL checkGround)
 {
 	// 壁のAABB情報を取得
-	AABB* walls = GetMapAABB();
-	for (int i = 0; i < MAP_GROUND_MAX; i++)
+	MapWall* walls = GetMapWall();
+	for (int i = 0; i < MAP_WALL_MAX; i++)
 	{
-		if (walls[i].tag == GROUND_AABB && checkGround == FALSE) continue;
+		if (walls[i].use == FALSE) continue;
+		if (walls[i].wallAABB.tag == GROUND_AABB && checkGround == FALSE) continue;
 
-		XMFLOAT3 wallPos = walls[i].pos;
-		float wallW = walls[i].w;
-		float wallH = walls[i].h;
+		XMFLOAT3 wallPos = walls[i].wallAABB.pos;
+		float wallW = walls[i].wallAABB.w;
+		float wallH = walls[i].wallAABB.h;
 
 		
 		// 衝突確認
@@ -3218,7 +3228,7 @@ void InitPlayerStatus(void)
 		g_Player[i].maxMP = PLAYER_MAX_MP;
 		g_Player[i].ST = PLAYER_MAX_ST;
 		g_Player[i].maxST = PLAYER_MAX_ST;
-		g_Player[i].ATK = 20;
+		g_Player[i].ATK = 200;
 		g_Player[i].DEF = 10;
 		g_Player[i].isInvincible = FALSE;
 		g_Player[i].attackPattern = NONE;

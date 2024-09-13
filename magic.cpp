@@ -217,12 +217,10 @@ void UpdateMagic(void)
 			BG* bg = GetBG();
 			if (g_Magic[i].pos.x < (-g_Magic[i].width / 2))		// 自分の大きさを考慮して画面外か判定している
 			{
-				g_Magic[i].use = FALSE;
 				ClearMagic(&g_Magic[i]);
 			}
 			if (g_Magic[i].pos.x > (bg->w + g_Magic[i].width / 2))	// 自分の大きさを考慮して画面外か判定している
 			{
-				g_Magic[i].use = FALSE;
 				ClearMagic(&g_Magic[i]);
 			}
 
@@ -522,6 +520,7 @@ void ClearMagic(Magic* magic)
 	magic->isCollision = FALSE;
 	magic->destroyAnim = FALSE;
 	magic->reverseAnim = FALSE;
+	magic->hitTarget = FALSE;
 	magic->damage = 0.0f;
 	magic->pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	magic->rot = XMFLOAT3(0.0f, 0.0f, 0.0f);
@@ -565,14 +564,18 @@ void SetUpMagicCollision(Magic* magic)
 		break;
 	case MAGIC_STOMP:
 		magic->magicAABB.pos = magic->pos;
+		if (magic->invertTex == TRUE)
+			magic->magicAABB.pos.x -= 30.0f;
+		else
+			magic->magicAABB.pos.x += 30.0f;
 		magic->magicAABB.tag = ENEMY_MAGIC_AABB;
-		magic->magicAABB.w = magic->width * 0.5f;
+		magic->magicAABB.w = magic->width * 0.3f;
 		magic->magicAABB.h = magic->height * 0.5f;
 		break;
 	case MAGIC_THUNDER:
 		magic->magicAABB.pos = magic->pos;
 		magic->magicAABB.tag = ENEMY_MAGIC_AABB;
-		magic->magicAABB.w = magic->width * 0.3f;
+		magic->magicAABB.w = magic->width * 0.5f;
 		magic->magicAABB.h = magic->height;
 		break;
 	case MAGIC_BARRAGE:
@@ -589,12 +592,14 @@ void SetUpMagicCollision(Magic* magic)
 void HandleMagicCollision(Magic* magic)
 {
 	// 地面のAABB情報を取得
-	AABB* grounds = GetMapAABB();
-	for (int j = 0; j < MAP_GROUND_MAX; j++)
+	MapWall* grounds = GetMapWall();
+	for (int j = 0; j < MAP_WALL_MAX; j++)
 	{
-		if (grounds[j].tag == GROUND_AABB && magic->magicType != MAGIC_BARRAGE) continue;
+		if (grounds->use == FALSE) continue;
+		if (grounds[j].wallAABB.tag == GROUND_AABB && magic->magicType != MAGIC_BARRAGE) continue;
+
 		if (CollisionBB(magic->magicAABB.pos, magic->magicAABB.w, magic->magicAABB.h,
-			grounds[j].pos, grounds[j].w, grounds[j].h))
+			grounds[j].wallAABB.pos, grounds[j].wallAABB.w, grounds[j].wallAABB.h))
 		{
 			switch (magic->magicType)
 			{
@@ -653,13 +658,14 @@ void HandleMagicCollision(Magic* magic)
 			switch (magic->magicType)
 			{
 			case MAGIC_BARRAGE:
-				PlayerTakeDamage(nullptr, magic);
-				magic->use = FALSE;
+				PlayerTakeDamage(nullptr, magic);;
+				ClearMagic(magic);
 				break;
 			case MAGIC_STOMP:
 			case MAGIC_THUNDER:
 			case MAGIC_EARTH:
 				PlayerTakeDamage(nullptr, magic);
+				magic->hitTarget = TRUE;
 				break;
 			default:
 				break;
@@ -697,7 +703,6 @@ void PlayMagicAnim(Magic* magic)
 
 			if (magic->destroyAnim == TRUE)
 			{
-				magic->use = FALSE;
 				ClearMagic(magic);
 			}
 		}
@@ -719,7 +724,6 @@ void PlayMagicAnim(Magic* magic)
 			if (magic->isAnimRepeat == FALSE &&
 				magic->patternAnim == GetMagicTexturePatternDivideX(magic) * GetMagicTexturePatternDivideY(magic) - 1)
 			{
-				magic->use = FALSE;
 				ClearMagic(magic);
 			}
 		}
@@ -758,7 +762,7 @@ void PlayMagicAnim(Magic* magic)
 					XMFLOAT3 toPlayerFloat3;
 					XMStoreFloat3(&toPlayerFloat3, toPlayer);
 
-					float followStrength = 0.1f;
+					float followStrength = 0.06f;
 					// 5. 線形補間して部分追従させる
 					XMVECTOR interpolatedMove = XMVectorLerp(magicMove, XMVectorSet(
 						toPlayerFloat3.x * MAGIC_BARRAGE_SPEED,

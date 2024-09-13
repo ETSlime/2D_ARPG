@@ -19,11 +19,12 @@
 #define TEXTURE_TELEPORT_HEIGHT				(125.0f)
 #define TEXTURE_TELEPORT_PATTERN_DIVIDE_X	(5)
 #define TEXTURE_TELEPORT_PATTERN_DIVIDE_Y	(2)
-#define	ANIM_WAIT_TELEPORT					(20)
+#ifdef _DEBUG
+#define TEXTURE_WALL_NUM_WIDTH				(24)
+#define TEXTURE_WALL_NUM_HEIGHT				(40)
+#endif // _DEBUG
 
-#define ROCK_01_TEXTURE_NO					(5)
-#define ROCK_02_TEXTURE_NO					(6)
-#define TELEPORT_TEXTURE_NO					(7)
+#define	ANIM_WAIT_TELEPORT					(20)
 
 #define TUTORIAL_01_GROUND_WIDTH	(TEXTURE_BG_TUTORIAL_01_WIDTH + 800.0f)
 #define TUTORIAL_01_GROUND_HEIGHT	(250)
@@ -133,6 +134,9 @@
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
+#ifdef _DEBUG
+void DrawWallNum(MapWall* wall, int idx);
+#endif
 
 
 //*****************************************************************************
@@ -155,14 +159,14 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/map/rock01.png",
 	"data/TEXTURE/map/rock02.png",
 	"data/TEXTURE/map/teleport.png",
+	"data/TEXTURE/number.png",
 };
 
 
 static BOOL			g_Load = FALSE;		// 初期化を行ったかのフラグ
 static BG			g_BG;
-static AABB			g_AABB[MAP_GROUND_MAX];
 static int			g_MapNo = MAP_01;
-static int			g_MapDraw = MAP_01;
+static int			g_MapDrawNo = MAP_01;
 static Teleport		g_Teleport[TELEPORT_NUM_MAX];
 
 static INTERPOLATION_DATA g_MoveTbl0[MOVE_NUM_MAX];
@@ -190,6 +194,7 @@ static INTERPOLATION_DATA g_Map_BOSS_MoveTbl_BOSS[MOVE_NUM_MAX];
 
 static EnemyConfig	g_EnemyConfig[MAP_ENEMY_MAX];
 static XMFLOAT3 g_PlayerInitPos[MAP_NUM_MAX][PLAYER_INIT_POS_MAX];
+static MapWall	g_MapWall[MAP_WALL_MAX];
 
 //=============================================================================
 // 初期化処理
@@ -220,9 +225,23 @@ HRESULT InitMap(void)
 	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	GetDevice()->CreateBuffer(&bd, NULL, &g_VertexBuffer);
 
+	for (int i = 0; i < MAP_WALL_MAX; i++)
+	{
+		g_MapWall[i].use = FALSE;
+		g_MapWall[i].w = 0.0f;
+		g_MapWall[i].h = 0.0f;
+		g_MapWall[i].texNo = TEXTURE_NONE;
+		g_MapWall[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_MapWall[i].wallAABB.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_MapWall[i].wallAABB.w = 0.0f;
+		g_MapWall[i].wallAABB.h = 0.0f;
+		g_MapWall[i].wallAABB.tag = WALL_AABB;
+		
+	}
+
 	// 変数の初期化
 	InitMapBG(g_MapNo);
-	InitMapCollisionBox(g_MapNo);
+	//InitMapCollisionBox(g_MapNo);
 	InitMoveTbl(g_MapNo);
 	InitEnemyConfig(g_MapNo);
 	InitTeleport(g_MapNo);
@@ -230,8 +249,8 @@ HRESULT InitMap(void)
 #ifdef _DEBUG	
 	// debug
 	{
-		int aabbCount = MAP_GROUND_MAX;
-		const int maxVertices = MAP_GROUND_MAX * 4;
+		int aabbCount = MAP_WALL_MAX;
+		const int maxVertices = MAP_WALL_MAX * 4;
 
 		D3D11_BUFFER_DESC bd;
 		ZeroMemory(&bd, sizeof(bd));
@@ -272,13 +291,6 @@ void UninitMap(void)
 		}
 	}
 
-	for (int i = 0; i < MAP_GROUND_MAX; i++)
-	{
-		g_AABB[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
-		g_AABB[i].w = 0.0f;
-		g_AABB[i].h = 0.0f;
-	}
-
 	for (int i = 0; i < MAP_ENEMY_MAX; i++)
 	{
 		g_EnemyConfig[i] = {};
@@ -300,6 +312,17 @@ void UninitMap(void)
 		g_Teleport[i].teleportAABB.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	}
 
+	for (int i = 0; i < MAP_WALL_MAX; i++)
+	{
+		g_MapWall[i].use = FALSE;
+		g_MapWall[i].w = 0.0f;
+		g_MapWall[i].h = 0.0f;
+		g_MapWall[i].texNo = 0;
+		g_MapWall[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_MapWall[i].wallAABB.pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
+		g_MapWall[i].wallAABB.w = 0.0f;
+		g_MapWall[i].wallAABB.h = 0.0f;
+	}
 
 	g_Load = FALSE;
 }
@@ -339,139 +362,6 @@ void InitMapBG(int map)
 	g_BG.scroll = FALSE;
 	g_BG.scrollSpeedX = 0.0f;
 	g_BG.scrollSpeedY = 0.0f;
-}
-void InitMapCollisionBox(int map)
-{
-	// AABB
-	for (int i = 0; i < MAP_GROUND_MAX; i++)
-	{
-		g_AABB[i].pos.x = 0;
-		g_AABB[i].pos.y = 0;
-		g_AABB[i].w = 0;
-		g_AABB[i].h = 0;
-		g_AABB[i].tag = WALL_AABB;
-	}
-
-	switch (map)
-	{
-	case TUTORIAL_01:
-	{
-		g_AABB[0].pos.x = TEXTURE_BG_TUTORIAL_01_WIDTH * 0.5f;
-		g_AABB[0].pos.y = 1340.0f + (TEXTURE_BG_TUTORIAL_01_HEIGHT - 1290.0f) * 0.5f;
-		g_AABB[0].w = TEXTURE_BG_TUTORIAL_01_WIDTH + 200.0f;
-		g_AABB[0].h = TUTORIAL01_GROUND_H * 0.5f;
-
-		g_AABB[1].pos.x = TUTORIAL_01_ROCK01_POS_X * 0.99f;
-		g_AABB[1].pos.y = TUTORIAL_01_ROCK01_POS_Y;
-		g_AABB[1].w = TUTORIAL_01_ROCK01_WIDTH * 0.83f;
-		g_AABB[1].h = TUTORIAL_01_ROCK01_HEIGHT * 0.78f;
-		break;
-	}
-	case MAP_01:
-	{
-		g_AABB[0].pos.x = MAP_01_GROUND_POS_X;
-		g_AABB[0].pos.y = MAP_01_GROUND_POS_Y + 5.0f;
-		g_AABB[0].w = TEXTURE_BG_MAP_01_WIDTH;
-		g_AABB[0].h = MAP01_GROUND_H;
-
-		g_AABB[1].pos.x = MAP_01_ROCK01_POS_X - 25.0f;
-		g_AABB[1].pos.y = MAP_01_ROCK01_POS_Y + 12.0f;
-		g_AABB[1].w = MAP_01_ROCK01_WIDTH * 0.83f;
-		g_AABB[1].h = MAP_01_ROCK01_HEIGHT * 0.78f;
-
-		g_AABB[2].pos.x = MAP_01_ROCK02_POS_X - 5.0f;
-		g_AABB[2].pos.y = MAP_01_ROCK02_POS_Y;
-		g_AABB[2].w = MAP_01_ROCK02_WIDTH * 0.87f;
-		g_AABB[2].h = MAP_01_ROCK02_HEIGHT * 1.0f;
-
-		g_AABB[3].pos.x = MAP_01_ROCK03_POS_X;
-		g_AABB[3].pos.y = MAP_01_ROCK03_POS_Y;
-		g_AABB[3].w = MAP_01_ROCK03_WIDTH * 0.8f;
-		g_AABB[3].h = MAP_01_ROCK03_HEIGHT * 0.8f;
-
-		g_AABB[4].pos.x = MAP_01_ROCK04_POS_X - 25.0f;
-		g_AABB[4].pos.y = MAP_01_ROCK04_POS_Y;
-		g_AABB[4].w = MAP_01_ROCK04_WIDTH * 0.84f;
-		g_AABB[4].h = MAP_01_ROCK04_HEIGHT * 0.8f;
-
-		g_AABB[5].pos.x = MAP_01_ROCK05_POS_X;
-		g_AABB[5].pos.y = MAP_01_ROCK05_POS_Y;
-		g_AABB[5].w = MAP_01_ROCK05_WIDTH * 0.8f;
-		g_AABB[5].h = MAP_01_ROCK05_HEIGHT * 0.8f;
-
-		g_AABB[6].pos.x = MAP_01_ROCK06_POS_X - 25.0f;
-		g_AABB[6].pos.y = MAP_01_ROCK06_POS_Y;
-		g_AABB[6].w = MAP_01_ROCK06_WIDTH * 0.85f;
-		g_AABB[6].h = MAP_01_ROCK06_HEIGHT * 0.8f;
-
-		break;
-	}
-	case MAP_02:
-	{
-		g_AABB[0].pos.x = TEXTURE_BG_MAP_02_WIDTH * 0.5f;
-		g_AABB[0].pos.y = 1290.0f + (TEXTURE_BG_MAP_02_HEIGHT - 1290.0f) * 0.5f;
-		g_AABB[0].w = TEXTURE_BG_MAP_02_WIDTH;
-		g_AABB[0].h = MAP02_GROUND_H * 0.5f;
-
-		g_AABB[1].pos.x = 685;
-		g_AABB[1].pos.y = 1226;
-		g_AABB[1].w = 103;
-		g_AABB[1].h = 224;
-
-		g_AABB[2].pos.x = 900;
-		g_AABB[2].pos.y = 857;
-		g_AABB[2].w = 640;
-		g_AABB[2].h = 40;
-
-		g_AABB[3].pos.x = 1450;
-		g_AABB[3].pos.y = 594;
-		g_AABB[3].w = 2200;
-		g_AABB[3].h = 40;
-
-		g_AABB[4].pos.x = MAP_02_ROCK01_POS_X;
-		g_AABB[4].pos.y = MAP_02_ROCK01_POS_Y;
-		g_AABB[4].w = MAP_02_ROCK01_WIDTH * 0.83f;
-		g_AABB[4].h = MAP_02_ROCK01_HEIGHT * 0.83f;
-
-		break;
-	}
-	case MAP_BOSS:
-	{
-		g_AABB[0].pos.x = MAP_BOSS_GROUND_POS_X;
-		g_AABB[0].pos.y = MAP_BOSS_GROUND_POS_Y + 5.0f;
-		g_AABB[0].w = TEXTURE_BG_MAP_BOSS_WIDTH;
-		g_AABB[0].h = MAP_BOSS_GROUND_HEIGHT * 0.84f;
-
-		g_AABB[1].pos.x = MAP_BOSS_ROCK01_POS_X - 11.1f;
-		g_AABB[1].pos.y = MAP_BOSS_ROCK01_POS_Y + 12.3f;
-		g_AABB[1].w = MAP_BOSS_ROCK01_WIDTH * 0.83f;
-		g_AABB[1].h = MAP_BOSS_ROCK01_HEIGHT * 0.83f;
-
-		g_AABB[2].pos.x = MAP_BOSS_ROCK02_POS_X;
-		g_AABB[2].pos.y = MAP_BOSS_ROCK02_POS_Y;
-		g_AABB[2].w = MAP_BOSS_ROCK02_WIDTH * 0.83f;
-		g_AABB[2].h = MAP_BOSS_ROCK02_HEIGHT * 0.83f;
-
-		g_AABB[3].pos.x = MAP_BOSS_ROCK03_POS_X;
-		g_AABB[3].pos.y = MAP_BOSS_ROCK03_POS_Y;
-		g_AABB[3].w = MAP_BOSS_ROCK03_WIDTH * 0.83f;
-		g_AABB[3].h = MAP_BOSS_ROCK03_HEIGHT * 0.83f;
-
-		g_AABB[4].pos.x = MAP_BOSS_ROCK04_POS_X - 21.1f;
-		g_AABB[4].pos.y = MAP_BOSS_ROCK04_POS_Y;
-		g_AABB[4].w = MAP_BOSS_ROCK04_WIDTH * 0.85f;
-		g_AABB[4].h = MAP_BOSS_ROCK04_HEIGHT * 0.83f;
-
-		//g_AABB[5].pos.x = MAP_BOSS_ROCK05_POS_X;
-		//g_AABB[5].pos.y = MAP_BOSS_ROCK05_POS_Y;
-		//g_AABB[5].w = MAP_BOSS_ROCK05_WIDTH;
-		//g_AABB[5].h = MAP_BOSS_ROCK05_HEIGHT;
-
-		break;
-	}
-	default:
-		break;
-	}
 }
 
 void InitMoveTbl(int map)
@@ -611,63 +501,17 @@ void InitTeleport(int map)
 	switch (map)
 	{
 	case TUTORIAL_01:
-		g_Teleport[0].pos.x = TUTORIAL_01_EXIT_POS_X;
-		g_Teleport[0].pos.y = TUTORIAL_01_EXIT_POS_Y;
-		g_Teleport[0].nextMapNo = MAP_01;
-		g_Teleport[0].nextInitPos = INITPOS_01;
-		g_Teleport[0].use = TRUE;
-		g_Teleport[0].teleportAABB.pos = g_Teleport[0].pos;
-		g_Teleport[0].teleportAABB.w = TEXTURE_TELEPORT_WIDTH * 0.5f;
-		g_Teleport[0].teleportAABB.h = TEXTURE_TELEPORT_HEIGHT * 0.5f;
-		g_Teleport[0].countAnim = 0.0f;
-		g_Teleport[0].patternAnim = 0;
+		SetTeleport(&g_Teleport[0], TUTORIAL_01_EXIT_POS_X, TUTORIAL_01_EXIT_POS_Y, MAP_01, INITPOS_01);
 		break;
 	case MAP_01:
-		g_Teleport[0].pos.x = MAP_01_TELEPORT_01_POS_X;
-		g_Teleport[0].pos.y = MAP_01_TELEPORT_01_POS_Y;
-		g_Teleport[0].nextMapNo = MAP_02;
-		g_Teleport[0].nextInitPos = INITPOS_01;
-		g_Teleport[0].use = TRUE;
-		g_Teleport[0].teleportAABB.pos = g_Teleport[0].pos;
-		g_Teleport[0].teleportAABB.w = TEXTURE_TELEPORT_WIDTH * 0.5f;
-		g_Teleport[0].teleportAABB.h = TEXTURE_TELEPORT_HEIGHT * 0.5f;
-		g_Teleport[0].countAnim = 0.0f;
-		g_Teleport[0].patternAnim = 0;
+		SetTeleport(&g_Teleport[0], MAP_01_TELEPORT_01_POS_X, MAP_01_TELEPORT_01_POS_Y, MAP_02, INITPOS_01);
 		break;
 	case MAP_02:
-		g_Teleport[0].pos.x = MAP_02_TELEPORT_01_POS_X;
-		g_Teleport[0].pos.y = MAP_02_TELEPORT_01_POS_Y;
-		g_Teleport[0].nextMapNo = MAP_01;
-		g_Teleport[0].nextInitPos = INITPOS_02;
-		g_Teleport[0].use = TRUE;
-		g_Teleport[0].teleportAABB.pos = g_Teleport[0].pos;
-		g_Teleport[0].teleportAABB.w = TEXTURE_TELEPORT_WIDTH * 0.5f;
-		g_Teleport[0].teleportAABB.h = TEXTURE_TELEPORT_HEIGHT * 0.5f;
-		g_Teleport[0].countAnim = 0.0f;
-		g_Teleport[0].patternAnim = 0;
-
-		g_Teleport[1].pos.x = MAP_02_TELEPORT_02_POS_X;
-		g_Teleport[1].pos.y = MAP_02_TELEPORT_02_POS_Y;
-		g_Teleport[1].nextMapNo = MAP_BOSS;
-		g_Teleport[1].nextInitPos = INITPOS_01;
-		g_Teleport[1].use = TRUE;
-		g_Teleport[1].teleportAABB.pos = g_Teleport[1].pos;
-		g_Teleport[1].teleportAABB.w = TEXTURE_TELEPORT_WIDTH * 0.5f;
-		g_Teleport[1].teleportAABB.h = TEXTURE_TELEPORT_HEIGHT * 0.5f;
-		g_Teleport[1].countAnim = 0.0f;
-		g_Teleport[1].patternAnim = 0;
+		SetTeleport(&g_Teleport[0], MAP_02_TELEPORT_01_POS_X, MAP_02_TELEPORT_01_POS_Y, MAP_01, INITPOS_02);
+		SetTeleport(&g_Teleport[1], MAP_02_TELEPORT_02_POS_X, MAP_02_TELEPORT_02_POS_Y, MAP_BOSS, INITPOS_01);
 		break;
 	case MAP_BOSS:
-		g_Teleport[0].pos.x = MAP_BOSS_TELEPORT_01_POS_X;
-		g_Teleport[0].pos.y = MAP_BOSS_TELEPORT_01_POS_Y;
-		g_Teleport[0].nextMapNo = MAP_02;
-		g_Teleport[0].nextInitPos = INITPOS_02;
-		g_Teleport[0].use = TRUE;
-		g_Teleport[0].teleportAABB.pos = g_Teleport[0].pos;
-		g_Teleport[0].teleportAABB.w = TEXTURE_TELEPORT_WIDTH * 0.5f;
-		g_Teleport[0].teleportAABB.h = TEXTURE_TELEPORT_HEIGHT * 0.5f;
-		g_Teleport[0].countAnim = 0.0f;
-		g_Teleport[0].patternAnim = 0;
+		SetTeleport(&g_Teleport[0], MAP_BOSS_TELEPORT_01_POS_X, MAP_BOSS_TELEPORT_01_POS_Y, MAP_02, INITPOS_02);
 		break;
 	default:
 		break;
@@ -749,6 +593,229 @@ void UpdateTeleport(void)
 }
 
 
+void UpdateMapWall(int mapNo)
+{
+	switch (mapNo)
+	{
+	case TUTORIAL_01:
+		g_MapWall[0].use = TRUE;
+		g_MapWall[0].texNo = TEXTURE_ROCK_01;
+		g_MapWall[0].w = TUTORIAL_01_GROUND_WIDTH;
+		g_MapWall[0].h = TUTORIAL_01_GROUND_HEIGHT;
+		g_MapWall[0].pos = XMFLOAT3(TUTORIAL_01_GROUND_POS_X, TUTORIAL_01_GROUND_POS_Y, 0.0f);
+
+		g_MapWall[0].wallAABB.pos.x = TEXTURE_BG_TUTORIAL_01_WIDTH * 0.5f;
+		g_MapWall[0].wallAABB.pos.y = 1340.0f + (TEXTURE_BG_TUTORIAL_01_HEIGHT - 1290.0f) * 0.5f;
+		g_MapWall[0].wallAABB.w = TEXTURE_BG_TUTORIAL_01_WIDTH + 200.0f;
+		g_MapWall[0].wallAABB.h = TUTORIAL01_GROUND_H * 0.5f;
+
+		g_MapWall[1].use = TRUE;
+		g_MapWall[1].texNo = TEXTURE_ROCK_02;
+		g_MapWall[1].w = TUTORIAL_01_ROCK01_WIDTH;
+		g_MapWall[1].h = TUTORIAL_01_ROCK01_HEIGHT;
+		g_MapWall[1].pos = XMFLOAT3(TUTORIAL_01_ROCK01_POS_X, TUTORIAL_01_ROCK01_POS_Y, 0.0f);
+
+		g_MapWall[1].wallAABB.pos.x = TUTORIAL_01_ROCK01_POS_X * 0.99f;
+		g_MapWall[1].wallAABB.pos.y = TUTORIAL_01_ROCK01_POS_Y;
+		g_MapWall[1].wallAABB.w = TUTORIAL_01_ROCK01_WIDTH * 0.83f;
+		g_MapWall[1].wallAABB.h = TUTORIAL_01_ROCK01_HEIGHT * 0.78f;
+
+		break;
+
+	case MAP_01:
+		g_MapWall[0].use = TRUE;
+		g_MapWall[0].texNo = TEXTURE_ROCK_02;
+		g_MapWall[0].w = MAP_01_GROUND_WIDTH;
+		g_MapWall[0].h = MAP_01_GROUND_HEIGHT;
+		g_MapWall[0].pos = XMFLOAT3(MAP_01_GROUND_POS_X, MAP_01_GROUND_POS_Y, 0.0f);
+
+		g_MapWall[0].wallAABB.pos.x = MAP_01_GROUND_POS_X;
+		g_MapWall[0].wallAABB.pos.y = MAP_01_GROUND_POS_Y + 5.0f;
+		g_MapWall[0].wallAABB.w = TEXTURE_BG_MAP_01_WIDTH;
+		g_MapWall[0].wallAABB.h = MAP01_GROUND_H;
+
+		g_MapWall[1].use = TRUE;
+		g_MapWall[1].texNo = TEXTURE_ROCK_01;
+		g_MapWall[1].w = MAP_01_ROCK01_WIDTH;
+		g_MapWall[1].h = MAP_01_ROCK01_HEIGHT;
+		g_MapWall[1].pos = XMFLOAT3(MAP_01_ROCK01_POS_X, MAP_01_ROCK01_POS_Y, 0.0f);
+
+		g_MapWall[1].wallAABB.pos.x = MAP_01_ROCK01_POS_X - 25.0f;
+		g_MapWall[1].wallAABB.pos.y = MAP_01_ROCK01_POS_Y + 12.0f;
+		g_MapWall[1].wallAABB.w = MAP_01_ROCK01_WIDTH * 0.83f;
+		g_MapWall[1].wallAABB.h = MAP_01_ROCK01_HEIGHT * 0.73f;
+
+		g_MapWall[2].use = TRUE;
+		g_MapWall[2].texNo = TEXTURE_ROCK_02;
+		g_MapWall[2].w = MAP_01_ROCK02_WIDTH;
+		g_MapWall[2].h = MAP_01_ROCK02_HEIGHT;
+		g_MapWall[2].pos = XMFLOAT3(MAP_01_ROCK02_POS_X, MAP_01_ROCK02_POS_Y, 0.0f);
+
+		g_MapWall[2].wallAABB.pos.x = MAP_01_ROCK02_POS_X - 8.0f;
+		g_MapWall[2].wallAABB.pos.y = MAP_01_ROCK02_POS_Y;
+		g_MapWall[2].wallAABB.w = MAP_01_ROCK02_WIDTH * 0.81f;
+		g_MapWall[2].wallAABB.h = MAP_01_ROCK02_HEIGHT * 0.75f;
+
+		g_MapWall[3].use = TRUE;
+		g_MapWall[3].texNo = TEXTURE_ROCK_01;
+		g_MapWall[3].w = MAP_01_ROCK03_WIDTH;
+		g_MapWall[3].h = MAP_01_ROCK03_HEIGHT;
+		g_MapWall[3].pos = XMFLOAT3(MAP_01_ROCK03_POS_X, MAP_01_ROCK03_POS_Y, 0.0f);
+
+		g_MapWall[3].wallAABB.pos.x = MAP_01_ROCK03_POS_X;
+		g_MapWall[3].wallAABB.pos.y = MAP_01_ROCK03_POS_Y;
+		g_MapWall[3].wallAABB.w = MAP_01_ROCK03_WIDTH * 0.8f;
+		g_MapWall[3].wallAABB.h = MAP_01_ROCK03_HEIGHT * 0.8f;
+
+		g_MapWall[4].use = TRUE;
+		g_MapWall[4].texNo = TEXTURE_ROCK_02;
+		g_MapWall[4].w = MAP_01_ROCK04_WIDTH;
+		g_MapWall[4].h = MAP_01_ROCK04_HEIGHT;
+		g_MapWall[4].pos = XMFLOAT3(MAP_01_ROCK04_POS_X, MAP_01_ROCK04_POS_Y, 0.0f);
+
+		g_MapWall[4].wallAABB.pos.x = MAP_01_ROCK04_POS_X - 25.0f;
+		g_MapWall[4].wallAABB.pos.y = MAP_01_ROCK04_POS_Y;
+		g_MapWall[4].wallAABB.w = MAP_01_ROCK04_WIDTH * 0.84f;
+		g_MapWall[4].wallAABB.h = MAP_01_ROCK04_HEIGHT * 0.8f;
+
+		g_MapWall[5].use = TRUE;
+		g_MapWall[5].texNo = TEXTURE_ROCK_02;
+		g_MapWall[5].w = MAP_01_ROCK05_WIDTH;
+		g_MapWall[5].h = MAP_01_ROCK05_HEIGHT;
+		g_MapWall[5].pos = XMFLOAT3(MAP_01_ROCK05_POS_X, MAP_01_ROCK05_POS_Y, 0.0f);
+
+		g_MapWall[5].wallAABB.pos.x = MAP_01_ROCK05_POS_X;
+		g_MapWall[5].wallAABB.pos.y = MAP_01_ROCK05_POS_Y;
+		g_MapWall[5].wallAABB.w = MAP_01_ROCK05_WIDTH * 0.8f;
+		g_MapWall[5].wallAABB.h = MAP_01_ROCK05_HEIGHT * 0.8f;
+
+		g_MapWall[6].use = TRUE;
+		g_MapWall[6].texNo = TEXTURE_ROCK_02;
+		g_MapWall[6].w = MAP_01_ROCK06_WIDTH;
+		g_MapWall[6].h = MAP_01_ROCK06_HEIGHT;
+		g_MapWall[6].pos = XMFLOAT3(MAP_01_ROCK06_POS_X, MAP_01_ROCK06_POS_Y, 0.0f);
+
+		g_MapWall[6].wallAABB.pos.x = MAP_01_ROCK06_POS_X - 25.0f;
+		g_MapWall[6].wallAABB.pos.y = MAP_01_ROCK06_POS_Y;
+		g_MapWall[6].wallAABB.w = MAP_01_ROCK06_WIDTH * 0.83f;
+		g_MapWall[6].wallAABB.h = MAP_01_ROCK06_HEIGHT * 0.75f;
+
+		break;
+	case MAP_02:
+	{
+		g_MapWall[0].use = TRUE;
+		g_MapWall[0].texNo = TEXTURE_ROCK_02;
+		g_MapWall[0].w = MAP_02_ROCK01_WIDTH;
+		g_MapWall[0].h = MAP_02_ROCK01_HEIGHT;
+		g_MapWall[0].pos = XMFLOAT3(MAP_02_ROCK01_POS_X, MAP_02_ROCK01_POS_Y, 0.0f);
+
+		g_MapWall[0].wallAABB.pos.x = TEXTURE_BG_MAP_02_WIDTH * 0.5f;
+		g_MapWall[0].wallAABB.pos.y = 1290.0f + (TEXTURE_BG_MAP_02_HEIGHT - 1290.0f) * 0.5f;
+		g_MapWall[0].wallAABB.w = TEXTURE_BG_MAP_02_WIDTH;
+		g_MapWall[0].wallAABB.h = MAP02_GROUND_H * 0.5f;
+
+		g_MapWall[1].use = TRUE;
+		g_MapWall[1].texNo = TEXTURE_ROCK_02;
+		g_MapWall[1].w = MAP_02_ROCK02_WIDTH;
+		g_MapWall[1].h = MAP_02_ROCK02_HEIGHT;
+		g_MapWall[1].pos = XMFLOAT3(MAP_02_ROCK02_POS_X, MAP_02_ROCK02_POS_Y, 0.0f);
+
+		g_MapWall[1].wallAABB.pos.x = MAP_02_ROCK01_POS_X;
+		g_MapWall[1].wallAABB.pos.y = MAP_02_ROCK01_POS_Y;
+		g_MapWall[1].wallAABB.w = MAP_02_ROCK01_WIDTH * 0.83f;
+		g_MapWall[1].wallAABB.h = MAP_02_ROCK01_HEIGHT * 0.83f;
+
+		g_MapWall[2].use = TRUE;
+		g_MapWall[2].texNo = TEXTURE_ROCK_02;
+		g_MapWall[2].w = MAP_02_ROCK03_WIDTH;
+		g_MapWall[2].h = MAP_02_ROCK03_HEIGHT;
+		g_MapWall[2].pos = XMFLOAT3(MAP_02_ROCK03_POS_X, MAP_02_ROCK03_POS_Y, 0.0f);
+
+		g_MapWall[2].wallAABB.pos.x = 1450;
+		g_MapWall[2].wallAABB.pos.y = 594;
+		g_MapWall[2].wallAABB.w = 2200;
+		g_MapWall[2].wallAABB.h = 40;
+
+
+		g_MapWall[3].use = TRUE;
+		g_MapWall[3].texNo = TEXTURE_NONE;
+		g_MapWall[3].wallAABB.pos.x = 900;
+		g_MapWall[3].wallAABB.pos.y = 857;
+		g_MapWall[3].wallAABB.w = 640;
+		g_MapWall[3].wallAABB.h = 40;
+
+		g_MapWall[4].use = TRUE;
+		g_MapWall[4].texNo = TEXTURE_NONE;
+		g_MapWall[4].wallAABB.pos.x = 685;
+		g_MapWall[4].wallAABB.pos.y = 1226;
+		g_MapWall[4].wallAABB.w = 103;
+		g_MapWall[4].wallAABB.h = 224;
+
+		break;
+	}
+	case MAP_BOSS:
+	{
+		g_MapWall[0].use = TRUE;
+		g_MapWall[0].texNo = TEXTURE_ROCK_02;
+		g_MapWall[0].w = MAP_BOSS_GROUND_WIDTH;
+		g_MapWall[0].h = MAP_BOSS_GROUND_HEIGHT;
+		g_MapWall[0].pos = XMFLOAT3(MAP_BOSS_GROUND_POS_X, MAP_BOSS_GROUND_POS_Y, 0.0f);
+
+		g_MapWall[0].wallAABB.pos.x = MAP_BOSS_GROUND_POS_X;
+		g_MapWall[0].wallAABB.pos.y = MAP_BOSS_GROUND_POS_Y + 5.0f;
+		g_MapWall[0].wallAABB.w = TEXTURE_BG_MAP_BOSS_WIDTH;
+		g_MapWall[0].wallAABB.h = MAP_BOSS_GROUND_HEIGHT * 0.84f;
+
+		g_MapWall[1].use = TRUE;
+		g_MapWall[1].texNo = TEXTURE_ROCK_01;
+		g_MapWall[1].w = MAP_BOSS_ROCK01_WIDTH;
+		g_MapWall[1].h = MAP_BOSS_ROCK01_HEIGHT;
+		g_MapWall[1].pos = XMFLOAT3(MAP_BOSS_ROCK01_POS_X, MAP_BOSS_ROCK01_POS_Y, 0.0f);
+
+		g_MapWall[1].wallAABB.pos.x = MAP_BOSS_ROCK01_POS_X - 11.1f;
+		g_MapWall[1].wallAABB.pos.y = MAP_BOSS_ROCK01_POS_Y + 12.3f;
+		g_MapWall[1].wallAABB.w = MAP_BOSS_ROCK01_WIDTH * 0.83f;
+		g_MapWall[1].wallAABB.h = MAP_BOSS_ROCK01_HEIGHT * 0.83f;
+		
+		g_MapWall[2].use = TRUE;
+		g_MapWall[2].texNo = TEXTURE_ROCK_02;
+		g_MapWall[2].w = MAP_BOSS_ROCK02_WIDTH;
+		g_MapWall[2].h = MAP_BOSS_ROCK02_HEIGHT;
+		g_MapWall[2].pos = XMFLOAT3(MAP_BOSS_ROCK02_POS_X, MAP_BOSS_ROCK02_POS_Y, 0.0f);
+
+		g_MapWall[2].wallAABB.pos.x = MAP_BOSS_ROCK02_POS_X;
+		g_MapWall[2].wallAABB.pos.y = MAP_BOSS_ROCK02_POS_Y;
+		g_MapWall[2].wallAABB.w = MAP_BOSS_ROCK02_WIDTH * 0.83f;
+		g_MapWall[2].wallAABB.h = MAP_BOSS_ROCK02_HEIGHT * 0.83f;
+
+		g_MapWall[3].use = TRUE;
+		g_MapWall[3].texNo = TEXTURE_ROCK_01;
+		g_MapWall[3].w = MAP_BOSS_ROCK03_WIDTH;
+		g_MapWall[3].h = MAP_BOSS_ROCK03_HEIGHT;
+		g_MapWall[3].pos = XMFLOAT3(MAP_BOSS_ROCK03_POS_X, MAP_BOSS_ROCK03_POS_Y, 0.0f);
+
+		g_MapWall[3].wallAABB.pos.x = MAP_BOSS_ROCK03_POS_X;
+		g_MapWall[3].wallAABB.pos.y = MAP_BOSS_ROCK03_POS_Y;
+		g_MapWall[3].wallAABB.w = MAP_BOSS_ROCK03_WIDTH * 0.83f;
+		g_MapWall[3].wallAABB.h = MAP_BOSS_ROCK03_HEIGHT * 0.83f;
+
+		g_MapWall[4].use = TRUE;
+		g_MapWall[4].texNo = TEXTURE_ROCK_02;
+		g_MapWall[4].w = MAP_BOSS_ROCK04_WIDTH;
+		g_MapWall[4].h = MAP_BOSS_ROCK04_HEIGHT;
+		g_MapWall[4].pos = XMFLOAT3(MAP_BOSS_ROCK04_POS_X, MAP_BOSS_ROCK04_POS_Y, 0.0f);
+
+		g_MapWall[4].wallAABB.pos.x = MAP_BOSS_ROCK04_POS_X - 21.1f;
+		g_MapWall[4].wallAABB.pos.y = MAP_BOSS_ROCK04_POS_Y;
+		g_MapWall[4].wallAABB.w = MAP_BOSS_ROCK04_WIDTH * 0.85f;
+		g_MapWall[4].wallAABB.h = MAP_BOSS_ROCK04_HEIGHT * 0.83f;
+		break;
+	}
+	default:
+		break;
+	}
+}
+
 //=============================================================================
 // 描画処理
 //=============================================================================
@@ -775,7 +842,7 @@ void DrawMap(void)
 	// 地面を描画
 	{
 		// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_MapDraw]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_MapDrawNo]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		SetSpriteLTColor(g_VertexBuffer,
@@ -790,26 +857,6 @@ void DrawMap(void)
 	DrawMapWalls(g_MapNo);
 	DrawTeleport();
 
-
-	// 空を描画
-	//{
-	//	// テクスチャ設定
-	//	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[1]);
-
-	//	// １枚のポリゴンの頂点とテクスチャ座標を設定
-	//	//float	tx = (g_BG.pos.x - g_BG.old_pos.x) * ((float)SCREEN_WIDTH / TEXTURE_WIDTH);
-	//	//g_BG.scrl += tx * 0.001f;
-	//	g_BG.scrl += 0.001f;
-
-	//	SetSpriteLTColor(g_VertexBuffer,
-	//		0.0f, 0.0f, SCREEN_WIDTH, SKY_H,
-	//		g_BG.scrl, 0.0f, 1.0f, 1.0f,
-	//		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-
-	//	// ポリゴン描画
-	//	GetDeviceContext()->Draw(4, 0);
-	//}
-
 #ifdef _DEBUG
 		MATERIAL materialAABB;
 		ZeroMemory(&materialAABB, sizeof(materialAABB));
@@ -819,22 +866,24 @@ void DrawMap(void)
 
 		SetMaterial(materialAABB);
 		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
-		for (int i = 0; i < MAP_GROUND_MAX; ++i)
+		for (int i = 0; i < MAP_WALL_MAX; ++i)
 		{
+			if (g_MapWall[i].use == FALSE) continue;
+
 			int vertexOffset = i * 4;
 
-			if (g_AABB[i].tag == WALL_AABB)
+			if (g_MapWall[i].wallAABB.tag == WALL_AABB)
 				SetSpriteColorRotation(g_AABBVertexBuffer, 
-					g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, 
-					g_AABB[i].w, g_AABB[i].h,
+					g_MapWall[i].wallAABB.pos.x - g_BG.pos.x, g_MapWall[i].wallAABB.pos.y - g_BG.pos.y,
+					g_MapWall[i].wallAABB.w, g_MapWall[i].wallAABB.h,
 					0.0f, 0.0f, 0.0f, 0.0f,
 					XMFLOAT4(0.0f, 1.0f, 0.0f, 0.2f),
 					0.0f,
 					vertexOffset);
-			else if (g_AABB[i].tag == GROUND_AABB)
+			else if (g_MapWall[i].wallAABB.tag == GROUND_AABB)
 				SetSpriteColorRotation(g_AABBVertexBuffer, 
-					g_AABB[i].pos.x - g_BG.pos.x, g_AABB[i].pos.y - g_BG.pos.y, 
-					g_AABB[i].w, g_AABB[i].h,
+					g_MapWall[i].wallAABB.pos.x - g_BG.pos.x, g_MapWall[i].wallAABB.pos.y - g_BG.pos.y,
+					g_MapWall[i].wallAABB.w, g_MapWall[i].wallAABB.h,
 					0.0f, 0.0f, 0.0f, 0.0f,
 					XMFLOAT4(1.0f, 1.0f, 0.0f, 0.2f),
 					0.0f,
@@ -864,175 +913,27 @@ void DrawMap(void)
 
 void DrawMapWalls(int map)
 {
-	switch (map)
+	for (int i = 0; i < MAP_WALL_MAX; i++)
 	{
-	case TUTORIAL_01:
-	{
+		if (g_MapWall[i].texNo == TEXTURE_NONE || g_MapWall[i].use == FALSE) continue;
+
 		// テクスチャ設定
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_MapWall[i].texNo]);
 
 		// １枚のポリゴンの頂点とテクスチャ座標を設定
 		SetSpriteColor(g_VertexBuffer,
-			TUTORIAL_01_GROUND_POS_X - g_BG.pos.x, TUTORIAL_01_GROUND_POS_Y - g_BG.pos.y,
-			TUTORIAL_01_GROUND_WIDTH, TUTORIAL_01_GROUND_HEIGHT,
+			g_MapWall[i].pos.x - g_BG.pos.x, g_MapWall[i].pos.y - g_BG.pos.y,
+			g_MapWall[i].w, g_MapWall[i].h,
 			0.0f, 0.0f, 1.0f, 1.0f,
 			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 
 		// ポリゴン描画
 		GetDeviceContext()->Draw(4, 0);
 
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			TUTORIAL_01_ROCK01_POS_X - g_BG.pos.x, TUTORIAL_01_ROCK01_POS_Y - g_BG.pos.y,
-			TUTORIAL_01_ROCK01_WIDTH, TUTORIAL_01_ROCK01_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
+#ifdef _DEBUG
+		DrawWallNum(&g_MapWall[i], i);
+#endif // _DEBUG
 
-		break;
-	}
-	case MAP_01:
-	{
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_GROUND_POS_X - g_BG.pos.x, MAP_01_GROUND_POS_Y - g_BG.pos.y,
-			MAP_01_GROUND_WIDTH, MAP_01_GROUND_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-		
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_ROCK01_POS_X - g_BG.pos.x, MAP_01_ROCK01_POS_Y - g_BG.pos.y,
-			MAP_01_ROCK01_WIDTH, MAP_01_ROCK01_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_ROCK02_POS_X - g_BG.pos.x, MAP_01_ROCK02_POS_Y - g_BG.pos.y,
-			MAP_01_ROCK02_WIDTH, MAP_01_ROCK01_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_ROCK03_POS_X - g_BG.pos.x, MAP_01_ROCK03_POS_Y - g_BG.pos.y,
-			MAP_01_ROCK03_WIDTH, MAP_01_ROCK03_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_ROCK04_POS_X - g_BG.pos.x, MAP_01_ROCK04_POS_Y - g_BG.pos.y,
-			MAP_01_ROCK04_WIDTH, MAP_01_ROCK04_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_ROCK05_POS_X - g_BG.pos.x, MAP_01_ROCK05_POS_Y - g_BG.pos.y,
-			MAP_01_ROCK05_WIDTH, MAP_01_ROCK05_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_01_ROCK06_POS_X - g_BG.pos.x, MAP_01_ROCK06_POS_Y - g_BG.pos.y,
-			MAP_01_ROCK06_WIDTH, MAP_01_ROCK06_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		break;
-	}
-	case MAP_02:
-	{
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_02_ROCK01_POS_X - g_BG.pos.x, MAP_02_ROCK01_POS_Y - g_BG.pos.y,
-			MAP_02_ROCK01_WIDTH, MAP_02_ROCK01_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_02_ROCK02_POS_X - g_BG.pos.x, MAP_02_ROCK02_POS_Y - g_BG.pos.y,
-			MAP_02_ROCK02_WIDTH, MAP_02_ROCK02_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_02_ROCK03_POS_X - g_BG.pos.x, MAP_02_ROCK03_POS_Y - g_BG.pos.y,
-			MAP_02_ROCK03_WIDTH, MAP_02_ROCK03_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		break;
-	}
-	case MAP_BOSS:
-	{
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_BOSS_GROUND_POS_X - g_BG.pos.x, MAP_BOSS_GROUND_POS_Y - g_BG.pos.y,
-			MAP_BOSS_GROUND_WIDTH, MAP_BOSS_GROUND_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_BOSS_ROCK01_POS_X - g_BG.pos.x, MAP_BOSS_ROCK01_POS_Y - g_BG.pos.y,
-			MAP_BOSS_ROCK01_WIDTH, MAP_BOSS_ROCK01_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_BOSS_ROCK02_POS_X - g_BG.pos.x, MAP_BOSS_ROCK02_POS_Y - g_BG.pos.y,
-			MAP_BOSS_ROCK02_WIDTH, MAP_BOSS_ROCK01_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_01_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_BOSS_ROCK03_POS_X - g_BG.pos.x, MAP_BOSS_ROCK03_POS_Y - g_BG.pos.y,
-			MAP_BOSS_ROCK03_WIDTH, MAP_BOSS_ROCK03_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		SetSpriteColor(g_VertexBuffer,
-			MAP_BOSS_ROCK04_POS_X - g_BG.pos.x, MAP_BOSS_ROCK04_POS_Y - g_BG.pos.y,
-			MAP_BOSS_ROCK04_WIDTH, MAP_BOSS_ROCK04_HEIGHT,
-			0.0f, 0.0f, 1.0f, 1.0f,
-			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		GetDeviceContext()->Draw(4, 0);
-
-		//GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[ROCK_02_TEXTURE_NO]);
-		//SetSpriteColor(g_VertexBuffer,
-		//	MAP_BOSS_ROCK05_POS_X - g_BG.pos.x, MAP_BOSS_ROCK05_POS_Y - g_BG.pos.y,
-		//	MAP_BOSS_ROCK05_WIDTH, MAP_BOSS_ROCK05_HEIGHT,
-		//	0.0f, 0.0f, 1.0f, 1.0f,
-		//	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
-		//GetDeviceContext()->Draw(4, 0);
-		break;
-	}
-	default:
-		break;
 	}
 }
 
@@ -1056,7 +957,7 @@ void DrawTeleport(void)
 		ty = (float)(g_Teleport[i].patternAnim / TEXTURE_TELEPORT_PATTERN_DIVIDE_X * th);
 
 
-		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[TELEPORT_TEXTURE_NO]);
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[TEXTURE_TELEPORT]);
 		SetSpriteColor(g_VertexBuffer,
 			px - g_BG.pos.x, py - g_BG.pos.y,
 			pw, ph,
@@ -1064,6 +965,40 @@ void DrawTeleport(void)
 			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
 		GetDeviceContext()->Draw(4, 0);
 
+	}
+}
+
+void DrawWallNum(MapWall* wall, int idx)
+{
+	// テクスチャ設定
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[TEXTURE_NUMBER]);
+	// 桁数分処理する
+	int number = idx;
+	for (int i = 0; i < 3; i++)
+	{
+		// 今回表示する桁の数字
+		float x = (float)(number % 10);
+
+		
+		float px = wall->pos.x - TEXTURE_WALL_NUM_WIDTH * i - g_BG.pos.x;
+		float py = wall->pos.y - g_BG.pos.y;
+		float pw = TEXTURE_WALL_NUM_WIDTH;	
+		float ph = TEXTURE_WALL_NUM_HEIGHT;
+
+		float tw = 1.0f / 10;		// テクスチャの幅
+		float th = 1.0f / 1;		// テクスチャの高さ
+		float tx = x * tw;			// テクスチャの左上X座標
+		float ty = 0.0f;			// テクスチャの左上Y座標
+
+		// １枚のポリゴンの頂点とテクスチャ座標を設定
+		SetSpriteColor(g_VertexBuffer, px, py, pw, ph, tx, ty, tw, th,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
+
+		// 次の桁へ
+		number /= 10;
 	}
 }
 
@@ -1076,9 +1011,9 @@ BG* GetBG(void)
 }
 
 
-AABB* GetMapAABB(void)
+MapWall* GetMapWall(void)
 {
-	return g_AABB;
+	return g_MapWall;
 }
 
 
@@ -1121,5 +1056,20 @@ void ScrollBG(float x, float y, float time)
 
 void UpdateMapDraw(void)
 {
-	g_MapDraw = g_MapNo;
+	g_MapDrawNo = g_MapNo;
+	UpdateMapWall(g_MapDrawNo);
+}
+
+void SetTeleport(Teleport* teleport, float initPosX, float initPosY, int nextMapNo, int nextPosIdx)
+{
+	teleport->pos.x = initPosX;
+	teleport->pos.y = initPosY;
+	teleport->nextMapNo = nextMapNo;
+	teleport->nextInitPos = nextPosIdx;
+	teleport->use = TRUE;
+	teleport->teleportAABB.pos = teleport->pos;
+	teleport->teleportAABB.w = TEXTURE_TELEPORT_WIDTH * 0.5f;
+	teleport->teleportAABB.h = TEXTURE_TELEPORT_HEIGHT * 0.5f;
+	teleport->countAnim = 0.0f;
+	teleport->patternAnim = 0;
 }

@@ -29,7 +29,7 @@
 #define OGRE_ATTACK_RADIUS			(100.0f)
 #define SKELL_ATTACK_RADIUS			(100.0f)
 #define	ENEMY_HIT_TIMER				(8.0f)
-#define	ENEMY_HIT_CD				(35.0f)
+#define	ENEMY_HIT_CD				(32.0f)
 #define ENEMY_STAGGER_RECOVERY_TIME (80)
 #define MAX_CHASE_DISTANCE			(800.0f)	// 最大追跡距離
 #define MIN_RETURN_DISTANCE			(600.0f)	// 最小の戻り距離（バッファゾーン）
@@ -116,16 +116,15 @@ struct EnemyAttributes
 
 struct LightPoint
 {
+	BOOL use;
+	BOOL flyingToPlayer;
 	XMFLOAT3 pos;
 	XMFLOAT3 move;
 	float w, h;
 	float timeToPlayer;
 	float timeToFly;
 	float distanceToPlayer;
-	float flyInterval;
 	float desiredToPlayerTime;
-	BOOL use;
-	BOOL flyingToPlayer;
 };
 
 struct BossMagic
@@ -173,6 +172,7 @@ struct ENEMY
 	XMFLOAT3	diePos;
 	float		dieInitSpeedX;
 	float		dieInitSpeedY;
+	BOOL		hitPlayer;
 
 	float		time;			// 線形補間用
 	int			tblNo;			// 行動データのテーブル番号
