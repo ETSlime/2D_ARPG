@@ -264,8 +264,8 @@ void HandleButtonPressed(void)
 	case TUTORIAL:
 		SetFade(FADE_OUT, MODE_TUTORIAL);
 		SetCurrentMap(TUTORIAL_01);
-		InitPlayerInitPos(TUTORIAL_01);
-		SetPlayerInitPos(TUTORIAL_01, INITPOS_01);
+		InitTeleportInitPos(TUTORIAL_01);
+		SetPlayerInitPosByMap(TUTORIAL_01, INITPOS_01);
 		break;
 	case EXIT_GAME:
 		ExitGame();

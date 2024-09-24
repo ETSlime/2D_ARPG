@@ -77,6 +77,7 @@ enum
 	MODE_MESSAGEBOX,
 	MODE_TUTORIAL,			// ゲーム説明画面
 	MODE_GAME,				// ゲーム画面
+	MODE_MENU,
 	MODE_RESULT,			// リザルト画面
 	MODE_MAX
 };

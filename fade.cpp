@@ -10,6 +10,7 @@
 #include "sound.h"
 #include "sprite.h"
 #include "player.h"
+#include "UI.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -131,7 +132,7 @@ void UpdateFade(void)
 			g_Color.w += FADE_RATE;		// α値を加算して画面を消していく
 			if (g_Color.w >= 1.0f)
 			{
-				if (g_ModeNext != GetMode())
+				if (g_ModeNext != GetMode() && g_ModeNext != MODE_MENU)
 				{
 					// 鳴っている曲を全部止める
 					StopSound();
@@ -156,6 +157,11 @@ void UpdateFade(void)
 				{
 					ResetPlayerPos();
 					g_ChangePos = FALSE;
+				}
+
+				if (g_ModeNext == MODE_MENU)
+				{
+					SetRenderMenuUI(TRUE);
 				}
 			}
 
@@ -254,8 +260,7 @@ void SetRespawn(BOOL respawn)
 void ChangeMapFade(int map, int pos)
 {
 	SetCurrentMap(map);
-	InitPlayerInitPos(map);
-	SetPlayerInitPos(map, pos);
+	InitTeleportInitPos(map);
 	SetFade(FADE_OUT, MODE_GAME);
 	g_ChangePos = TRUE;
 }

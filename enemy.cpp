@@ -1319,7 +1319,8 @@ void HandleBossAction(ENEMY* enemy, int stage)
 {
 	PLAYER* player = GetPlayer();
 	BG* bg = GetBG();
-	int minInterval = 0, maxInterval = 0;
+	// アクションの最小間隔と最大間隔
+	int minInterval = 0, maxInterval = 0; 
 	switch (stage)
 	{
 	case BOSS_FIGHT_STAGE_04:
@@ -1327,13 +1328,17 @@ void HandleBossAction(ENEMY* enemy, int stage)
 		minInterval = 200;
 		maxInterval = 500;
 		g_BossFightCount--;
+		// 新しいアクションを開始
 		if (g_BossFightCount <= 0)
 		{
 			int magicType = GetRand(MAGIC_THUNDER, MAGIC_BARRAGE);
+
+			// 雷攻撃
 			if (magicType == MAGIC_THUNDER)
 			{
 				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
 				{
+					// 既にアクティブな雷攻撃が存在する場合はスキップ
 					if (g_BossMagic[i].magicType == MAGIC_THUNDER && g_BossMagic[i].active == TRUE) continue;
 
 					if (g_BossMagic[i].active == FALSE)
@@ -1349,11 +1354,13 @@ void HandleBossAction(ENEMY* enemy, int stage)
 						g_BossMagic[i].timeInterval = 15.0f;
 						g_BossMagic[i].currentTime = 15.0f;
 
+						// 次のアクションカウントをランダムに設定
 						g_BossFightCount = GetRand(minInterval, maxInterval);
 						break;
 					}
 				}
 			}
+			// 弾幕攻撃 
 			else if (magicType == MAGIC_BARRAGE)
 			{
 				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
@@ -1389,7 +1396,7 @@ void HandleBossAction(ENEMY* enemy, int stage)
 		if (g_BossFightCount <= 0)
 		{
 			int rand = GetRand(0, 100);
-			int magicType = rand < 80 ? MAGIC_EARTH : MAGIC_THUNDER;
+			int magicType = rand < 80 ? MAGIC_EARTH : MAGIC_THUNDER; // 80%の確率で地属性、20%で雷属性
 			if (magicType == MAGIC_THUNDER)
 			{
 				for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
@@ -1527,16 +1534,20 @@ void HandleBossAction(ENEMY* enemy, int stage)
 		break;
 	}
 
+	// 全てのボス魔法の状態を更新
 	for (int i = 0; i < BOSS_MAGIC_NUM_MAX; i++)
 	{
 		if (g_BossMagic[i].active == TRUE)
 		{
 			g_BossMagic[i].currentTime--;
+			// 現在のカウントが発動タイミングに達した場合、魔法をトリガー
 			if (g_BossMagic[i].currentTime <= 0.0f)
 			{
-				g_BossMagic[i].currentTime = g_BossMagic[i].timeInterval;
+				g_BossMagic[i].currentTime = g_BossMagic[i].timeInterval;	// 次の発動時間を設定
 				
 				XMFLOAT3 pos = g_BossMagic[i].initPos;
+
+				// 雷攻撃の場合、ステージに応じて位置を変更
 				if (g_BossMagic[i].magicType == MAGIC_THUNDER)
 				{
 					if (stage == BOSS_FIGHT_STAGE_06)
@@ -1549,7 +1560,7 @@ void HandleBossAction(ENEMY* enemy, int stage)
 					else
 						pos.x += g_BossMagic[i].currentCount * 50.0f;
 				}
-
+				// 弾幕攻撃の場合、円形に配置
 				else if (g_BossMagic[i].magicType == MAGIC_BARRAGE)
 				{
 					float angleStep = 360.0f / g_BossMagic[i].maxCount;
@@ -1563,10 +1574,8 @@ void HandleBossAction(ENEMY* enemy, int stage)
 				if (g_BossMagic[i].currentCount == g_BossMagic[i].maxCount)
 					g_BossMagic[i].active = FALSE;
 			}
-		}
-		
+		}	
 	}
-
 }
 
 void UpdateEnemyMoveTbl(ENEMY* enemy, float newPosY)
@@ -1584,22 +1593,38 @@ void UpdateEnemyMoveTbl(ENEMY* enemy, float newPosY)
 void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 {
 	PLAYER* player = GetPlayer();
+	// プレイヤーのgreyHP（回復可能なHP）が現在のHPより大きい場合、HPを回復
+	if (player->greyHP > player->HP)
+	{
+		player->HP += HP_RECOVERY_RATE;
+		if (player->HP > player->greyHP)
+			player->HP = player->greyHP;
+	}
+
+	// 敵の向きをプレイヤーの位置に基づいて決定
 	enemy->dir = enemy->pos.x - player->pos.x > 0 ? CHAR_DIR_LEFT : CHAR_DIR_RIGHT;
 	enemy->isHit = true;
 	enemy->hitTimer = ENEMY_HIT_TIMER;
 	enemy->hitCD = ENEMY_HIT_CD;
 	enemy->attributes.staggerRecoveryTime = GetEnemyAttributes(enemy)->staggerRecoveryTime;
+
+	// 魔法がnullの場合、通常の攻撃によるダメージ処理
 	if (magic == nullptr)
 	{
+		// プレイヤーがパリィ攻撃中の場合、敵のヒットクールダウンを短縮
 		if (player->attackPattern == PARRY)
 			enemy->hitCD = ENEMY_HIT_CD * 0.5f;
 
+		// MP回復
 		player->MP += 30.0f;
 		if (player->MP > player->maxMP)
 			player->MP = player->maxMP;
+
+		// 敵の強靭さを減少し、敵のHPにプレイヤーの攻撃ダメージを適用
 		enemy->attributes.staggerResistance -= GetPoiseDamage();
 		enemy->attributes.hp -= GetPlayerDamage();
 	}
+	// 魔法攻撃の場合
 	else
 	{
 		switch (magic->magicType)
@@ -1613,6 +1638,7 @@ void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 		}
 	}
 
+	// 敵の強靭さがゼロ以下
 	if (enemy->attributes.staggerResistance <= 0 && enemy->enemyType != BOSS)
 	{
 		if (enemy->state != ENEMY_ATTACK)
@@ -1623,6 +1649,7 @@ void EnemyTakeDamage(ENEMY* enemy, Magic* magic)
 		enemy->countAnim = 0.0f;
 	}
 
+	// 敵のHPがゼロ以下になった場合、死亡処理を行う
 	if (enemy->attributes.hp <= 0)
 	{
 		enemy->state = ENEMY_DIE;

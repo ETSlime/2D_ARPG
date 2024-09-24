@@ -20,9 +20,21 @@
 #define PLAYER_MAX				(1)		// プレイヤーのMax人数
 #define MAX_ATTACK_AABB			(3)
 
-#define PLAYER_MAX_HP			(1200.0f)
-#define PLAYER_MAX_MP			(1800.0f)
-#define PLAYER_MAX_ST			(1000.0f)
+#define PLAYER_INIT_MAX_HP		(1200.0f)
+#define PLAYER_INIT_MAX_MP		(1800.0f)
+#define PLAYER_INIT_MAX_ST		(1000.0f)
+#define PLAYER_INIT_ATK			(20.0f)
+#define PLAYER_INIT_DEF			(10.0f)
+#define PLAYER_INIT_MAT			(5.0f)
+#define PLAYER_INIT_MDF			(5.0f)
+#define PLAYER_INIT_SP_HP		(8)
+#define PLAYER_INIT_SP_MP		(8)
+#define PLAYER_INIT_SP_ST		(5)
+#define PLAYER_INIT_SP_ATK		(4)
+#define PLAYER_INIT_SP_DEF		(4)
+#define PLAYER_INIT_SP_MAT		(3)
+#define PLAYER_INIT_SP_MDF		(2)
+
 
 #define	PLAYER_OFFSET_CNT		(12)	// 12分身
 #define ACTION_QUEUE_SIZE		(4)
@@ -39,9 +51,13 @@
 #define HARDLANDING_HEIGHT		(60)
 #define	DIVE_ATTACK_SPEED		(10.0f)
 #define DASH_INTERVAL			(25)
-#define MAGIC_NUM_MAX			(3)
+#define MAGIC_NUM_MAX			(5)
 #define	HEALING_CD_TIME			(100.0f)
 #define	FIRE_BALL_CD_TIME		(200.0f)
+#define GREY_HP_DECAY_RATE		(5.0f)
+#define HP_RECOVERY_RATE		(20.0f)
+#define HP_RECOVERY_WINDOW		(100)
+#define INIT_REQUIRED_EXP		(500)
 
 #define NORMAL_ATTACK1_DAMAGE_RATE		(1.0f)
 #define NORMAL_ATTACK2_DAMAGE_RATE		(1.2f)
@@ -196,6 +212,7 @@ struct PLAYER
 	int			defendCnt;
 	int			jumpEffectCnt;
 	int			magicCasting;
+	int			recoveryWindow;
 	XMFLOAT3	airJumpPos;
 
 	// battle
@@ -207,12 +224,16 @@ struct PLAYER
 	float		maxST;
 	float		ATK;
 	float		DEF;
+	float		MAT;
+	float		MDF;
+	float		greyHP;
 	int			attackInterval;
-	int			magic;
+	int			currentMagicIdx;
 	float		healingCD;
 	float		fireBallCD;
 	BOOL		isInvincible;
 	BOOL		flameblade;
+	int			magicList[MAGIC_NUM_MAX];
 
 	XMFLOAT3	move;			// 移動速度
 	XMFLOAT3	offset[PLAYER_OFFSET_CNT];		// 残像ポリゴンの座標
@@ -227,6 +248,27 @@ struct PLAYER
 	// AABB
 	AABB		bodyAABB;
 	AABB		attackAABB[MAX_ATTACK_AABB];
+};
+
+struct PlayerData
+{
+	float	maxHP;
+	float	maxMP;
+	float	maxST;
+	float	ATK;
+	float	DEF;
+	float	MAT;
+	float	MDF;
+	int		magicList[MAGIC_NUM_MAX];
+	int		level;
+	int		skillPointLeft;
+	int		spHP;
+	int		spMP;
+	int		spST;
+	int		spATK;
+	int		spDEF;
+	int		spMAT;
+	int		spMDF;
 };
 
 //*****************************************************************************
@@ -244,6 +286,7 @@ void DrawCastEffect(void);
 void DrawDieFadeOut(void);
 
 PLAYER* GetPlayer(void);
+PlayerData* GetPlayerData(void);
 
 int GetPlayerCount(void);
 
@@ -298,7 +341,11 @@ BOOL CheckMoveCollision(float move, int dir, BOOL checkGround = FALSE);
 
 float GetActionStaminaCost(int action);
 
-void SetPlayerInitPos(int map, int idx);
+// レベルアップに必要な経験値を計算する関数
+int CalculateExpForLevel(int level);
+
+void SetPlayerInitPosByMap(int map, int idx);
+void SetPlayerInitPos(float posX, float posY);
 void SetPlayerHP(int HP);
 void SetPlayerMP(int MP);
 void SetPlayerST(int ST);

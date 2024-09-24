@@ -57,6 +57,16 @@ struct MapWall
 	AABB		wallAABB;
 };
 
+struct Sculpture
+{
+	int			id;
+	int			location;
+	float		w, h;
+	XMFLOAT3	pos;
+	AABB		sculptureAABB;
+	BOOL		drawMsg;
+};
+
 // îwåiÉTÉCÉY
 #define TEXTURE_BG_TUTORIAL_01_WIDTH		(3770.0f)			
 #define TEXTURE_BG_TUTORIAL_01_HEIGHT		(1504.0f)
@@ -82,7 +92,9 @@ struct MapWall
 #define MAP02_GROUND_H				(214.0f)
 #define MAP03_GROUND_H				(214.0f)
 
-#define PLAYER_INIT_POS_X_MAP01_01	(566.0f)
+#define	SCULPTURE_NUM_MAX			(5)
+
+#define PLAYER_INIT_POS_X_MAP01_01	(202.0f)
 #define PLAYER_INIT_POS_Y_MAP01_01	(2051.0f)
 #define PLAYER_INIT_POS_X_MAP01_02	(4154.0f)
 #define PLAYER_INIT_POS_Y_MAP01_02	(2051.0f)
@@ -127,6 +139,8 @@ enum
 	TEXTURE_ROCK_02,
 	TEXTURE_TELEPORT,
 	TEXTURE_NUMBER,
+	TEXTURE_SCULPTURE,
+	TEXTURE_SCULPTURE_MSG,
 	TEXTURE_NONE,
 };
 
@@ -138,13 +152,15 @@ HRESULT InitMap(void);
 void InitMapBG(int map);
 void InitMoveTbl(int map);
 void InitEnemyConfig(int map);
-void InitPlayerInitPos(int map);
+void InitTeleportInitPos(int map);
 void InitTeleport(int map);
+void InitSculpture(void);
 void SetTeleport(Teleport* teleport, float initPosX, float initPosY, int nextMapNo, int nextPosIdx);
 void UninitMap(void);
 void UpdateMap(void);
 void UpdateMapDraw(void);
 void UpdateTeleport(void);
+void UpdateSculpture(void);
 void UpdateMapWall(int mapNo);
 void DrawMap(void);
 
@@ -155,10 +171,11 @@ void ScrollBG(float x, float y, float time);
 
 MapWall* GetMapWall(void);
 EnemyConfig* GetEnemyConfig(void);
-XMFLOAT3 GetPlayerInitPos(int map, int idx);
+XMFLOAT3 GetTeleportInitPos(int map, int idx);
 
 int GetCurrentMap();
 void SetCurrentMap(int map);
 
 void DrawMapWalls(int map);
 void DrawTeleport(void);
+void DrawSculpture(int map);

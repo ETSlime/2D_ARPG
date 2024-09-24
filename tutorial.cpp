@@ -155,8 +155,8 @@ HRESULT InitTutorial(void)
 
 	g_NextDialogue = -1;
 
-	SetPlayerHP(PLAYER_MAX_HP * 0.3f);
-	SetPlayerMP(PLAYER_MAX_MP * 0.2f);
+	SetPlayerHP(PLAYER_INIT_MAX_HP * 0.3f);
+	SetPlayerMP(PLAYER_INIT_MAX_MP * 0.2f);
 
 	SetLimitPlayerMoveLeft(TRUE);
 	SetLimitPlayerMoveRight(TRUE);

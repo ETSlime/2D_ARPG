@@ -353,6 +353,9 @@ void Update(void)
 		}
 
 		break;
+	case MODE_MENU:
+		UpdateUI();
+		break;
 
 	case MODE_RESULT:		// リザルト画面の更新
 		UpdateResult();
@@ -399,6 +402,7 @@ void Draw(void)
 		DrawScore();
 		break;
 	case MODE_GAME:			// ゲーム画面の描画
+	case MODE_MENU:
 		DrawMap();
 		DrawEnemy();
 		DrawPlayer();
@@ -479,7 +483,28 @@ void SetMode(int mode)
 		}
 
 	}
-	else
+	else if (mode == MODE_MENU)
+	{
+		g_Mode = mode;	// 次のモードをセットしている
+		// エネミーの終了処理
+		UninitEnemy();
+
+		// プレイヤーの終了処理
+		UninitPlayer();
+
+		// エフェクトの終了処理
+		UninitEffect();
+
+		// マジックの終了処理
+		UninitMagic();
+
+		InitMagic();
+		InitEffect();
+		InitPlayer();
+		InitEnemy();
+
+	}
+	else if (g_Mode != MODE_MENU)
 	{
 		// モードを変える前に全部メモリを解放しちゃう
 		StopSound();			// まず曲を止める
@@ -530,9 +555,9 @@ void SetMode(int mode)
 			InitUI();
 			break;
 		case MODE_TUTORIAL:
-			InitUI();
 			InitMap();
 			InitPlayer();
+			InitUI();
 			InitEnemy();
 			InitMagic();
 			InitEffect();
@@ -541,9 +566,9 @@ void SetMode(int mode)
 			break;
 		case MODE_GAME:
 			// ゲーム画面の初期化
-			InitUI();
 			InitMap();
 			InitPlayer();
+			InitUI();
 			InitEnemy();
 			InitMagic();
 			InitEffect();
@@ -567,6 +592,10 @@ void SetMode(int mode)
 		case MODE_MAX:
 			break;
 		}
+	}
+	else
+	{
+		g_Mode = mode;	// 次のモードをセットしている
 	}
 }
 

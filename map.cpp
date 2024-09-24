@@ -10,21 +10,16 @@
 #include "player.h"
 #include "fade.h"
 #include "sound.h"
+#include "input.h"
+#include "UI.h"
 
 //*****************************************************************************
 // マクロ定義
 //*****************************************************************************
-
-#define TEXTURE_TELEPORT_WIDTH				(125.0f)
-#define TEXTURE_TELEPORT_HEIGHT				(125.0f)
-#define TEXTURE_TELEPORT_PATTERN_DIVIDE_X	(5)
-#define TEXTURE_TELEPORT_PATTERN_DIVIDE_Y	(2)
 #ifdef _DEBUG
 #define TEXTURE_WALL_NUM_WIDTH				(24)
 #define TEXTURE_WALL_NUM_HEIGHT				(40)
 #endif // _DEBUG
-
-#define	ANIM_WAIT_TELEPORT					(20)
 
 #define TUTORIAL_01_GROUND_WIDTH	(TEXTURE_BG_TUTORIAL_01_WIDTH + 800.0f)
 #define TUTORIAL_01_GROUND_HEIGHT	(250)
@@ -35,9 +30,6 @@
 #define TUTORIAL_01_ROCK01_HEIGHT	(400)
 #define TUTORIAL_01_ROCK01_POS_X	(2550)
 #define TUTORIAL_01_ROCK01_POS_Y	(TEXTURE_BG_TUTORIAL_01_HEIGHT - 200)
-
-#define TUTORIAL_01_EXIT_POS_X		(3680.0f)
-#define TUTORIAL_01_EXIT_POS_Y		(1350.0f)
 
 #define MAP_01_GROUND_WIDTH			(TEXTURE_BG_MAP_01_WIDTH + 1200.0f)
 #define MAP_01_GROUND_HEIGHT		(250)
@@ -74,9 +66,6 @@
 #define MAP_01_ROCK06_POS_X		(2519.0f)
 #define MAP_01_ROCK06_POS_Y		(1553.0f)
 
-#define MAP_01_TELEPORT_01_POS_X	(PLAYER_INIT_POS_X_MAP01_02 + 150.0f)
-#define MAP_01_TELEPORT_01_POS_Y	(PLAYER_INIT_POS_Y_MAP01_02)
-
 #define MAP_02_ROCK01_WIDTH	(600.0f)
 #define MAP_02_ROCK01_HEIGHT	(135.0f)
 #define MAP_02_ROCK01_POS_X	(213.0f)
@@ -92,11 +81,6 @@
 #define	MAP_02_ROCK03_POS_X		(1470.0f)
 #define MAP_02_ROCK03_POS_Y		(589.f)
 
-
-#define MAP_02_TELEPORT_01_POS_X	(PLAYER_INIT_POS_X_MAP02_01 - 100.0f)
-#define MAP_02_TELEPORT_01_POS_Y	(PLAYER_INIT_POS_Y_MAP02_01)
-#define MAP_02_TELEPORT_02_POS_X	(PLAYER_INIT_POS_X_MAP02_02 + 100.0f)
-#define MAP_02_TELEPORT_02_POS_Y	(PLAYER_INIT_POS_Y_MAP02_02)
 
 #define MAP_BOSS_ROCK01_WIDTH	(594.0f)
 #define MAP_BOSS_ROCK01_HEIGHT	(189.0f)
@@ -128,8 +112,37 @@
 #define MAP_BOSS_GROUND_POS_X		(TEXTURE_BG_MAP_BOSS_WIDTH * 0.5f)
 #define MAP_BOSS_GROUND_POS_Y		(TEXTURE_BG_MAP_BOSS_HEIGHT)
 
+
+
+// teleport
+#define TEXTURE_TELEPORT_WIDTH				(125.0f)
+#define TEXTURE_TELEPORT_HEIGHT				(125.0f)
+#define TEXTURE_TELEPORT_PATTERN_DIVIDE_X	(5)
+#define TEXTURE_TELEPORT_PATTERN_DIVIDE_Y	(2)
+#define	ANIM_WAIT_TELEPORT					(20)
+
+#define TUTORIAL_01_EXIT_POS_X		(3680.0f)
+#define TUTORIAL_01_EXIT_POS_Y		(1350.0f)
+
+#define MAP_01_TELEPORT_01_POS_X	(PLAYER_INIT_POS_X_MAP01_02 + 150.0f)
+#define MAP_01_TELEPORT_01_POS_Y	(PLAYER_INIT_POS_Y_MAP01_02)
+
+#define MAP_02_TELEPORT_01_POS_X	(PLAYER_INIT_POS_X_MAP02_01 - 100.0f)
+#define MAP_02_TELEPORT_01_POS_Y	(PLAYER_INIT_POS_Y_MAP02_01)
+#define MAP_02_TELEPORT_02_POS_X	(PLAYER_INIT_POS_X_MAP02_02 + 100.0f)
+#define MAP_02_TELEPORT_02_POS_Y	(PLAYER_INIT_POS_Y_MAP02_02)
+
 #define MAP_BOSS_TELEPORT_01_POS_X	(PLAYER_INIT_POS_X_MAP_BOSS_01 - 120.0f)
 #define MAP_BOSS_TELEPORT_01_POS_Y	(PLAYER_INIT_POS_Y_MAP_BOSS_01)
+
+// sculpture
+#define TEXTURE_SCULPTURE_WIDTH				(156.0f)
+#define TEXTURE_SCULPTURE_HEIGHT			(255.0f)
+#define TEXTURE_SCULPTURE_MSG_WIDTH			(136.0f)
+#define TEXTURE_SCULPTURE_MSG_HEIGHT		(45.0f)
+
+#define MAP_01_SCULPTURE_POS_X				(566.0f)
+#define MAP_01_SCULPTURE_POS_Y				(1971.0f)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -160,6 +173,8 @@ static char *g_TexturName[TEXTURE_MAX] = {
 	"data/TEXTURE/map/rock02.png",
 	"data/TEXTURE/map/teleport.png",
 	"data/TEXTURE/number.png",
+	"data/TEXTURE/sculpture.png",
+	"data/TEXTURE/UI/action_UI.png",
 };
 
 
@@ -168,6 +183,7 @@ static BG			g_BG;
 static int			g_MapNo = MAP_01;
 static int			g_MapDrawNo = MAP_01;
 static Teleport		g_Teleport[TELEPORT_NUM_MAX];
+static Sculpture	g_Sculpture[SCULPTURE_NUM_MAX];
 
 static INTERPOLATION_DATA g_MoveTbl0[MOVE_NUM_MAX];
 static INTERPOLATION_DATA g_MoveTbl1[MOVE_NUM_MAX];
@@ -193,7 +209,7 @@ static INTERPOLATION_DATA g_Map_01_MoveTbl_Gargoyle_03[MOVE_NUM_MAX];
 static INTERPOLATION_DATA g_Map_BOSS_MoveTbl_BOSS[MOVE_NUM_MAX];
 
 static EnemyConfig	g_EnemyConfig[MAP_ENEMY_MAX];
-static XMFLOAT3 g_PlayerInitPos[MAP_NUM_MAX][PLAYER_INIT_POS_MAX];
+static XMFLOAT3 g_TeleportInitPos[MAP_NUM_MAX][PLAYER_INIT_POS_MAX];
 static MapWall	g_MapWall[MAP_WALL_MAX];
 
 //=============================================================================
@@ -241,10 +257,10 @@ HRESULT InitMap(void)
 
 	// 変数の初期化
 	InitMapBG(g_MapNo);
-	//InitMapCollisionBox(g_MapNo);
 	InitMoveTbl(g_MapNo);
 	InitEnemyConfig(g_MapNo);
 	InitTeleport(g_MapNo);
+	InitSculpture();
 
 #ifdef _DEBUG	
 	// debug
@@ -300,7 +316,7 @@ void UninitMap(void)
 	{
 		for (int j = 0; j < TELEPORT_NUM_MAX; j++)
 		{
-			g_PlayerInitPos[i][j] = XMFLOAT3(0.0f, 0.0f, 0.0f);
+			g_TeleportInitPos[i][j] = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		}
 	}
 
@@ -384,8 +400,8 @@ void InitMoveTbl(int map)
 		break;
 	case MAP_01:
 	{
-		g_Map_01_MoveTbl_Goblin_01[0] = { XMFLOAT3(350.0f, PLAYER_INIT_POS_Y_MAP01_01, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
-		g_Map_01_MoveTbl_Goblin_01[1] = { XMFLOAT3(938.0f, PLAYER_INIT_POS_Y_MAP01_01, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
+		g_Map_01_MoveTbl_Goblin_01[0] = { XMFLOAT3(1350.0f, PLAYER_INIT_POS_Y_MAP01_01, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
+		g_Map_01_MoveTbl_Goblin_01[1] = { XMFLOAT3(1938.0f, PLAYER_INIT_POS_Y_MAP01_01, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
 
 		g_Map_01_MoveTbl_Goblin_02[0] = { XMFLOAT3(1675.0f, PLAYER_INIT_POS_Y_MAP01_01, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	150 };
 		g_Map_01_MoveTbl_Goblin_02[1] = { XMFLOAT3(2257.0f, PLAYER_INIT_POS_Y_MAP01_01, 0.0f),	XMFLOAT3(0.0f, 0.0f, 0.0f),	XMFLOAT3(1.0f, 1.0f, 1.0f),	300 };
@@ -437,23 +453,23 @@ void InitMoveTbl(int map)
 	}
 }
 
-void InitPlayerInitPos(int map)
+void InitTeleportInitPos(int map)
 {
 	switch (map)
 	{
 	case TUTORIAL_01:
-		g_PlayerInitPos[TUTORIAL_01][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_TUTORIAL01_01, PLAYER_INIT_POS_Y_TUTORIAL01_01, 0.0f);
+		g_TeleportInitPos[TUTORIAL_01][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_TUTORIAL01_01, PLAYER_INIT_POS_Y_TUTORIAL01_01, 0.0f);
 		break;
 	case MAP_01:
-		g_PlayerInitPos[MAP_01][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP01_01, PLAYER_INIT_POS_Y_MAP01_01, 0.0f);
-		g_PlayerInitPos[MAP_01][INITPOS_02] = XMFLOAT3(PLAYER_INIT_POS_X_MAP01_02, PLAYER_INIT_POS_Y_MAP01_02, 0.0f);
+		g_TeleportInitPos[MAP_01][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP01_01, PLAYER_INIT_POS_Y_MAP01_01, 0.0f);
+		g_TeleportInitPos[MAP_01][INITPOS_02] = XMFLOAT3(PLAYER_INIT_POS_X_MAP01_02, PLAYER_INIT_POS_Y_MAP01_02, 0.0f);
 		break;
 	case MAP_02:
-		g_PlayerInitPos[MAP_02][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP02_01, PLAYER_INIT_POS_Y_MAP02_01, 0.0f);
-		g_PlayerInitPos[MAP_02][INITPOS_02] = XMFLOAT3(PLAYER_INIT_POS_X_MAP02_02, PLAYER_INIT_POS_Y_MAP02_02, 0.0f);
+		g_TeleportInitPos[MAP_02][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP02_01, PLAYER_INIT_POS_Y_MAP02_01, 0.0f);
+		g_TeleportInitPos[MAP_02][INITPOS_02] = XMFLOAT3(PLAYER_INIT_POS_X_MAP02_02, PLAYER_INIT_POS_Y_MAP02_02, 0.0f);
 		break;
 	case MAP_BOSS:
-		g_PlayerInitPos[MAP_BOSS][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP_BOSS_01, PLAYER_INIT_POS_Y_MAP_BOSS_01, 0.0f);
+		g_TeleportInitPos[MAP_BOSS][INITPOS_01] = XMFLOAT3(PLAYER_INIT_POS_X_MAP_BOSS_01, PLAYER_INIT_POS_Y_MAP_BOSS_01, 0.0f);
 		break;
 	default:
 		break;
@@ -518,6 +534,23 @@ void InitTeleport(int map)
 	}
 }
 
+void InitSculpture(void)
+{
+	for (int i = 0; i < SCULPTURE_NUM_MAX; i++)
+	{
+		g_Sculpture[i].sculptureAABB.tag = SCULPTURE_AABB;
+		g_Sculpture[i].w = TEXTURE_SCULPTURE_WIDTH;
+		g_Sculpture[i].h = TEXTURE_SCULPTURE_HEIGHT;
+		g_Sculpture[i].sculptureAABB.w = TEXTURE_SCULPTURE_WIDTH;
+		g_Sculpture[i].sculptureAABB.h = TEXTURE_SCULPTURE_HEIGHT;
+		g_Sculpture[i].drawMsg = FALSE;
+	}
+	g_Sculpture[0].id = 0;
+	g_Sculpture[0].location = MAP_01;
+	g_Sculpture[0].pos = XMFLOAT3(MAP_01_SCULPTURE_POS_X, MAP_01_SCULPTURE_POS_Y, 0.0f);
+	g_Sculpture[0].sculptureAABB.pos = g_Sculpture[0].pos;
+
+}
 
 //=============================================================================
 // 更新処理
@@ -539,12 +572,53 @@ void UpdateMap(void)
 	}
 
 	UpdateTeleport();
+	UpdateSculpture();
 
 #ifdef _DEBUG	// デバッグ情報を表示する
 
 
 #endif
 
+}
+
+void UpdateSculpture(void)
+{
+	for (int i = 0; i < SCULPTURE_NUM_MAX; i++)
+	{
+		if (g_Sculpture[i].location != g_MapNo) continue;
+
+		AABB sculptureBox = g_Sculpture[i].sculptureAABB;
+		PLAYER* player = GetPlayer();
+
+		// プレイヤーのAABB情報を取得
+		XMFLOAT3 playerPos = player->bodyAABB.pos;
+		float playerW = player->bodyAABB.w;
+		float playerH = player->bodyAABB.h;
+
+		// テレポートのAABB情報を取得
+		XMFLOAT3 sculpturePos = sculptureBox.pos;
+		float sculptureW = sculptureBox.w;
+		float sculptureH = sculptureBox.h;
+
+		// プレイヤーの包囲ボックスとテレポートの包囲ボックスが重なっているかを確認
+		BOOL isColliding = CollisionBB(playerPos, playerW, playerH, sculpturePos, sculptureW, sculptureH);
+
+		if (isColliding)
+		{
+			g_Sculpture[i].drawMsg = TRUE;
+			if (GetKeyboardRelease(DIK_S))
+			{
+				SetFade(FADE_OUT, MODE_MENU);
+				SetPlayerInitPos(g_Sculpture[i].pos.x, player->pos.y);
+				InitSystemMenu();
+				ResetCursor();
+			}
+		}
+		else
+		{
+			g_Sculpture[i].drawMsg = FALSE;
+		}
+	}
 }
 
 void UpdateTeleport(void)
@@ -855,6 +929,7 @@ void DrawMap(void)
 	}
 
 	DrawMapWalls(g_MapNo);
+	DrawSculpture(g_MapNo);
 	DrawTeleport();
 
 #ifdef _DEBUG
@@ -937,6 +1012,69 @@ void DrawMapWalls(int map)
 	}
 }
 
+void DrawSculpture(int map)
+{
+	for (int i = 0; i < SCULPTURE_NUM_MAX; i++)
+	{
+		if (g_Sculpture[i].location != map) continue;
+
+		// テクスチャ設定
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[TEXTURE_SCULPTURE]);
+
+		// １枚のポリゴンの頂点とテクスチャ座標を設定
+		SetSpriteColor(g_VertexBuffer,
+			g_Sculpture[i].pos.x - g_BG.pos.x, g_Sculpture[i].pos.y - g_BG.pos.y,
+			g_Sculpture[i].w, g_Sculpture[i].h,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+		// ポリゴン描画
+		GetDeviceContext()->Draw(4, 0);
+
+		if (g_Sculpture[i].drawMsg == TRUE && GetMode() != MODE_MENU)
+		{
+			// テクスチャ設定
+			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[TEXTURE_SCULPTURE_MSG]);
+
+			// １枚のポリゴンの頂点とテクスチャ座標を設定
+			SetSpriteColor(g_VertexBuffer,
+				g_Sculpture[i].pos.x - g_BG.pos.x, g_Sculpture[i].pos.y - g_BG.pos.y + 155.0f,
+				TEXTURE_SCULPTURE_MSG_WIDTH, TEXTURE_SCULPTURE_MSG_HEIGHT,
+				0.0f, 0.0f, 1.0f, 1.0f,
+				XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+
+			// ポリゴン描画
+			GetDeviceContext()->Draw(4, 0);
+		}
+
+#ifdef _DEBUG
+		UINT stride = sizeof(VERTEX_3D);
+		UINT offset = 0;
+
+		MATERIAL materialAABB;
+		ZeroMemory(&materialAABB, sizeof(materialAABB));
+		materialAABB.Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialAABB.noTexSampling = 1;
+
+
+		SetMaterial(materialAABB);
+		GetDeviceContext()->IASetVertexBuffers(0, 1, &g_AABBVertexBuffer, &stride, &offset);
+
+		int vertexOffset = i * 4;
+
+		SetSpriteColorRotation(g_AABBVertexBuffer,
+			g_Sculpture[i].sculptureAABB.pos.x - g_BG.pos.x, g_Sculpture[i].sculptureAABB.pos.y - g_BG.pos.y,
+			g_Sculpture[i].sculptureAABB.w, g_Sculpture[i].sculptureAABB.h,
+			0.0f, 0.0f, 0.0f, 0.0f,
+			XMFLOAT4(0.5f, 0.5f, 0.5f, 0.2f),
+			0.0f);
+
+		GetDeviceContext()->Draw(4, vertexOffset);
+#endif // _DEBUG
+
+	}
+}
+
 void DrawTeleport(void)
 {
 	for (int i = 0; i < TELEPORT_NUM_MAX; i++)
@@ -968,8 +1106,10 @@ void DrawTeleport(void)
 	}
 }
 
+
 void DrawWallNum(MapWall* wall, int idx)
 {
+#ifdef _DEBUG
 	// テクスチャ設定
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[TEXTURE_NUMBER]);
 	// 桁数分処理する
@@ -979,7 +1119,7 @@ void DrawWallNum(MapWall* wall, int idx)
 		// 今回表示する桁の数字
 		float x = (float)(number % 10);
 
-		
+
 		float px = wall->pos.x - TEXTURE_WALL_NUM_WIDTH * i - g_BG.pos.x;
 		float py = wall->pos.y - g_BG.pos.y;
 		float pw = TEXTURE_WALL_NUM_WIDTH;	
@@ -1000,6 +1140,7 @@ void DrawWallNum(MapWall* wall, int idx)
 		// 次の桁へ
 		number /= 10;
 	}
+#endif // _DEBUG	
 }
 
 //=============================================================================
@@ -1022,9 +1163,9 @@ EnemyConfig* GetEnemyConfig(void)
 	return g_EnemyConfig;
 }
 
-XMFLOAT3 GetPlayerInitPos(int map, int idx)
+XMFLOAT3 GetTeleportInitPos(int map, int idx)
 {
-	return g_PlayerInitPos[map][idx];
+	return g_TeleportInitPos[map][idx];
 }
 
 int GetCurrentMap()

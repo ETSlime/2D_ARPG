@@ -254,6 +254,8 @@ static BOOL		g_DisableDefendCount = FALSE;
 
 static BOOL		g_LimitBGMove = TRUE;
 
+static PlayerData g_PlayerData;
+
 static AttackAABBTBL normalAttack1Tbl[MAX_ATTACK_AABB * ANIM_NORMAL_ATTACK1_FRAME] = {
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
 	{XMFLOAT3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f},
@@ -539,6 +541,23 @@ HRESULT InitPlayer(void)
 	g_DisableAttack = FALSE;
 	g_DisableDefend = FALSE;
 	g_DisableDefendCount = FALSE;
+
+	g_PlayerData.maxHP = PLAYER_INIT_MAX_HP;
+	g_PlayerData.maxMP = PLAYER_INIT_MAX_MP;
+	g_PlayerData.maxST = PLAYER_INIT_MAX_ST;
+	g_PlayerData.ATK = PLAYER_INIT_ATK;
+	g_PlayerData.DEF = PLAYER_INIT_DEF;
+	g_PlayerData.MAT = PLAYER_INIT_MAT;
+	g_PlayerData.MDF = PLAYER_INIT_MDF;
+	g_PlayerData.level = 1;
+	g_PlayerData.skillPointLeft = 5;
+	g_PlayerData.spHP = 8;
+	g_PlayerData.spMP = 8;
+	g_PlayerData.spST = 5;
+	g_PlayerData.spATK = 4;
+	g_PlayerData.spDEF = 4;
+	g_PlayerData.spMAT = 3;
+	g_PlayerData.spMDF = 2;
 
 	// プレイヤー構造体の初期化
 	InitPlayerStatus();
@@ -1258,13 +1277,23 @@ void UpdateKeyboardInput(void)
 	}
 
 	if (GetKeyboardRelease(DIK_Q) && g_DisableMagicSwitch == FALSE)
-		g_Player->magic = (g_Player->magic + 2) % MAGIC_NUM_MAX;
+	{
+		g_Player->currentMagicIdx = (g_Player->currentMagicIdx + MAGIC_NUM_MAX - 1) % MAGIC_NUM_MAX;
+		while (g_Player->magicList[g_Player->currentMagicIdx] == MAGIC_NONE)
+			g_Player->currentMagicIdx = (g_Player->currentMagicIdx + MAGIC_NUM_MAX - 1) % MAGIC_NUM_MAX;
+	}
+		
 	if (GetKeyboardRelease(DIK_E) && g_DisableMagicSwitch == FALSE)
-		g_Player->magic = (g_Player->magic + 1) % MAGIC_NUM_MAX;
+	{
+		g_Player->currentMagicIdx = (g_Player->currentMagicIdx + 1) % MAGIC_NUM_MAX;
+		while (g_Player->magicList[g_Player->currentMagicIdx] == MAGIC_NONE)
+			g_Player->currentMagicIdx = (g_Player->currentMagicIdx + 1) % MAGIC_NUM_MAX;
+	}
+		
 
 	if (GetKeyboardRelease(DIK_F))
 	{
-		switch (g_Player->magic)
+		switch (g_Player->magicList[g_Player->currentMagicIdx])
 		{
 		case MAGIC_HEALING:
 			if (g_Player->healingCD <= 0 
@@ -1431,6 +1460,15 @@ void UpdatePlayerStates(void)
 
 	if (g_Player->jumpEffectCnt > 0)
 		g_Player->jumpEffectCnt--;
+
+	if (g_Player->recoveryWindow > 0)
+		g_Player->recoveryWindow--;
+	if (g_Player->greyHP >= g_Player->HP && g_Player->recoveryWindow > 0)
+	{
+		g_Player->greyHP -= GREY_HP_DECAY_RATE;
+		if (g_Player->greyHP < g_Player->HP)
+			g_Player->greyHP = g_Player->HP;
+	}
 }
 
 void UpdateBackGroundScroll(void)
@@ -1655,6 +1693,8 @@ void UpdateActionQueue(void)
 
 void PlayerTakeDamage(ENEMY* enemy, Magic* magic)
 {
+	g_Player->greyHP = g_Player->HP;
+	g_Player->recoveryWindow = HP_RECOVERY_WINDOW;
 	int dir = 0;
 	if (enemy)
 	{
@@ -2489,6 +2529,10 @@ PLAYER* GetPlayer(void)
 	return &g_Player[0];
 }
 
+PlayerData* GetPlayerData(void)
+{
+	return &g_PlayerData;
+}
 
 // 生きてるエネミーの数
 int GetPlayerCount(void)
@@ -3160,17 +3204,35 @@ float GetPoiseDamage(void)
 	}
 }
 
-void SetPlayerInitPos(int map, int idx)
+void SetPlayerInitPosByMap(int map, int idx)
 {
-	XMFLOAT3 initPos = GetPlayerInitPos(map, idx);
+	XMFLOAT3 initPos = GetTeleportInitPos(map, idx);
 	g_InitPos.x = initPos.x;
 	g_InitPos.y = initPos.y;
+}
+
+void SetPlayerInitPos(float posX, float posY)
+{
+	g_InitPos.x = posX;
+	g_InitPos.y = posY;
 }
 
 void ResetPlayerPos(void)
 {
 	SET_PLAYER_POS_X(g_InitPos.x);
 	SET_PLAYER_POS_Y(g_InitPos.y);
+}
+
+int CalculateExpForLevel(int level)
+{
+	// 初期の経験値
+	int baseExp = INIT_REQUIRED_EXP;
+
+	// 経験値の成長率
+	float growthRate = 1.1f; // レベルごとに10%成長
+
+	// 指数関数を使用して必要な経験値を計算
+	return (int)(baseExp * pow(growthRate, level - 1));
 }
 
 void InitPlayerStatus(void)
@@ -3222,17 +3284,21 @@ void InitPlayerStatus(void)
 		g_Player[i].patternAnim = CHAR_IDLE;
 		g_Player[i].airJumpPos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-		g_Player[i].HP = PLAYER_MAX_HP;
-		g_Player[i].maxHP = PLAYER_MAX_HP;
-		g_Player[i].MP = PLAYER_MAX_MP;
-		g_Player[i].maxMP = PLAYER_MAX_MP;
-		g_Player[i].ST = PLAYER_MAX_ST;
-		g_Player[i].maxST = PLAYER_MAX_ST;
-		g_Player[i].ATK = 200;
-		g_Player[i].DEF = 10;
+		g_Player[i].maxHP = g_PlayerData.maxHP;
+		g_Player[i].HP = g_Player[i].maxHP;
+		g_Player[i].maxMP = g_PlayerData.maxMP;
+		g_Player[i].MP = g_Player[i].maxMP;
+		g_Player[i].maxST = g_PlayerData.maxST;
+		g_Player[i].ST = g_Player[i].maxST;
+		g_Player[i].ATK = g_PlayerData.ATK;
+		g_Player[i].DEF = g_PlayerData.DEF;
+		g_Player[i].MAT = g_PlayerData.MAT;
+		g_Player[i].MDF = g_PlayerData.MDF;
+		g_Player[i].greyHP = g_Player[i].maxHP;
+		g_Player[i].recoveryWindow = 0;
 		g_Player[i].isInvincible = FALSE;
 		g_Player[i].attackPattern = NONE;
-		g_Player[i].magic = MAGIC_HEALING;
+		g_Player[i].currentMagicIdx = 1;
 		g_Player[i].healingCD = 0;
 		g_Player[i].fireBallCD = 0;
 		g_Player[i].flameblade = FALSE;
@@ -3265,6 +3331,22 @@ void InitPlayerStatus(void)
 		g_Player[i].bodyAABB.w = g_Player[i].w * 0.7f;
 		g_Player[i].bodyAABB.h = g_Player[i].h;
 		g_Player[i].bodyAABB.tag = PLAYER_BODY_AABB;
+
+		// magic
+		g_Player[i].magicList[0] = MAGIC_FLAMEBLADE;
+		g_Player[i].magicList[1] = MAGIC_HEALING;
+		g_Player[i].magicList[2] = MAGIC_FIRE_BALL;
+		if (GetMode() == MODE_GAME)
+		{
+			g_Player[i].magicList[3] = MAGIC_SHIELD;
+			g_Player[i].magicList[4] = MAGIC_HIDDEN;
+		}
+		else
+		{
+			g_Player[i].magicList[3] = MAGIC_NONE;
+			g_Player[i].magicList[4] = MAGIC_NONE;
+		}
+
 	}
 }
 

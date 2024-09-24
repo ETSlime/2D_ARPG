@@ -33,6 +33,7 @@ enum
 	PLAYER_MAGIC_AABB,
 	ENEMY_MAGIC_AABB,
 	TELEPORT_AABB,
+	SCULPTURE_AABB,
 };
 
 //*****************************************************************************
