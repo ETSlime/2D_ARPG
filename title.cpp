@@ -9,6 +9,7 @@
 #include "fade.h"
 #include "map.h"
 #include "player.h"
+#include "UI.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -28,7 +29,7 @@
 #define ANIM_BG_PATTERN_DIVID_X		(6)
 #define ANIM_BG_PATTERN_DIVID_Y		(5)
 #define	ANIM_TITLE_PATTERN_DIVID_X	(5)
-#define	BUTTON_NUM					(3)
+#define	BUTTON_NUM					(4)
 
 //*****************************************************************************
 // プロトタイプ宣言
@@ -56,6 +57,7 @@ static int						g_BG_patternAnim;
 static int						g_BG_countAnim;
 static int						g_title_patternAnim;
 static int						g_title_countAnim;
+static int						g_RenderLoadPage;
 
 float	alpha;
 BOOL	flag_alpha;
@@ -107,6 +109,8 @@ HRESULT InitTitle(void)
 	g_title_patternAnim = 0;
 	g_title_countAnim = 0;
 
+	g_RenderLoadPage = FALSE;
+
 	return S_OK;
 }
 
@@ -140,10 +144,20 @@ void UninitTitle(void)
 //=============================================================================
 void UpdateTitle(void)
 {
-
-	if (GetKeyboardTrigger(DIK_RETURN))
+	int* cursorCurrentTime = GetCursorCurretTime();
+	int* cursorActionTime = GetCursorActionTime();
+	int deltaTime = *cursorCurrentTime - *cursorActionTime;
+	if (GetKeyboardRelease(DIK_RETURN) && deltaTime >= CURSOR_DELTA_TIME && g_RenderLoadPage == FALSE)
 	{// Enter押したら、ステージを切り替える
+		*cursorActionTime = *cursorCurrentTime;
 		HandleButtonPressed();
+	}
+	else if (GetKeyboardRelease(DIK_X) && g_RenderLoadPage == TRUE && deltaTime >= CURSOR_DELTA_TIME)
+	{
+		*cursorActionTime = *cursorCurrentTime;
+		g_RenderLoadPage = FALSE;
+		SetRenderLoadGamePage(FALSE);
+		SetUIFade(UI_MODULE_LOAD, FADE_OUT);
 	}
 	// ゲームパッドで入力処理
 	else if (IsButtonTriggered(0, BUTTON_START))
@@ -157,11 +171,13 @@ void UpdateTitle(void)
 
 	if (GetKeyboardRelease(DIK_UP))
 	{
-		g_Cursor = (g_Cursor + BUTTON_NUM - 1) % BUTTON_NUM;
+		if (g_RenderLoadPage == FALSE)
+			g_Cursor = (g_Cursor + BUTTON_NUM - 1) % BUTTON_NUM;
 	}
 	else if (GetKeyboardRelease(DIK_DOWN))
 	{
-		g_Cursor = (g_Cursor + 1) % BUTTON_NUM;
+		if (g_RenderLoadPage == FALSE)
+			g_Cursor = (g_Cursor + 1) % BUTTON_NUM;
 	}
 
 	g_BG_countAnim++;
@@ -177,6 +193,8 @@ void UpdateTitle(void)
 		g_title_countAnim = 0;
 		g_title_patternAnim = (g_title_patternAnim + 1) % ANIM_TITLE_PATTERN_DIVID_X;
 	}
+
+	*cursorCurrentTime = *cursorCurrentTime + 1;
 
 #ifdef _DEBUG	// デバッグ情報を表示する
 	//PrintDebugProc("Player:↑ → ↓ ←　Space\n");
@@ -259,9 +277,18 @@ void HandleButtonPressed(void)
 	switch (g_Cursor)
 	{
 	case NEW_GANE:
+		InitPlayerData();
 		SetFade(FADE_OUT, MODE_MESSAGEBOX);
 		break;
+	case CONTINUE:
+		g_RenderLoadPage = TRUE;
+		SetRenderLoadGamePage(TRUE);
+		SetUIFade(UI_MODULE_LOAD, FADE_IN);
+		UpdateSaveSlotData();
+		ResetCursor();
+		break;
 	case TUTORIAL:
+		InitPlayerData();
 		SetFade(FADE_OUT, MODE_TUTORIAL);
 		SetCurrentMap(TUTORIAL_01);
 		InitTeleportInitPos(TUTORIAL_01);

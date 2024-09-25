@@ -271,6 +271,7 @@ struct PlayerData
 	int		spMDF;
 	int		magicList[MAGIC_SLOT_MAX];
 	int		magicLearned[MAGIC_NUM_MAX];
+	XMFLOAT3 initPos;
 };
 
 //*****************************************************************************

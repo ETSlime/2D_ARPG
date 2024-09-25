@@ -19,6 +19,7 @@
 enum
 {
 	NEW_GANE,
+	CONTINUE,
 	TUTORIAL,
 	EXIT_GAME,
 };

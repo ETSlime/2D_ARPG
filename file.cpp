@@ -10,7 +10,7 @@
 *******************************************************************************/
 #include "file.h"
 #include "score.h"
-
+#include "UI.h"
 
 /*******************************************************************************
 * マクロ定義
@@ -48,28 +48,17 @@ SAVEDATA	save;		// セーブデータ作成場所
 戻り値:	void
 説明:	セーブデータを作成し、ファイルへ出力する
 *******************************************************************************/
-void SaveData(void)
+void SaveData(int saveSlotNum)
 {
+	if (saveSlotNum == -1)
+		return;
+
 	{	// プレイヤーデータをセーブする
-		PLAYER *player = GetPlayer();
+		PlayerData *playerData = GetPlayerData();
 
 		// プレイヤーの人数分セーブする
-		for (int i = 0; i < PLAYER_MAX; i++)
-		{
-			save.player[i] = player[i];
-		}
+		save.playerData = *playerData;
 	}
-
-	{	// エネミーデータをセーブする
-		ENEMY *enemy = GetEnemy();
-
-		// エネミーの人数分セーブする
-		for (int i = 0; i < ENEMY_MAX; i++)
-		{
-			save.enemy[i] = enemy[i];
-		}
-	}
-
 
 	// スコアデータをセーブする
 	save.score = GetScore();
@@ -94,19 +83,17 @@ void SaveData(void)
 
 	// SAVEDATA構造体ごと全部をファイルに出力する
 	FILE *fp;
-
+	
 	printf("\nセーブ開始・・・");
-	fopen_s(&fp, "savedata.bin", "wb");			// ファイルをバイナリ書き込みモードでOpenする
+	char filename[20];
+	sprintf_s(filename, sizeof(filename), "savedata%02d.bin", saveSlotNum);
+	fopen_s(&fp, filename, "wb");		// ファイルをバイナリ書き込みモードでOpenする
 
 	if (fp != NULL)								// ファイルがあれば書き込み、無ければ無視
 	{	
 		fwrite(&save, 1, sizeof(SAVEDATA), fp);	// 指定したアドレスから指定したバイト数分ファイルへ書き込む
 		fclose(fp);								// Openしていたファイルを閉じる
 		printf("終了！\n");
-	}
-	else
-	{
-		printf("ファイルエラー！\n");
 	}
 
 }
@@ -118,16 +105,18 @@ void SaveData(void)
 戻り値:	void
 説明:	セーブデータをファイルから読み込む
 *******************************************************************************/
-void LoadData(void)
+BOOL LoadData(int saveSlotNum, PlayerData* playerData)
 {
-	PLAYER *player = GetPlayer();	// プレイヤーのアドレスを取得する
-	ENEMY  *enemy  = GetEnemy();	// エネミーのアドレスを取得する
+	if (saveSlotNum == -1)
+		return FALSE;
 
 	// ファイルからセーブデータを読み込む
 	FILE* fp;
 
 	printf("\nロード開始・・・");
-	fopen_s(&fp, "savedata.bin", "rb");	// ファイルをバイナリ読み込みモードでOpenする
+	char filename[20];
+	sprintf_s(filename, sizeof(filename), "savedata%02d.bin", saveSlotNum);
+	fopen_s(&fp, filename, "rb");	// ファイルをバイナリ読み込みモードでOpenする
 
 	if (fp != NULL)						// ファイルがあれば書き込み、無ければ無視
 	{
@@ -137,7 +126,7 @@ void LoadData(void)
 	}
 	else
 	{
-		printf("ファイルエラー！\n");
+		return FALSE;
 	}
 
 
@@ -158,7 +147,7 @@ void LoadData(void)
 		if (sum != org)
 		{
 			// データが改ざんされている！
-			return;
+			return FALSE;
 		}
 	}
 
@@ -166,29 +155,19 @@ void LoadData(void)
 
 	// プレイヤーの人数分、playerワークへ戻す
 	{	// プレイヤーデータをロードする
-		PLAYER *player = GetPlayer();
+		if (playerData == nullptr)
+			playerData = GetPlayerData();
 
 		// プレイヤーの人数分ロードする
-		for (int i = 0; i < PLAYER_MAX; i++)
-		{
-			player[i] = save.player[i];
-		}
-	}
-
-	{	// エネミーデータをロードする
-		ENEMY *enemy = GetEnemy();
-
-		// エネミーの人数分ロードする
-		for (int i = 0; i < ENEMY_MAX; i++)
-		{
-			enemy[i] = save.enemy[i];
-		}
+		*playerData = save.playerData;
 	}
 
 	// スコアデータをロードする
 	SetScore(save.score);
 
+	SetPlayerInitPos(playerData->initPos.x, playerData->initPos.y);
 
+	return TRUE;
 }
 
 

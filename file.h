@@ -23,10 +23,7 @@
 struct	SAVEDATA				// セーブデータの構造体
 {
 	// プレイヤーデータを保存
-	PLAYER	player[PLAYER_MAX];	// プレイヤーのMAX人数分セーブする
-
-	// エネミーデータを保存
-	ENEMY	enemy[ENEMY_MAX];	// エネミーのMAX人数分セーブする
+	PlayerData	playerData;	// プレイヤーのMAX人数分セーブする
 
 	// スコアデータを保存
 	int		score;				// スコアを保存する
@@ -41,7 +38,7 @@ struct	SAVEDATA				// セーブデータの構造体
 /*******************************************************************************
 * プロトタイプ宣言
 *******************************************************************************/
-void SaveData(void);
-void LoadData(void);
+void SaveData(int saveSlotNum);
+BOOL LoadData(int saveSlotNum, PlayerData* playerData = nullptr);
 
 

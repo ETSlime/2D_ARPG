@@ -161,6 +161,7 @@ void UpdateFade(void)
 
 				if (g_ModeNext == MODE_MENU)
 				{
+					InitPlayerStatus();
 					SetRenderMenuUI(TRUE);
 				}
 			}

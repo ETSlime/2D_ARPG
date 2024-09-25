@@ -28,6 +28,8 @@
 #define SP_DEF_PER_LV								(3.0f)
 #define SP_MDF_PER_LV								(3.0f)
 
+#define CURSOR_DELTA_TIME							(3)
+
 struct UISprite
 {
 	BOOL use;
@@ -44,6 +46,14 @@ struct LevelUpStatus
 {
 	float oldValue;
 	float newValue;
+};
+
+struct SaveSlotData
+{
+	BOOL valid;
+	int level;
+	int currentExp;
+	int skillPoint;
 };
 
 // texture num
@@ -63,6 +73,7 @@ enum
 	UI_SKILL_ENABLED,
 	UI_MESSAGEBOX_RETURN_TITLE,
 	UI_BUTTON_NEW_GAME,
+	UI_BUTTON_CONTINUE,
 	UI_BUTTON_TUTORIAL,
 	UI_BUTTON_EXIT_GAME,
 	UI_BUTTON_YES,
@@ -81,6 +92,7 @@ enum
 	UI_PLAYER_STATUS,
 	UI_MAGIC_LIST,
 	UI_SAVE_SLOT,
+	UI_SAVE_SLOT_EMPTY,
 	UI_SAVE_PAGE,
 	UI_LOAD_PAGE,
 	UI_BUTTON_CONFIRM,
@@ -90,6 +102,9 @@ enum
 	UI_MAGIC_SLOT,
 	UI_HIGHLIGHT_BOX,
 	UI_EMPYT_MAGIC_BOX,
+	UI_MESSAGEBOX_SAVE,
+	UI_MESSAGEBOX_LOAD,
+	UI_MESSAGEBOX_REPLACE_SAVE,
 	UI_NONE,
 };
 
@@ -98,6 +113,7 @@ enum
 	UI_MODULE_SYSTEM_MENU,
 	UI_MODULE_STATUS,
 	UI_MODULE_MAGIC_LIST,
+	UI_MODULE_TELEPORT,
 	UI_MODULE_SAVE,
 	UI_MODULE_LOAD,
 	UI_MODULE_NONE,
@@ -144,6 +160,12 @@ enum
 	CURSOR_RIGHT,
 };
 
+enum
+{
+	SAVE_GAME,
+	LOAD_GAME,
+};
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -155,9 +177,11 @@ void UpdateUI(void);
 void UpdateUIFade(void);
 void UpdateStatusUI(void);
 void UpdateMagicList(void);
+void UpdateSaveLoadPage(int mode);
 void UpdateSystemMenu(void);
 void UpdateSPStatus(int cursor, int dir);
 void UpdatePlayerStatus(int category);
+void UpdateSaveSlotData(void);
 void DrawUI(void);
 void DrawTitleUI(void);
 void DrawMessageBox(void);
@@ -166,13 +190,15 @@ void DrawPauseUI(void);
 void DrawMenuUI(void);
 void DrawStatusUI(void);
 void DrawMagicList(void);
+void DrawSaveLoadPage(int mode);
 void DrawSystemMenuUI(void);
 void DrawButton(int button, BOOL selected);
 void DrawPlayerGauge(void);
 void DrawPlayerJumpIcon(void);
 void DrawSkillIcon(void);
 void DrawFlamebladeIcon(void);
-void DrawNumber(float posX, float posY, int num, int category, int numDigit = 0);
+void DrawNumber(float posX, float posY, int num, int category = -1, int numDigit = 0);
+void DrawSaveLoadMsgBox(int texNo);
 
 void SetRespawnMessageBox(BOOL render);
 void SetRenderGauge(BOOL render);
@@ -180,7 +206,10 @@ void SetRenderSkillIcon(BOOL render);
 void SetRenderJumpIcon(BOOL render);
 void SetRenderBladeIcon(BOOL render);
 void SetRenderMenuUI(BOOL render);
+void SetRenderLoadGamePage(BOOL render);
 void SetUIFade(int module, int fade);
+int* GetCursorCurretTime(void);
+int* GetCursorActionTime(void);
 void ResetCursor(void);
 
 void ClearLevelUpStatus(void);

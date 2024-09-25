@@ -11,6 +11,7 @@
 #include "title.h"
 #include "score.h"
 #include "sound.h"
+#include "file.h"
 
 //*****************************************************************************
 // マクロ定義
@@ -48,7 +49,7 @@
 #define UI_MAGIC_ICON_RIGHT_POS_Y		(480.0f)
 #define UI_FLAMEBLADE_ICON_POS_X		(756.0f)
 #define UI_FLAMEBLADE_ICON_POS_Y		(376.0f)
-#define	UI_MAX							(45)
+#define	UI_MAX							(46)
 #define	GAUGE_MAX						(3)
 
 #define TEXTURE_FLAMEBLADE_ICON_PATTERN_DIVIDE_X	(4)
@@ -66,8 +67,8 @@
 #define TEXTURE_BUTTON_TITLE_HEIGHT					(40.0f)
 // タイトルUIポジション
 #define UI_TITLE_BUTTON_POS_X						(470.0f)
-#define	UI_TITLE_BUTTON_POS_Y						(330.0f)
-#define UI_TITLE_BUTTON_OFFSET_Y					(70.0f)
+#define	UI_TITLE_BUTTON_POS_Y						(300.0f)
+#define UI_TITLE_BUTTON_OFFSET_Y					(60.0f)
 
 
 // メッセージボックステクスチャサイズ
@@ -156,6 +157,16 @@
 #define TEXTURE_MAGIC_LIST_ICON_BOX_WIDTH			(92.0f)
 #define TEXTURE_MAGIC_LIST_ICON_BOX_HEIGHT			(92.0f)
 
+#define TEXTURE_SL_PAGE_WIDTH						(580.0f)
+#define TEXTURE_SL_PAGE_HEIGHT						(480.0f)
+#define UI_SL_PAGE_POS_X							(510.0f)
+#define	UI_SL_PAGE_POS_Y							(275.0f)
+#define UI_SL_SLOT_WIDTH							(571.0f)
+#define UI_SL_SLOT_HEIGHT							(112.0f)
+#define UI_SL_SLOT_INIT_POS_X						(510.0f)
+#define UI_SL_SLOT_INIT_POS_Y						(117.0f)
+#define UI_SL_SLOT_NUM								(4)
+
 // 一時停止UIテクスチャサイズ
 #define	TEXTURE_BUTTON_PAUSE_WIDTH					(150.0f)
 #define	TEXTURE_BUTTON_PAUSE_HEIGHT					(40.0f)
@@ -166,7 +177,6 @@
 #define UI_BUTTON_SELECTED_SCALE					(1.2f)
 
 #define	FADE_RATE									(0.04f)			// フェード係数
-#define CURSOR_DELTA_TIME							(3)
 
 #define UI_RESPAWN_MESSAGE_OFFSET_Y					(40.0f)
 
@@ -196,6 +206,7 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/skillEnabled.png",
 	"data/TEXTURE/UI/messagebox_return_title.png",
 	"data/TEXTURE/UI/button_new_game.png",
+	"data/TEXTURE/UI/button_continue.png",
 	"data/TEXTURE/UI/button_tutorial.png",
 	"data/TEXTURE/UI/button_exit_game.png",
 	"data/TEXTURE/UI/button_yes.png",
@@ -214,6 +225,7 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/player_status.png",
 	"data/TEXTURE/UI/magic_ui.png",
 	"data/TEXTURE/UI/save_slot.png",
+	"data/TEXTURE/UI/save_slot_empty.png",
 	"data/TEXTURE/UI/save_ui.png",
 	"data/TEXTURE/UI/load_ui.png",
 	"data/TEXTURE/UI/confirm_button.png",
@@ -223,6 +235,9 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/magic_slot.png",
 	"data/TEXTURE/UI/Highlight_Box.png",
 	"data/TEXTURE/UI/skill_box.png",
+	"data/TEXTURE/UI/messagebox_save.png",
+	"data/TEXTURE/UI/messagebox_load.png",
+	"data/TEXTURE/UI/messagebox_replace_save.png",
 };
 
 static UISprite					g_UI[UI_MAX];
@@ -232,6 +247,7 @@ static int						g_skillEnabledCountAnim;
 static int						g_skillEnabledPatternAnim;
 static BOOL						g_Load = FALSE;
 static int						g_Cursor;
+static int						g_Cursor2;
 static int						g_MenuUIModule;
 static int						g_MenuUIModuleNext;
 static BOOL						g_IsFading;
@@ -244,6 +260,7 @@ static BOOL						g_RenderSkillIcon;
 static BOOL						g_RenderBladeIcon;
 static BOOL						g_RenderJumpIcon;
 static BOOL						g_RenderMenuUI;
+static BOOL						g_RenderLoadGamePage;
 static float					g_ArrowMove;
 static int						g_ArrowMoveCnt;
 static float					g_NewMagicScale;
@@ -252,6 +269,10 @@ static int						g_MagicLearnedCnt;
 static LevelUpStatus			g_LevelUpStatus[SP_CNT_MAX + STATUS_CNT_MAX];
 static BOOL						g_ChangeMagic;
 static int						g_MagicListNew[MAGIC_SLOT_MAX];
+static BOOL						g_RenderSaveMsgBox;
+static BOOL						g_RenderLoadMsgBox;
+static BOOL						g_RenderReplaceSaveMsgBox;
+static SaveSlotData				g_SaveSlotData[UI_SL_SLOT_NUM];
 
 //=============================================================================
 // 初期化処理
@@ -303,6 +324,7 @@ HRESULT InitUI(void)
 		g_UI[i].ratio = 1.0f;
 	}
 
+	g_RenderLoadGamePage = FALSE;
 	g_PlayerRespawnMsg = FALSE;
 	g_RenderGauge = TRUE;
 	g_RenderSkillIcon = TRUE;
@@ -310,6 +332,9 @@ HRESULT InitUI(void)
 	g_RenderJumpIcon = TRUE;
 	g_RenderMenuUI = FALSE;
 	g_ChangeMagic = FALSE;
+	g_RenderSaveMsgBox = FALSE;
+	g_RenderLoadMsgBox = FALSE;
+	g_RenderReplaceSaveMsgBox = FALSE;
 
 	g_flamebladeIconCountAnim = 0;
 	g_flamebladePatternAnim = 0;
@@ -323,7 +348,7 @@ HRESULT InitUI(void)
 	g_NewMagicScaleCnt = 0;
 
 	g_MenuUIModule = UI_MODULE_SYSTEM_MENU;
-	g_MenuUIModule = UI_MODULE_SYSTEM_MENU;
+	g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
 	g_IsFading = FALSE;
 
 	g_UI[UI_HP].width = TEXTURE_HP_WIDTH;
@@ -358,14 +383,19 @@ HRESULT InitUI(void)
 	g_UI[UI_BUTTON_NEW_GAME].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y, 0.0f);
 	g_UI[UI_BUTTON_NEW_GAME].texNo = UI_BUTTON_NEW_GAME;
 
+	g_UI[UI_BUTTON_CONTINUE].width = TEXTURE_BUTTON_TITLE_WIDTH;
+	g_UI[UI_BUTTON_CONTINUE].height = TEXTURE_BUTTON_TITLE_HEIGHT;
+	g_UI[UI_BUTTON_CONTINUE].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y, 0.0f);
+	g_UI[UI_BUTTON_CONTINUE].texNo = UI_BUTTON_CONTINUE;
+
 	g_UI[UI_BUTTON_TUTORIAL].width = TEXTURE_BUTTON_TITLE_WIDTH;
 	g_UI[UI_BUTTON_TUTORIAL].height = TEXTURE_BUTTON_TITLE_HEIGHT;
-	g_UI[UI_BUTTON_TUTORIAL].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y, 0.0f);
+	g_UI[UI_BUTTON_TUTORIAL].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y * 2, 0.0f);
 	g_UI[UI_BUTTON_TUTORIAL].texNo = UI_BUTTON_TUTORIAL;
 
 	g_UI[UI_BUTTON_EXIT_GAME].width = TEXTURE_BUTTON_TITLE_WIDTH;
 	g_UI[UI_BUTTON_EXIT_GAME].height = TEXTURE_BUTTON_TITLE_HEIGHT;
-	g_UI[UI_BUTTON_EXIT_GAME].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y * 2, 0.0f);
+	g_UI[UI_BUTTON_EXIT_GAME].pos = XMFLOAT3(UI_TITLE_BUTTON_POS_X, UI_TITLE_BUTTON_POS_Y + UI_TITLE_BUTTON_OFFSET_Y * 3, 0.0f);
 	g_UI[UI_BUTTON_EXIT_GAME].texNo = UI_BUTTON_EXIT_GAME;
 
 	g_UI[UI_BUTTON_YES].width = TEXTURE_BUTTON_PAUSE_WIDTH;
@@ -457,6 +487,39 @@ HRESULT InitUI(void)
 	g_UI[UI_HIGHLIGHT_BOX].texNo = UI_HIGHLIGHT_BOX;
 	g_UI[UI_HIGHLIGHT_BOX].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
 
+	g_UI[UI_SAVE_PAGE].width = TEXTURE_SL_PAGE_WIDTH;
+	g_UI[UI_SAVE_PAGE].height = TEXTURE_SL_PAGE_HEIGHT;
+	g_UI[UI_SAVE_PAGE].pos = XMFLOAT3(UI_SL_PAGE_POS_X, UI_SL_PAGE_POS_Y, 0.0f);
+	g_UI[UI_SAVE_PAGE].texNo = UI_SAVE_PAGE;
+	g_UI[UI_SAVE_PAGE].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+
+	g_UI[UI_LOAD_PAGE].width = TEXTURE_SL_PAGE_WIDTH;
+	g_UI[UI_LOAD_PAGE].height = TEXTURE_SL_PAGE_HEIGHT;
+	g_UI[UI_LOAD_PAGE].pos = XMFLOAT3(UI_SL_PAGE_POS_X, UI_SL_PAGE_POS_Y, 0.0f);
+	g_UI[UI_LOAD_PAGE].texNo = UI_LOAD_PAGE;
+	g_UI[UI_LOAD_PAGE].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+
+	g_UI[UI_SAVE_SLOT].width = UI_SL_SLOT_WIDTH;
+	g_UI[UI_SAVE_SLOT].height = UI_SL_SLOT_HEIGHT;
+	g_UI[UI_SAVE_SLOT].pos = XMFLOAT3(UI_SL_SLOT_INIT_POS_X, UI_SL_SLOT_INIT_POS_Y, 0.0f);
+	g_UI[UI_SAVE_SLOT].texNo = UI_SAVE_SLOT;
+	g_UI[UI_SAVE_SLOT].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+
+	g_UI[UI_MESSAGEBOX_SAVE].width = TEXTURE_MESSAGE_BOX_WIDTH;
+	g_UI[UI_MESSAGEBOX_SAVE].height = TEXTURE_MESSAGE_BOX_HEIGHT;
+	g_UI[UI_MESSAGEBOX_SAVE].pos = XMFLOAT3(UI_SYSTEM_MENU_BOX_POS_X, UI_SYSTEM_MENU_BOX_POS_Y, 0.0f);
+	g_UI[UI_MESSAGEBOX_SAVE].texNo = UI_MESSAGEBOX_SAVE;
+
+	g_UI[UI_MESSAGEBOX_LOAD].width = TEXTURE_MESSAGE_BOX_WIDTH;
+	g_UI[UI_MESSAGEBOX_LOAD].height = TEXTURE_MESSAGE_BOX_HEIGHT;
+	g_UI[UI_MESSAGEBOX_LOAD].pos = XMFLOAT3(UI_SYSTEM_MENU_BOX_POS_X, UI_SYSTEM_MENU_BOX_POS_Y, 0.0f);
+	g_UI[UI_MESSAGEBOX_LOAD].texNo = UI_MESSAGEBOX_LOAD;
+
+	g_UI[UI_MESSAGEBOX_REPLACE_SAVE].width = TEXTURE_MESSAGE_BOX_WIDTH;
+	g_UI[UI_MESSAGEBOX_REPLACE_SAVE].height = TEXTURE_MESSAGE_BOX_HEIGHT;
+	g_UI[UI_MESSAGEBOX_REPLACE_SAVE].pos = XMFLOAT3(UI_SYSTEM_MENU_BOX_POS_X, UI_SYSTEM_MENU_BOX_POS_Y, 0.0f);
+	g_UI[UI_MESSAGEBOX_REPLACE_SAVE].texNo = UI_MESSAGEBOX_REPLACE_SAVE;
+
 	g_UI[BG_FADE].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
 	g_UI[BG_FADE].pos = XMFLOAT3(SCREEN_CENTER_X, SCREEN_CENTER_Y, 0.0f);
 	g_UI[BG_FADE].width = SCREEN_WIDTH;
@@ -518,7 +581,10 @@ void UpdateUI(void)
 	// タイトル画面の処理
 	case MODE_TITLE:
 	{
-		g_Cursor = GetTitleCursor();
+		if (g_RenderLoadGamePage == TRUE)
+			UpdateSaveLoadPage(LOAD_GAME);
+		else
+			g_Cursor = GetTitleCursor();
 		break;
 	}
 	// メッセージボックスの処理
@@ -686,6 +752,12 @@ void UpdateUI(void)
 		case UI_MODULE_SYSTEM_MENU:
 			UpdateSystemMenu();
 			break;
+		case UI_MODULE_SAVE:
+			UpdateSaveLoadPage(SAVE_GAME);
+			break;
+		case UI_MODULE_LOAD:
+			UpdateSaveLoadPage(LOAD_GAME);
+			break;
 		default:
 			break;
 		}
@@ -697,7 +769,6 @@ void UpdateUI(void)
 	}
 
 	UpdateUIFade();
-
 }
 
 void UpdateStatusUI(void)
@@ -1224,6 +1295,16 @@ void UpdateSystemMenu(void)
 			g_MagicLearnedCnt = GetMagicLearnedCount();
 			InitMagicList();
 			break;
+		case GET_SYSTEM_MENU_CURSOR_IDX(UI_BUTTON_SAVE):
+			SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
+			UpdateSaveSlotData();
+			g_MenuUIModuleNext = UI_MODULE_SAVE;
+			break;
+		case GET_SYSTEM_MENU_CURSOR_IDX(UI_BUTTON_LOAD):
+			SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
+			UpdateSaveSlotData();
+			g_MenuUIModuleNext = UI_MODULE_LOAD;
+			break;
 		case GET_SYSTEM_MENU_CURSOR_IDX(UI_BUTTON_RESUME_GAME):
 			SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
 			SetUIFade(BG_FADE, FADE_OUT);
@@ -1237,6 +1318,128 @@ void UpdateSystemMenu(void)
 		g_cursorActionTime = g_cursorCurretTime;
 		SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
 		SetUIFade(BG_FADE, FADE_OUT);
+	}
+
+	g_cursorCurretTime++;
+}
+
+void UpdateSaveSlotData(void)
+{
+	for (int i = 0; i < UI_SL_SLOT_NUM; i++)
+	{
+		PlayerData playerDataTemp;
+		if (LoadData(i, &playerDataTemp))
+		{
+			g_SaveSlotData[i].valid = TRUE;
+			g_SaveSlotData[i].level = playerDataTemp.level;
+			g_SaveSlotData[i].skillPoint = playerDataTemp.skillPointLeft;
+			g_SaveSlotData[i].currentExp = GetScore();
+		}
+		else
+			g_SaveSlotData[i].valid = FALSE;
+
+	}
+}
+
+void UpdateSaveLoadPage(int mode)
+{
+
+	int deltaTime = g_cursorCurretTime - g_cursorActionTime;
+
+	if (g_RenderSaveMsgBox == TRUE || g_RenderReplaceSaveMsgBox == TRUE)
+	{
+		if ((GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT))
+			&& deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			g_Cursor2 = g_Cursor2 == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+		}
+		else if (GetKeyboardRelease(DIK_RETURN) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			if (g_Cursor2 == UI_BUTTON_YES)
+			{
+				SaveData(g_Cursor);
+				UpdateSaveSlotData();
+
+			}
+			g_RenderSaveMsgBox = FALSE;
+			g_RenderReplaceSaveMsgBox = FALSE;
+		}
+		else if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			g_RenderSaveMsgBox = FALSE;
+			g_RenderReplaceSaveMsgBox = FALSE;
+		}
+	}
+	else if (g_RenderLoadMsgBox == TRUE)
+	{
+		if ((GetKeyboardRelease(DIK_LEFT) || GetKeyboardRelease(DIK_RIGHT))
+			&& deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			g_Cursor2 = g_Cursor2 == UI_BUTTON_NO ? UI_BUTTON_YES : UI_BUTTON_NO;
+		}
+		else if (GetKeyboardRelease(DIK_RETURN) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			if (g_Cursor2 == UI_BUTTON_YES)
+			{
+				LoadData(g_Cursor);
+				SetLoadGame(TRUE);
+				SetFade(FADE_OUT, MODE_GAME);
+			}
+			g_RenderLoadMsgBox = FALSE;
+		}
+		else if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			g_RenderLoadMsgBox = FALSE;
+		}
+	}
+	else
+	{
+		if (GetKeyboardRelease(DIK_DOWN) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+
+			g_Cursor = (g_Cursor + 1) % UI_SL_SLOT_NUM;
+		}
+		else if (GetKeyboardRelease(DIK_UP) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+
+			g_Cursor = (g_Cursor + UI_SL_SLOT_NUM - 1) % UI_SL_SLOT_NUM;
+		}
+		else if (GetKeyboardRelease(DIK_RETURN) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+			if (mode == SAVE_GAME)
+			{
+				if (g_SaveSlotData[g_Cursor].valid == FALSE)
+					g_RenderSaveMsgBox = TRUE;
+				else
+					g_RenderReplaceSaveMsgBox = TRUE;
+				g_Cursor2 = UI_BUTTON_YES;
+			}
+			else if (mode == LOAD_GAME)
+			{
+				if (g_SaveSlotData[g_Cursor].valid == TRUE)
+				{
+					g_RenderLoadMsgBox = TRUE;
+					g_Cursor2 = UI_BUTTON_YES;
+				}
+			}
+		}
+		else if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
+		{
+			g_cursorActionTime = g_cursorCurretTime;
+
+			SetUIFade(g_MenuUIModule, FADE_OUT);
+			if (GetMode() == MODE_MENU)
+				g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
+		}
 	}
 
 	g_cursorCurretTime++;
@@ -1287,13 +1490,14 @@ void UpdateUIFade(void)
 		}
 	}
 
-	if (isFadingOut == FALSE)
+	if (isFadingOut == FALSE && g_MenuUIModuleNext != g_MenuUIModule)
 	{
-		if (g_MenuUIModuleNext != g_MenuUIModule)
-		{
+		if (g_MenuUIModuleNext == UI_MODULE_SYSTEM_MENU && GetMode() == MODE_MENU)
+			g_Cursor = g_MenuUIModule - 1;
+		else
 			g_Cursor = 0;
-			SetUIFade(g_MenuUIModuleNext, FADE_IN);
-		}
+
+		SetUIFade(g_MenuUIModuleNext, FADE_IN);
 	}
 
 }
@@ -1349,11 +1553,17 @@ void DrawTitleUI(void)
 	BOOL selected = g_Cursor == 0;
 	DrawButton(UI_BUTTON_NEW_GAME, selected);
 
+	selected = g_Cursor == UI_BUTTON_CONTINUE - UI_BUTTON_NEW_GAME;
+	DrawButton(UI_BUTTON_CONTINUE, selected);
+
 	selected = g_Cursor == UI_BUTTON_TUTORIAL - UI_BUTTON_NEW_GAME;
 	DrawButton(UI_BUTTON_TUTORIAL, selected);
 
 	selected = g_Cursor == UI_BUTTON_EXIT_GAME - UI_BUTTON_NEW_GAME;
 	DrawButton(UI_BUTTON_EXIT_GAME, selected);
+
+	if (g_RenderLoadGamePage == TRUE)
+		DrawSaveLoadPage(LOAD_GAME);
 }
 
 void DrawInGameUI(void)
@@ -1394,6 +1604,12 @@ void DrawMenuUI(void)
 		break;
 	case UI_MODULE_SYSTEM_MENU:
 		DrawSystemMenuUI();
+		break;
+	case UI_MODULE_SAVE:
+		DrawSaveLoadPage(SAVE_GAME);
+		break;
+	case UI_MODULE_LOAD:
+		DrawSaveLoadPage(LOAD_GAME);
 		break;
 	default:
 		break;
@@ -1569,6 +1785,99 @@ void DrawMagicList(void)
 	DrawButton(UI_BUTTON_CONFIRM, selected);
 	selected = g_Cursor == CURSOR_CANCEL ? TRUE : FALSE;
 	DrawButton(UI_BUTTON_CANCEL, selected);
+}
+
+void DrawSaveLoadPage(int mode)
+{
+	if (mode == SAVE_GAME)
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_UI[UI_SAVE_PAGE].texNo]);
+		SetSpriteColor(g_VertexBuffer,
+			g_UI[UI_SAVE_PAGE].pos.x, g_UI[UI_SAVE_PAGE].pos.y,
+			g_UI[UI_SAVE_PAGE].width, g_UI[UI_SAVE_PAGE].height,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			g_UI[UI_SAVE_PAGE].color);
+		GetDeviceContext()->Draw(4, 0);
+	}
+	else if (mode == LOAD_GAME)
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_UI[UI_LOAD_PAGE].texNo]);
+		SetSpriteColor(g_VertexBuffer,
+			g_UI[UI_LOAD_PAGE].pos.x, g_UI[UI_LOAD_PAGE].pos.y,
+			g_UI[UI_LOAD_PAGE].width, g_UI[UI_LOAD_PAGE].height,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			g_UI[UI_LOAD_PAGE].color);
+		GetDeviceContext()->Draw(4, 0);
+	}
+
+
+	for (int i = 0; i < UI_SL_SLOT_NUM; i++)
+	{
+
+
+		if (g_SaveSlotData[i].valid == TRUE)
+		{
+			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SAVE_SLOT]);
+			SetSpriteColor(g_VertexBuffer,
+				g_UI[UI_SAVE_SLOT].pos.x, g_UI[UI_SAVE_SLOT].pos.y + i * g_UI[UI_SAVE_SLOT].height,
+				g_UI[UI_SAVE_SLOT].width, g_UI[UI_SAVE_SLOT].height,
+				0.0f, 0.0f, 1.0f, 1.0f,
+				g_UI[UI_SAVE_SLOT].color);
+			GetDeviceContext()->Draw(4, 0);
+
+			DrawNumber(g_UI[UI_SAVE_SLOT].pos.x, g_UI[UI_SAVE_SLOT].pos.y - 27.0f + i * g_UI[UI_SAVE_SLOT].height, g_SaveSlotData[i].level);
+			DrawNumber(g_UI[UI_SAVE_SLOT].pos.x, g_UI[UI_SAVE_SLOT].pos.y - 3.0f + i * g_UI[UI_SAVE_SLOT].height, g_SaveSlotData[i].skillPoint);
+			DrawNumber(g_UI[UI_SAVE_SLOT].pos.x, g_UI[UI_SAVE_SLOT].pos.y + 22.0f + i * g_UI[UI_SAVE_SLOT].height, GetScore());
+		}
+		else
+		{
+			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_SAVE_SLOT_EMPTY]);
+			SetSpriteColor(g_VertexBuffer,
+				g_UI[UI_SAVE_SLOT].pos.x, g_UI[UI_SAVE_SLOT].pos.y + i * g_UI[UI_SAVE_SLOT].height,
+				g_UI[UI_SAVE_SLOT].width, g_UI[UI_SAVE_SLOT].height,
+				0.0f, 0.0f, 1.0f, 1.0f,
+				g_UI[UI_SAVE_SLOT].color);
+			GetDeviceContext()->Draw(4, 0);
+		}
+	}
+
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_UI[UI_HIGHLIGHT_BOX].texNo]);
+	SetSpriteColor(g_VertexBuffer,
+		g_UI[UI_SAVE_SLOT].pos.x, g_UI[UI_SAVE_SLOT].pos.y + g_Cursor * g_UI[UI_SAVE_SLOT].height,
+		g_UI[UI_SAVE_SLOT].width * 1.1f, g_UI[UI_SAVE_SLOT].height * 0.9f,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		g_UI[UI_HIGHLIGHT_BOX].color);
+	GetDeviceContext()->Draw(4, 0);
+
+	if (g_RenderSaveMsgBox == TRUE)
+	{
+		DrawSaveLoadMsgBox(UI_MESSAGEBOX_SAVE);
+	}
+	else if (g_RenderReplaceSaveMsgBox == TRUE)
+	{
+		DrawSaveLoadMsgBox(UI_MESSAGEBOX_REPLACE_SAVE);
+	}
+	else if (g_RenderLoadMsgBox == TRUE)
+	{
+		DrawSaveLoadMsgBox(UI_MESSAGEBOX_LOAD);
+	}
+}
+
+void DrawSaveLoadMsgBox(int texNo)
+{
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_UI[texNo].texNo]);
+	SetSpriteColor(g_VertexBuffer,
+		g_UI[texNo].pos.x, g_UI[texNo].pos.y,
+		g_UI[texNo].width, g_UI[texNo].height,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		g_UI[UI_HIGHLIGHT_BOX].color);
+	GetDeviceContext()->Draw(4, 0);
+
+	BOOL selected = g_Cursor2 == UI_BUTTON_YES;
+	DrawButton(UI_BUTTON_YES, selected);
+
+	selected = g_Cursor2 == UI_BUTTON_NO;
+	DrawButton(UI_BUTTON_NO, selected);
 }
 
 void DrawSystemMenuUI(void)
@@ -2000,17 +2309,19 @@ void DrawNumber(float posX, float posY, int num, int category, int numDigit)
 	// テクスチャ設定
 	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[UI_NUM]);
 
-	num = CHECK_MODIFIED_VALUE(category, num);
+	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (category != -1)
+	{
+		num = CHECK_MODIFIED_VALUE(category, num);
 
+		if (num > g_LevelUpStatus[category].oldValue && g_LevelUpStatus[category].oldValue != -1)
+			color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+		else if (num < g_LevelUpStatus[category].oldValue && g_LevelUpStatus[category].oldValue != -1)
+			color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	}
 	if (numDigit == 0)
 		numDigit = COUNT_DIGITS(num);
 
-	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	if (num > g_LevelUpStatus[category].oldValue && g_LevelUpStatus[category].oldValue != -1)
-		color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	else if (num < g_LevelUpStatus[category].oldValue && g_LevelUpStatus[category].oldValue != -1)
-		color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 	color.w = g_UI[UI_NUM].color.w;
 
 	// 桁数分処理する
@@ -2065,7 +2376,7 @@ float GetMagicCooldown(int magicType, float healingCDProgress, float fireBallCDP
 	{
 		return fireBallCDProgress;
 	}
-	return 0.0f;
+	return 1.0f;
 }
 
 void SetUIFade(int UIModule, int fade)
@@ -2102,6 +2413,20 @@ void SetUIFade(int UIModule, int fade)
 			if (g_UI[i].UIModule == UI_MODULE_MAGIC_LIST)
 				g_UI[i].fade = fade;
 		}
+		break;
+	case UI_MODULE_SAVE:
+		g_MenuUIModule = UIModule;
+		g_UI[UI_SAVE_PAGE].fade = fade;
+		g_UI[UI_SAVE_SLOT].fade = fade;
+		g_UI[UI_HIGHLIGHT_BOX].fade = fade;
+		g_UI[UI_NUM].fade = fade;
+		break;
+	case UI_MODULE_LOAD:
+		g_MenuUIModule = UIModule;
+		g_UI[UI_LOAD_PAGE].fade = fade;
+		g_UI[UI_SAVE_SLOT].fade = fade;
+		g_UI[UI_HIGHLIGHT_BOX].fade = fade;
+		g_UI[UI_NUM].fade = fade;
 		break;
 	default:
 		g_UI[UIModule].fade = fade;
@@ -2229,7 +2554,21 @@ void SetRenderMenuUI(BOOL render)
 	g_RenderMenuUI = render;
 }
 
+void SetRenderLoadGamePage(BOOL render)
+{
+	g_RenderLoadGamePage = render;
+}
+
 void ResetCursor(void)
 {
 	g_Cursor = 0;
+}
+
+int* GetCursorCurretTime(void)
+{
+	return &g_cursorCurretTime;
+}
+int* GetCursorActionTime(void)
+{
+	return &g_cursorActionTime;
 }

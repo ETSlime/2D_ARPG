@@ -500,8 +500,9 @@ void SetMode(int mode)
 		InitEnemy();
 
 	}
-	else if (g_Mode != MODE_MENU)
+	else if (g_Mode != MODE_MENU || g_LoadGame == TRUE)
 	{
+		g_LoadGame = FALSE;
 		// モードを変える前に全部メモリを解放しちゃう
 		StopSound();			// まず曲を止める
 
@@ -569,13 +570,6 @@ void SetMode(int mode)
 			InitMagic();
 			InitEffect();
 			InitScore();
-
-			// ロードゲームだったらすべての初期化が終わった後にセーブデータを読み込む
-			if (g_LoadGame == TRUE)
-			{
-				LoadData();
-				g_LoadGame = FALSE;		// ロードしたからフラグをClearする
-			}
 
 			PlaySound(SOUND_LABEL_BGM_sample001);
 			break;

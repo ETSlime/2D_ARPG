@@ -542,8 +542,6 @@ HRESULT InitPlayer(void)
 	g_DisableDefend = FALSE;
 	g_DisableDefendCount = FALSE;
 
-	InitPlayerData();
-
 	// プレイヤー構造体の初期化
 	InitPlayerStatus();
 
@@ -2701,8 +2699,6 @@ void DrawCastEffect(void)
 	float tx = g_Player->animFrameCountCast % patternDividX * tw;
 	float ty = g_Player->animFrameCountCast / patternDividY * th;
 
-	std::cout << tx << std::endl;
-
 	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	// １枚のポリゴンの頂点とテクスチャ座標を設定
 	SetSpriteColor(g_VertexBuffer,
@@ -3224,6 +3220,7 @@ void SetPlayerInitPos(float posX, float posY)
 {
 	g_InitPos.x = posX;
 	g_InitPos.y = posY;
+	g_PlayerData.initPos = XMFLOAT3(posX, posY, 0.0f);
 }
 
 void ResetPlayerPos(void)
@@ -3351,7 +3348,7 @@ void InitPlayerStatus(void)
 		g_Player[i].recoveryWindow = 0;
 		g_Player[i].isInvincible = FALSE;
 		g_Player[i].attackPattern = NONE;
-		g_Player[i].currentMagicIdx = 1;
+		g_Player[i].currentMagicIdx = 0;
 		g_Player[i].healingCD = 0;
 		g_Player[i].fireBallCD = 0;
 		g_Player[i].flameblade = FALSE;
