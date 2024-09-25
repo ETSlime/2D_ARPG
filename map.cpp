@@ -611,6 +611,7 @@ void UpdateSculpture(void)
 				SetFade(FADE_OUT, MODE_MENU);
 				SetPlayerInitPos(g_Sculpture[i].pos.x, player->pos.y);
 				InitSystemMenu();
+				InitPlayerStatus();
 				ResetCursor();
 			}
 		}

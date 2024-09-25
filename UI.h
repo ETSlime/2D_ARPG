@@ -37,6 +37,7 @@ struct UISprite
 	XMFLOAT3 pos;
 	int fade;
 	XMFLOAT4 color;
+	int UIModule;
 };
 
 struct LevelUpStatus
@@ -88,6 +89,7 @@ enum
 	UI_RIGHT_ARROW,
 	UI_MAGIC_SLOT,
 	UI_HIGHLIGHT_BOX,
+	UI_EMPYT_MAGIC_BOX,
 	UI_NONE,
 };
 
@@ -98,6 +100,7 @@ enum
 	UI_MODULE_MAGIC_LIST,
 	UI_MODULE_SAVE,
 	UI_MODULE_LOAD,
+	UI_MODULE_NONE,
 };
 
 enum
@@ -146,6 +149,7 @@ enum
 //*****************************************************************************
 HRESULT InitUI(void);
 void InitSystemMenu(void);
+void InitMagicList(void);
 void UninitUI(void);
 void UpdateUI(void);
 void UpdateUIFade(void);
@@ -183,5 +187,8 @@ void ClearLevelUpStatus(void);
 
 void HandleStatusUIButton(void);
 BOOL IsSkillIconActive(int magic);
-int GetSkillIconTexNo(int magic);
 float GetMagicCooldown(int magicType, float healingCDProgress, float fireBallCDProgress);
+int GetMagicTexNo(int magic);
+
+void RemoveMagicListElementAt(int idx);
+BOOL InsertMagicListElement(int magic);

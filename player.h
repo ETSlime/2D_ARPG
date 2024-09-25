@@ -51,7 +51,8 @@
 #define HARDLANDING_HEIGHT		(60)
 #define	DIVE_ATTACK_SPEED		(10.0f)
 #define DASH_INTERVAL			(25)
-#define MAGIC_NUM_MAX			(5)
+#define MAGIC_SLOT_MAX			(5)
+#define MAGIC_NUM_MAX			(15)
 #define	HEALING_CD_TIME			(100.0f)
 #define	FIRE_BALL_CD_TIME		(200.0f)
 #define GREY_HP_DECAY_RATE		(5.0f)
@@ -233,7 +234,7 @@ struct PLAYER
 	float		fireBallCD;
 	BOOL		isInvincible;
 	BOOL		flameblade;
-	int			magicList[MAGIC_NUM_MAX];
+	int			magicList[MAGIC_SLOT_MAX];
 
 	XMFLOAT3	move;			// 移動速度
 	XMFLOAT3	offset[PLAYER_OFFSET_CNT];		// 残像ポリゴンの座標
@@ -259,7 +260,6 @@ struct PlayerData
 	float	DEF;
 	float	MAT;
 	float	MDF;
-	int		magicList[MAGIC_NUM_MAX];
 	int		level;
 	int		skillPointLeft;
 	int		spHP;
@@ -269,6 +269,8 @@ struct PlayerData
 	int		spDEF;
 	int		spMAT;
 	int		spMDF;
+	int		magicList[MAGIC_SLOT_MAX];
+	int		magicLearned[MAGIC_NUM_MAX];
 };
 
 //*****************************************************************************
@@ -276,6 +278,7 @@ struct PlayerData
 //*****************************************************************************
 HRESULT InitPlayer(void);
 void InitPlayerStatus(void);
+void InitPlayerData(void);
 void UninitPlayer(void);
 void UpdatePlayer(void);
 void DrawPlayer(void);
@@ -362,6 +365,8 @@ void PlayerRespawnDirectly(void);
 void ResetPlayerPos(void);
 
 BOOL GetMagicActive(int magic);
+int GetMagicLearnedCount(void);
+int GetMagicEquippedCount(void);
 BOOL GetUpdatePlayer(void);
 void SetUpdatePlayer(BOOL update);
 

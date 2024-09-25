@@ -542,22 +542,7 @@ HRESULT InitPlayer(void)
 	g_DisableDefend = FALSE;
 	g_DisableDefendCount = FALSE;
 
-	g_PlayerData.maxHP = PLAYER_INIT_MAX_HP;
-	g_PlayerData.maxMP = PLAYER_INIT_MAX_MP;
-	g_PlayerData.maxST = PLAYER_INIT_MAX_ST;
-	g_PlayerData.ATK = PLAYER_INIT_ATK;
-	g_PlayerData.DEF = PLAYER_INIT_DEF;
-	g_PlayerData.MAT = PLAYER_INIT_MAT;
-	g_PlayerData.MDF = PLAYER_INIT_MDF;
-	g_PlayerData.level = 1;
-	g_PlayerData.skillPointLeft = 5;
-	g_PlayerData.spHP = 8;
-	g_PlayerData.spMP = 8;
-	g_PlayerData.spST = 5;
-	g_PlayerData.spATK = 4;
-	g_PlayerData.spDEF = 4;
-	g_PlayerData.spMAT = 3;
-	g_PlayerData.spMDF = 2;
+	InitPlayerData();
 
 	// プレイヤー構造体の初期化
 	InitPlayerStatus();
@@ -1276,18 +1261,18 @@ void UpdateKeyboardInput(void)
 		HandlePlayerAttack();
 	}
 
-	if (GetKeyboardRelease(DIK_Q) && g_DisableMagicSwitch == FALSE)
+	int magicCount = GetMagicEquippedCount();
+	if (GetKeyboardRelease(DIK_Q) && g_DisableMagicSwitch == FALSE && magicCount != 0)
 	{
-		g_Player->currentMagicIdx = (g_Player->currentMagicIdx + MAGIC_NUM_MAX - 1) % MAGIC_NUM_MAX;
+		g_Player->currentMagicIdx = (g_Player->currentMagicIdx + magicCount - 1) % magicCount;
 		while (g_Player->magicList[g_Player->currentMagicIdx] == MAGIC_NONE)
-			g_Player->currentMagicIdx = (g_Player->currentMagicIdx + MAGIC_NUM_MAX - 1) % MAGIC_NUM_MAX;
+			g_Player->currentMagicIdx = (g_Player->currentMagicIdx + magicCount - 1) % magicCount;
 	}
-		
-	if (GetKeyboardRelease(DIK_E) && g_DisableMagicSwitch == FALSE)
+	else if (GetKeyboardRelease(DIK_E) && g_DisableMagicSwitch == FALSE && magicCount != 0)
 	{
-		g_Player->currentMagicIdx = (g_Player->currentMagicIdx + 1) % MAGIC_NUM_MAX;
+		g_Player->currentMagicIdx = (g_Player->currentMagicIdx + 1) % magicCount;
 		while (g_Player->magicList[g_Player->currentMagicIdx] == MAGIC_NONE)
-			g_Player->currentMagicIdx = (g_Player->currentMagicIdx + 1) % MAGIC_NUM_MAX;
+			g_Player->currentMagicIdx = (g_Player->currentMagicIdx + 1) % magicCount;
 	}
 		
 
@@ -3204,6 +3189,30 @@ float GetPoiseDamage(void)
 	}
 }
 
+int GetMagicLearnedCount(void)
+{
+	int count = 0;
+	for (int i = 0; i < MAGIC_NUM_MAX; i++)
+	{
+		if (g_PlayerData.magicLearned[i] != MAGIC_NONE)
+			count++;
+	}
+
+	return count;
+}
+
+int GetMagicEquippedCount(void)
+{
+	int count = 0;
+	for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+	{
+		if (g_PlayerData.magicList[i] != MAGIC_NONE)
+			count++;
+	}
+
+	return count;
+}
+
 void SetPlayerInitPosByMap(int map, int idx)
 {
 	XMFLOAT3 initPos = GetTeleportInitPos(map, idx);
@@ -3233,6 +3242,50 @@ int CalculateExpForLevel(int level)
 
 	// 指数関数を使用して必要な経験値を計算
 	return (int)(baseExp * pow(growthRate, level - 1));
+}
+
+void InitPlayerData(void)
+{
+	g_PlayerData.maxHP = PLAYER_INIT_MAX_HP;
+	g_PlayerData.maxMP = PLAYER_INIT_MAX_MP;
+	g_PlayerData.maxST = PLAYER_INIT_MAX_ST;
+	g_PlayerData.ATK = PLAYER_INIT_ATK;
+	g_PlayerData.DEF = PLAYER_INIT_DEF;
+	g_PlayerData.MAT = PLAYER_INIT_MAT;
+	g_PlayerData.MDF = PLAYER_INIT_MDF;
+	g_PlayerData.level = 1;
+	g_PlayerData.skillPointLeft = 5;
+	g_PlayerData.spHP = 8;
+	g_PlayerData.spMP = 8;
+	g_PlayerData.spST = 5;
+	g_PlayerData.spATK = 4;
+	g_PlayerData.spDEF = 4;
+	g_PlayerData.spMAT = 3;
+	g_PlayerData.spMDF = 2;
+	for (int i = 0; i < MAGIC_NUM_MAX; i++)
+	{
+		g_PlayerData.magicLearned[i] = MAGIC_NONE;
+	}
+	for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+	{
+		g_PlayerData.magicList[i] = MAGIC_NONE;
+	}
+	g_PlayerData.magicList[0] = MAGIC_FLAMEBLADE;
+	g_PlayerData.magicLearned[0] = MAGIC_FLAMEBLADE;
+	g_PlayerData.magicList[1] = MAGIC_HEALING;
+	g_PlayerData.magicLearned[1] = MAGIC_HEALING;
+	g_PlayerData.magicList[2] = MAGIC_FIRE_BALL;
+	g_PlayerData.magicLearned[2] = MAGIC_FIRE_BALL;
+	if (GetMode() == MODE_TUTORIAL)
+	{
+		g_PlayerData.magicList[3] = MAGIC_NONE;
+		g_PlayerData.magicList[4] = MAGIC_NONE;
+	}
+	else
+	{
+		g_PlayerData.magicLearned[3] = MAGIC_SHIELD;
+		g_PlayerData.magicLearned[4] = MAGIC_HIDDEN;
+	}
 }
 
 void InitPlayerStatus(void)
@@ -3333,18 +3386,9 @@ void InitPlayerStatus(void)
 		g_Player[i].bodyAABB.tag = PLAYER_BODY_AABB;
 
 		// magic
-		g_Player[i].magicList[0] = MAGIC_FLAMEBLADE;
-		g_Player[i].magicList[1] = MAGIC_HEALING;
-		g_Player[i].magicList[2] = MAGIC_FIRE_BALL;
-		if (GetMode() == MODE_GAME)
+		for (int i = 0; i < MAGIC_SLOT_MAX; i++)
 		{
-			g_Player[i].magicList[3] = MAGIC_SHIELD;
-			g_Player[i].magicList[4] = MAGIC_HIDDEN;
-		}
-		else
-		{
-			g_Player[i].magicList[3] = MAGIC_NONE;
-			g_Player[i].magicList[4] = MAGIC_NONE;
+			g_Player->magicList[i] = g_PlayerData.magicList[i];
 		}
 
 	}

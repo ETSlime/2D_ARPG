@@ -136,11 +136,25 @@
 #define UI_MAGIC_LIST_POS_X							(510.0f)
 #define	UI_MAGIC_LIST_POS_Y							(275.0f)
 
-#define TEXTURE_MAGIC_SLOT_WIDTH					(85.0f)
-#define TEXTURE_MAGIC_SLOT_HEIGHT					(85.0f)
-#define	UI_MAGIC_SLOT_POS_X							(355.0f)
-#define UI_MAGIC_SLOT_POS_Y							(255.0f)
-#define UI_MAGIC_SLOT_OFFSET_X						(85.0f)
+#define TEXTURE_MAGIC_SLOT_WIDTH					(95.0f)
+#define TEXTURE_MAGIC_SLOT_HEIGHT					(95.0f)
+#define	UI_MAGIC_SLOT_POS_X							(291.0f)
+#define UI_MAGIC_SLOT_POS_Y							(130.0f)
+#define UI_MAGIC_SLOT_OFFSET_X						(110.0f)
+#define UI_MAGIC_SLOT_NUM							(5)
+
+#define UI_MAGIC_ICON_SCALE_CNT_MAX					(185)
+
+#define TEXTURE_MAGIC_LIST_ICON_WIDTH				(65.0f)
+#define TEXTURE_MAGIC_LIST_ICON_HEIGHT				(65.0f)
+#define UI_MAGIC_LIST_ICON_INIT_POS_X				(291.0f)
+#define UI_MAGIC_LIST_ICON_INIT_POS_Y				(270.0f)
+#define UI_MAGIC_LIST_ICON_OFFSET_X					(95.0f)
+#define UI_MAGIC_LIST_ICON_OFFSET_Y					(95.0f)
+#define UI_MAGIC_LIST_ICON_NUM_PER_ROW				(5)
+
+#define TEXTURE_MAGIC_LIST_ICON_BOX_WIDTH			(92.0f)
+#define TEXTURE_MAGIC_LIST_ICON_BOX_HEIGHT			(92.0f)
 
 // 一時停止UIテクスチャサイズ
 #define	TEXTURE_BUTTON_PAUSE_WIDTH					(150.0f)
@@ -151,7 +165,7 @@
 #define UI_PAUSE_BUTTON_OFFSET_X					(200.0f)
 #define UI_BUTTON_SELECTED_SCALE					(1.2f)
 
-#define	FADE_RATE									(0.05f)			// フェード係数
+#define	FADE_RATE									(0.04f)			// フェード係数
 #define CURSOR_DELTA_TIME							(3)
 
 #define UI_RESPAWN_MESSAGE_OFFSET_Y					(40.0f)
@@ -208,6 +222,7 @@ static char* g_TexturName[UI_MAX] = {
 	"data/TEXTURE/UI/right_arrow.png",
 	"data/TEXTURE/UI/magic_slot.png",
 	"data/TEXTURE/UI/Highlight_Box.png",
+	"data/TEXTURE/UI/skill_box.png",
 };
 
 static UISprite					g_UI[UI_MAX];
@@ -231,7 +246,12 @@ static BOOL						g_RenderJumpIcon;
 static BOOL						g_RenderMenuUI;
 static float					g_ArrowMove;
 static int						g_ArrowMoveCnt;
+static float					g_NewMagicScale;
+static int						g_NewMagicScaleCnt;
+static int						g_MagicLearnedCnt;
 static LevelUpStatus			g_LevelUpStatus[SP_CNT_MAX + STATUS_CNT_MAX];
+static BOOL						g_ChangeMagic;
+static int						g_MagicListNew[MAGIC_SLOT_MAX];
 
 //=============================================================================
 // 初期化処理
@@ -272,6 +292,7 @@ HRESULT InitUI(void)
 		g_UI[i].pos = XMFLOAT3(0.0f, 0.0f, 0.0f);
 		g_UI[i].fade = FADE_NONE;
 		g_UI[i].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		g_UI[i].UIModule = UI_MODULE_NONE;
 	}
 
 	// ゲージの初期化
@@ -288,6 +309,7 @@ HRESULT InitUI(void)
 	g_RenderBladeIcon = TRUE;
 	g_RenderJumpIcon = TRUE;
 	g_RenderMenuUI = FALSE;
+	g_ChangeMagic = FALSE;
 
 	g_flamebladeIconCountAnim = 0;
 	g_flamebladePatternAnim = 0;
@@ -296,6 +318,9 @@ HRESULT InitUI(void)
 
 	g_ArrowMove = 0;
 	g_ArrowMoveCnt = 0;
+
+	g_MagicLearnedCnt = 0;
+	g_NewMagicScaleCnt = 0;
 
 	g_MenuUIModule = UI_MODULE_SYSTEM_MENU;
 	g_MenuUIModule = UI_MODULE_SYSTEM_MENU;
@@ -394,21 +419,43 @@ HRESULT InitUI(void)
 	g_UI[UI_PLAYER_STATUS].texNo = UI_PLAYER_STATUS;
 	g_UI[UI_PLAYER_STATUS].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
 
+
+	g_UI[UI_RIGHT_ARROW].width = TEXTURE_ARROW_WIDTH;
+	g_UI[UI_RIGHT_ARROW].height = TEXTURE_ARROW_HEIGHT;
+	g_UI[UI_RIGHT_ARROW].pos = XMFLOAT3(NUMBER_SP_HP_POS_X, NUMBER_SP_HP_POS_Y, 0.0f);
+	g_UI[UI_RIGHT_ARROW].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+
+	g_UI[UI_NUM].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+
 	g_UI[UI_MAGIC_LIST].width = TEXTURE_MAGIC_LIST_WIDTH;
 	g_UI[UI_MAGIC_LIST].height = TEXTURE_MAGIC_LIST_HEIGHT;
 	g_UI[UI_MAGIC_LIST].pos = XMFLOAT3(UI_MAGIC_LIST_POS_X, UI_MAGIC_LIST_POS_Y, 0.0f);
 	g_UI[UI_MAGIC_LIST].texNo = UI_MAGIC_LIST;
+	g_UI[UI_MAGIC_LIST].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
 
 	g_UI[UI_BUTTON_CONFIRM].width = TEXTURE_SUBMENU_BUTTON_WIDTH;
 	g_UI[UI_BUTTON_CONFIRM].height = TEXTURE_SUBMENU_BUTTON_HEIGHT;
 	g_UI[UI_BUTTON_CONFIRM].pos = XMFLOAT3(UI_CONFIRM_BUTTON_POS_X, UI_CONFIRM_BUTTON_POS_Y, 0.0f);
 	g_UI[UI_BUTTON_CONFIRM].texNo = UI_BUTTON_CONFIRM;
+	g_UI[UI_BUTTON_CONFIRM].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
 
 	g_UI[UI_BUTTON_CANCEL].width = TEXTURE_SUBMENU_BUTTON_WIDTH;
 	g_UI[UI_BUTTON_CANCEL].height = TEXTURE_SUBMENU_BUTTON_HEIGHT;
 	g_UI[UI_BUTTON_CANCEL].pos = XMFLOAT3(UI_CANCEL_BUTTON_POS_X, UI_CANCEL_BUTTON_POS_Y, 0.0f);
 	g_UI[UI_BUTTON_CANCEL].texNo = UI_BUTTON_CANCEL;
+	g_UI[UI_BUTTON_CANCEL].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
 
+	g_UI[UI_MAGIC_SLOT].width = TEXTURE_MAGIC_SLOT_WIDTH;
+	g_UI[UI_MAGIC_SLOT].height = TEXTURE_MAGIC_SLOT_HEIGHT;
+	g_UI[UI_MAGIC_SLOT].pos = XMFLOAT3(UI_MAGIC_SLOT_POS_X, UI_MAGIC_SLOT_POS_Y, 0.0f);
+	g_UI[UI_MAGIC_SLOT].texNo = UI_MAGIC_SLOT;
+	g_UI[UI_MAGIC_SLOT].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+
+	g_UI[UI_HIGHLIGHT_BOX].width = TEXTURE_MAGIC_LIST_ICON_BOX_WIDTH;
+	g_UI[UI_HIGHLIGHT_BOX].height = TEXTURE_MAGIC_LIST_ICON_BOX_WIDTH;
+	g_UI[UI_HIGHLIGHT_BOX].pos = XMFLOAT3(UI_MAGIC_LIST_ICON_INIT_POS_X, UI_MAGIC_LIST_ICON_INIT_POS_Y, 0.0f);
+	g_UI[UI_HIGHLIGHT_BOX].texNo = UI_HIGHLIGHT_BOX;
+	g_UI[UI_HIGHLIGHT_BOX].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
 
 	g_UI[BG_FADE].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
 	g_UI[BG_FADE].pos = XMFLOAT3(SCREEN_CENTER_X, SCREEN_CENTER_Y, 0.0f);
@@ -753,9 +800,9 @@ void HandleStatusUIButton(void)
 		}
 	}
 
+	ClearLevelUpStatus();
 	if (resume == FALSE)
 	{
-		ClearLevelUpStatus();
 		SetUIFade(UI_MODULE_STATUS, FADE_OUT);
 		g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
 		g_Cursor = GET_SYSTEM_MENU_CURSOR_IDX(UI_BUTTON_STATUS);
@@ -990,13 +1037,161 @@ void UpdatePlayerStatus(int category)
 
 void UpdateMagicList(void)
 {
+	g_NewMagicScaleCnt++;
+	g_NewMagicScaleCnt = fmod(g_NewMagicScaleCnt, UI_MAGIC_ICON_SCALE_CNT_MAX);
+
+	float angle = (XM_PI * 2.0f * g_NewMagicScaleCnt) / UI_MAGIC_ICON_SCALE_CNT_MAX;
+
+	g_NewMagicScale = (sin(angle) + 1.0f) * (1.1f - 0.8f) / 2.0f + 0.8f;
+
 	int deltaTime = g_cursorCurretTime - g_cursorActionTime;
-	if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
+
+	if (GetKeyboardRelease(DIK_LEFT) && deltaTime >= CURSOR_DELTA_TIME)
 	{
 		g_cursorActionTime = g_cursorCurretTime;
-		SetUIFade(UI_MODULE_STATUS, FADE_OUT);
-		g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
+		if (g_Cursor == CURSOR_CONFIRM || g_Cursor == CURSOR_CANCEL)
+		{
+			g_Cursor = g_Cursor == CURSOR_CONFIRM ? CURSOR_CANCEL : CURSOR_CONFIRM;
+		}
+		else if (g_Cursor == 0)
+		{
+			g_Cursor = g_MagicLearnedCnt - 1;
+		}
+		else
+			g_Cursor--;
 	}
+	else if (GetKeyboardRelease(DIK_RIGHT) && deltaTime >= CURSOR_DELTA_TIME)
+	{
+		g_cursorActionTime = g_cursorCurretTime;
+		if (g_Cursor == CURSOR_CONFIRM || g_Cursor == CURSOR_CANCEL)
+		{
+			g_Cursor = g_Cursor == CURSOR_CONFIRM ? CURSOR_CANCEL : CURSOR_CONFIRM;
+		}
+		else if (g_Cursor == g_MagicLearnedCnt - 1)
+		{
+			g_Cursor = 0;
+		}
+		else
+			g_Cursor++;
+	}
+	else if (GetKeyboardRelease(DIK_UP) && deltaTime >= CURSOR_DELTA_TIME)
+	{
+		g_cursorActionTime = g_cursorCurretTime;
+		if (g_Cursor == CURSOR_CONFIRM || g_Cursor == CURSOR_CANCEL)
+		{
+			g_Cursor = g_MagicLearnedCnt - 1;
+		}
+		else if (g_Cursor < UI_MAGIC_LIST_ICON_NUM_PER_ROW)
+		{
+			g_Cursor = CURSOR_CONFIRM;
+		}
+		else
+			g_Cursor -= UI_MAGIC_LIST_ICON_NUM_PER_ROW;
+	}
+	else if (GetKeyboardRelease(DIK_DOWN) && deltaTime >= CURSOR_DELTA_TIME)
+	{
+		g_cursorActionTime = g_cursorCurretTime;
+		if (g_Cursor == CURSOR_CONFIRM || g_Cursor == CURSOR_CANCEL)
+		{
+			g_Cursor = 0;
+		}
+		else if (g_Cursor >= g_MagicLearnedCnt - UI_MAGIC_LIST_ICON_NUM_PER_ROW)
+		{
+			g_Cursor = CURSOR_CONFIRM;
+		}
+		else
+			g_Cursor += UI_MAGIC_LIST_ICON_NUM_PER_ROW;
+	}
+	else if (GetKeyboardRelease(DIK_RETURN) && deltaTime >= CURSOR_DELTA_TIME)
+	{
+		g_cursorActionTime = g_cursorCurretTime;
+
+		PlayerData* playerData = GetPlayerData();
+		PLAYER* player = GetPlayer();
+		if (g_Cursor == CURSOR_CONFIRM)
+		{
+			BOOL change = FALSE;
+			for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+			{
+				if (g_MagicListNew[i] != playerData->magicList[i])
+				{
+					playerData->magicList[i] = g_MagicListNew[i];
+					player->magicList[i] = g_MagicListNew[i];
+					change = TRUE;
+				}
+			}
+			if (change == FALSE)
+			{
+				SetUIFade(UI_MODULE_MAGIC_LIST, FADE_OUT);
+				g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
+			}
+			else
+			{
+				player->currentMagicIdx = 0;
+			}
+		}
+		else if (g_Cursor == CURSOR_CANCEL)
+		{
+			BOOL change = FALSE;
+			for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+			{
+				if (g_MagicListNew[i] != playerData->magicList[i])
+				{
+					g_MagicListNew[i] = playerData->magicList[i];
+					change = TRUE;
+				}
+			}
+			if (change == FALSE)
+			{
+				SetUIFade(UI_MODULE_MAGIC_LIST, FADE_OUT);
+				g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
+			}
+		}
+		else
+		{
+			BOOL remove = FALSE;
+			for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+			{
+				if (g_MagicListNew[i] == playerData->magicLearned[g_Cursor])
+				{
+					RemoveMagicListElementAt(i);
+					remove = TRUE;
+					break;
+				}
+			}
+			BOOL add = FALSE;
+			if (remove == FALSE)
+			{
+				add = InsertMagicListElement(playerData->magicLearned[g_Cursor]);
+			}
+		}
+	}
+	else if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
+	{
+		g_cursorActionTime = g_cursorCurretTime;
+
+		PlayerData* playerData = GetPlayerData();
+		BOOL change = FALSE;
+		for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+		{
+			if (g_MagicListNew[i] != playerData->magicList[i])
+			{
+				g_MagicListNew[i] = playerData->magicList[i];
+				change = TRUE;
+			}
+		}
+
+		if (change == FALSE)
+		{
+			SetUIFade(UI_MODULE_MAGIC_LIST, FADE_OUT);
+			g_MenuUIModuleNext = UI_MODULE_SYSTEM_MENU;
+		}
+	}
+
+	int x_idx = g_Cursor % UI_MAGIC_LIST_ICON_NUM_PER_ROW;
+	int y_idx = g_Cursor / UI_MAGIC_LIST_ICON_NUM_PER_ROW;
+	g_UI[UI_HIGHLIGHT_BOX].pos.x = UI_MAGIC_LIST_ICON_INIT_POS_X + x_idx * UI_MAGIC_LIST_ICON_OFFSET_X;
+	g_UI[UI_HIGHLIGHT_BOX].pos.y = UI_MAGIC_LIST_ICON_INIT_POS_Y + y_idx * UI_MAGIC_LIST_ICON_OFFSET_Y;
 
 	g_cursorCurretTime++;
 }
@@ -1014,8 +1209,7 @@ void UpdateSystemMenu(void)
 		g_cursorActionTime = g_cursorCurretTime;
 		g_Cursor = (g_Cursor + 1) % SYSTEM_MENU_BUTTON_NUM;
 	}
-
-	if ((GetKeyboardRelease(DIK_RETURN) || GetKeyboardRelease(DIK_C)) && deltaTime >= CURSOR_DELTA_TIME)
+	else if ((GetKeyboardRelease(DIK_RETURN) || GetKeyboardRelease(DIK_C)) && deltaTime >= CURSOR_DELTA_TIME)
 	{
 		g_cursorActionTime = g_cursorCurretTime;
 		switch (g_Cursor)
@@ -1027,6 +1221,8 @@ void UpdateSystemMenu(void)
 		case GET_SYSTEM_MENU_CURSOR_IDX(UI_BUTTON_MAGIC):
 			SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
 			g_MenuUIModuleNext = UI_MODULE_MAGIC_LIST;
+			g_MagicLearnedCnt = GetMagicLearnedCount();
+			InitMagicList();
 			break;
 		case GET_SYSTEM_MENU_CURSOR_IDX(UI_BUTTON_RESUME_GAME):
 			SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
@@ -1036,8 +1232,7 @@ void UpdateSystemMenu(void)
 			break;
 		}
 	}
-
-	if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
+	else if (GetKeyboardRelease(DIK_X) && deltaTime >= CURSOR_DELTA_TIME)
 	{
 		g_cursorActionTime = g_cursorCurretTime;
 		SetUIFade(UI_MODULE_SYSTEM_MENU, FADE_OUT);
@@ -1095,7 +1290,10 @@ void UpdateUIFade(void)
 	if (isFadingOut == FALSE)
 	{
 		if (g_MenuUIModuleNext != g_MenuUIModule)
+		{
+			g_Cursor = 0;
 			SetUIFade(g_MenuUIModuleNext, FADE_IN);
+		}
 	}
 
 }
@@ -1236,22 +1434,22 @@ void DrawStatusUI(void)
 		float posX = UI_RIGHT_ARROW_POS_X;
 		if (i == g_Cursor)
 			posX += g_ArrowMove;
-		XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
 		SetSpriteColorRotation(g_VertexBuffer,
-			posX, NUMBER_SP_HP_POS_Y + i * NUMBER_STATUS_OFFSET_Y,
-			TEXTURE_ARROW_WIDTH, TEXTURE_ARROW_HEIGHT,
+			posX, g_UI[UI_RIGHT_ARROW].pos.y + i * NUMBER_STATUS_OFFSET_Y,
+			g_UI[UI_RIGHT_ARROW].width, g_UI[UI_RIGHT_ARROW].height,
 			0.0f, 0.0f, 1.0f, 1.0f,
-			color, 0.0f);
+			g_UI[UI_RIGHT_ARROW].color, 0.0f);
 		GetDeviceContext()->Draw(4, 0);
 
 		posX = UI_LEFT_ARROW_POS_X;
 		if (i == g_Cursor)
 			posX -= g_ArrowMove;
 		SetSpriteColorRotation(g_VertexBuffer,
-			posX, NUMBER_SP_HP_POS_Y + i * NUMBER_STATUS_OFFSET_Y,
-			TEXTURE_ARROW_WIDTH, TEXTURE_ARROW_HEIGHT,
+			posX, g_UI[UI_RIGHT_ARROW].pos.y + i * NUMBER_STATUS_OFFSET_Y,
+			g_UI[UI_RIGHT_ARROW].width, g_UI[UI_RIGHT_ARROW].height,
 			0.0f, 0.0f, 1.0f, 1.0f,
-			color, PI);
+			g_UI[UI_RIGHT_ARROW].color, PI);
 		GetDeviceContext()->Draw(4, 0);
 	}
 
@@ -1283,8 +1481,93 @@ void DrawMagicList(void)
 		g_UI[UI_MAGIC_LIST].color);
 	GetDeviceContext()->Draw(4, 0);
 
-	BOOL selected = FALSE;
+	for (int i = 0; i < UI_MAGIC_SLOT_NUM; i++)
+	{
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_UI[UI_MAGIC_SLOT].texNo]);
+		SetSpriteColor(g_VertexBuffer,
+			g_UI[UI_MAGIC_SLOT].pos.x + i * UI_MAGIC_SLOT_OFFSET_X, g_UI[UI_MAGIC_SLOT].pos.y,
+			g_UI[UI_MAGIC_SLOT].width, g_UI[UI_MAGIC_SLOT].height,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			g_UI[UI_MAGIC_SLOT].color);
+		GetDeviceContext()->Draw(4, 0);
+
+		if (g_MagicListNew[i] != MAGIC_NONE)
+		{
+			XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f);
+			int texNo = GetMagicTexNo(g_MagicListNew[i]);
+			color.w = g_UI[texNo].color.w;
+			float scale = 0.56f;
+			GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[texNo]);
+			SetSpriteColor(g_VertexBuffer,
+				g_UI[UI_MAGIC_SLOT].pos.x + i * UI_MAGIC_SLOT_OFFSET_X, g_UI[UI_MAGIC_SLOT].pos.y,
+				g_UI[UI_MAGIC_SLOT].width * scale, g_UI[UI_MAGIC_SLOT].height * scale,
+				0.0f, 0.0f, 1.0f, 1.0f,
+				color);
+			GetDeviceContext()->Draw(4, 0);
+		}
+	}
+
+	PLAYER* player = GetPlayer();
+	PlayerData* playerData = GetPlayerData();
+	int count = 0;
+	for (int i = 0; i < MAGIC_NUM_MAX; i++)
+	{
+		if (playerData->magicLearned[i] == MAGIC_NONE) continue;
+
+		int x_idx = count % UI_MAGIC_LIST_ICON_NUM_PER_ROW;
+		int y_idx = count / UI_MAGIC_LIST_ICON_NUM_PER_ROW;
+		int magicTexNo = GetMagicTexNo(playerData->magicLearned[i]);
+		XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+		float scale = 1.0f;
+		BOOL equipped = FALSE;
+		BOOL newAdd = TRUE;
+		for (int j = 0; j < MAGIC_SLOT_MAX; j++)
+		{
+			if (g_MagicListNew[j] == playerData->magicLearned[i])
+			{
+				equipped = TRUE;
+				for (int k = 0; k < MAGIC_SLOT_MAX; k++)
+				{
+					if (g_MagicListNew[j] == playerData->magicList[k])
+					{
+						newAdd = FALSE;
+						break;
+					}
+				}
+			}
+		}
+		if (equipped)
+		{
+			scale = 0.8f;
+			if (newAdd)
+				scale *= g_NewMagicScale;
+			color = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+		}
+
+		color.w = g_UI[magicTexNo].color.w;
+		GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[magicTexNo]);
+		SetSpriteColor(g_VertexBuffer,
+			UI_MAGIC_LIST_ICON_INIT_POS_X + x_idx * UI_MAGIC_LIST_ICON_OFFSET_X, 
+			UI_MAGIC_LIST_ICON_INIT_POS_Y + y_idx * UI_MAGIC_LIST_ICON_OFFSET_Y,
+			TEXTURE_MAGIC_LIST_ICON_WIDTH * scale, TEXTURE_MAGIC_LIST_ICON_HEIGHT * scale,
+			0.0f, 0.0f, 1.0f, 1.0f,
+			color);
+		GetDeviceContext()->Draw(4, 0);
+		g_UI[magicTexNo].UIModule = UI_MODULE_MAGIC_LIST;
+		count++;
+	}
+
+	GetDeviceContext()->PSSetShaderResources(0, 1, &g_Texture[g_UI[UI_HIGHLIGHT_BOX].texNo]);
+	SetSpriteColor(g_VertexBuffer,
+		g_UI[UI_HIGHLIGHT_BOX].pos.x, g_UI[UI_HIGHLIGHT_BOX].pos.y,
+		g_UI[UI_HIGHLIGHT_BOX].width, g_UI[UI_HIGHLIGHT_BOX].height,
+		0.0f, 0.0f, 1.0f, 1.0f,
+		g_UI[UI_HIGHLIGHT_BOX].color);
+	GetDeviceContext()->Draw(4, 0);
+
+	BOOL selected = g_Cursor == CURSOR_CONFIRM ? TRUE : FALSE;
 	DrawButton(UI_BUTTON_CONFIRM, selected);
+	selected = g_Cursor == CURSOR_CANCEL ? TRUE : FALSE;
 	DrawButton(UI_BUTTON_CANCEL, selected);
 }
 
@@ -1425,21 +1708,28 @@ void DrawSkillIcon(void)
 	SetMaterial(material);
 
 	PLAYER* player = GetPlayer();
-	int currentMagic = UI_NONE, leftMagic = UI_NONE, rightMagic = UI_NONE;
-	currentMagic = GetSkillIconTexNo(player->magicList[player->currentMagicIdx]);
+	int currentMagic = UI_EMPYT_MAGIC_BOX, leftMagic = UI_EMPYT_MAGIC_BOX, rightMagic = UI_EMPYT_MAGIC_BOX;
+	currentMagic = GetMagicTexNo(player->magicList[player->currentMagicIdx]);
 
-	for (int j = player->currentMagicIdx; j >= 0; j--)
+	int magicCount = GetMagicEquippedCount();
+	int leftMagicIdx = -1, rightMagicIdx = -1;
+	if (magicCount > 1)
 	{
-		if (player->magicList[j] != MAGIC_NONE)
-			leftMagic = GetSkillIconTexNo(player->magicList[(player->currentMagicIdx + MAGIC_NUM_MAX - 1) % MAGIC_NUM_MAX]);
-		break;
+		leftMagicIdx = (player->currentMagicIdx + magicCount - 1) % magicCount;
+		while (player->magicList[player->currentMagicIdx] == MAGIC_NONE)
+			leftMagicIdx = (player->currentMagicIdx + magicCount - 1) % magicCount;
+		rightMagicIdx = (player->currentMagicIdx + 1) % magicCount;
+		while (player->magicList[player->currentMagicIdx] == MAGIC_NONE)
+			rightMagicIdx = (player->currentMagicIdx + 1) % magicCount;
 	}
-	for (int j = player->currentMagicIdx; j < MAGIC_NUM_MAX; j++)
-	{
-		if (player->magicList[j] != MAGIC_NONE)
-			rightMagic = GetSkillIconTexNo(player->magicList[(player->currentMagicIdx + 1) % MAGIC_NUM_MAX]);
-		break;
-	}
+	if (leftMagicIdx >= 0)
+		leftMagic = GetMagicTexNo(player->magicList[leftMagicIdx]);
+	else
+		leftMagic = UI_EMPYT_MAGIC_BOX;
+	if (rightMagicIdx >= 0)
+		rightMagic = GetMagicTexNo(player->magicList[rightMagicIdx]);
+	else
+		rightMagic = UI_EMPYT_MAGIC_BOX;
 
 	float healingCDProgress = 1.0f - player->healingCD / HEALING_CD_TIME;
 	float fireBallCDProgress = 1.0f - player->fireBallCD / FIRE_BALL_CD_TIME;
@@ -1721,6 +2011,7 @@ void DrawNumber(float posX, float posY, int num, int category, int numDigit)
 		color = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	else if (num < g_LevelUpStatus[category].oldValue && g_LevelUpStatus[category].oldValue != -1)
 		color = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	color.w = g_UI[UI_NUM].color.w;
 
 	// 桁数分処理する
 	for (int i = 0; i < numDigit; i++)
@@ -1760,25 +2051,6 @@ void ClearLevelUpStatus(void)
 	}
 }
 
-int GetSkillIconTexNo(int magic)
-{
-	switch (magic)
-	{
-	case MAGIC_HEALING:
-		return UI_MAGIC_HEAL;
-	case MAGIC_FLAMEBLADE:
-		return UI_MAGIC_FLAMEBLADE;
-	case MAGIC_FIRE_BALL:
-		return UI_MAGIC_FIRE_BALL;
-	case MAGIC_SHIELD:
-		return UI_MAGIC_SHIELD;
-	case MAGIC_HIDDEN:
-		return UI_MAGIC_HIDDEN;
-	default:
-		return -1;
-	}
-}
-
 float GetMagicCooldown(int magicType, float healingCDProgress, float fireBallCDProgress)
 {
 	if (magicType == UI_MAGIC_HEAL)
@@ -1813,14 +2085,46 @@ void SetUIFade(int UIModule, int fade)
 	case UI_MODULE_STATUS:
 		g_MenuUIModule = UIModule;
 		g_UI[UI_PLAYER_STATUS].fade = fade;
+		g_UI[UI_BUTTON_CONFIRM].fade = fade;
+		g_UI[UI_BUTTON_CANCEL].fade = fade;
+		g_UI[UI_RIGHT_ARROW].fade = fade;
+		g_UI[UI_NUM].fade = fade;
 		break;
 	case UI_MODULE_MAGIC_LIST:
 		g_MenuUIModule = UIModule;
-		g_UI[UI_MODULE_MAGIC_LIST].fade = fade;
+		g_UI[UI_MAGIC_LIST].fade = fade;
+		g_UI[UI_BUTTON_CONFIRM].fade = fade;
+		g_UI[UI_BUTTON_CANCEL].fade = fade;
+		g_UI[UI_MAGIC_SLOT].fade = fade;
+		g_UI[UI_HIGHLIGHT_BOX].fade = fade;
+		for (int i = 0; i < UI_MAX; i++)
+		{
+			if (g_UI[i].UIModule == UI_MODULE_MAGIC_LIST)
+				g_UI[i].fade = fade;
+		}
 		break;
 	default:
 		g_UI[UIModule].fade = fade;
 		break;
+	}
+}
+
+int GetMagicTexNo(int magic)
+{
+	switch (magic)
+	{
+	case MAGIC_FIRE_BALL:
+		return UI_MAGIC_FIRE_BALL;
+	case MAGIC_FLAMEBLADE:
+		return UI_MAGIC_FLAMEBLADE;
+	case MAGIC_HEALING:
+		return UI_MAGIC_HEAL;
+	case MAGIC_SHIELD:
+		return UI_MAGIC_SHIELD;
+	case MAGIC_HIDDEN:
+		return UI_MAGIC_HIDDEN;
+	default:
+		return UI_EMPYT_MAGIC_BOX;
 	}
 }
 
@@ -1839,14 +2143,60 @@ void InitSystemMenu(void)
 	g_UI[BG_FADE].color = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
 }
 
+void InitMagicList(void)
+{
+	PlayerData* playerData = GetPlayerData();
+	for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+	{
+		g_MagicListNew[i] = playerData->magicList[i];
+	}
+}
+
 BOOL IsSkillIconActive(int magic)
 {
+	if (magic == UI_EMPYT_MAGIC_BOX) return TRUE;
+
 	if (magic == UI_MAGIC_HEAL && GetMagicActive(MAGIC_HEALING) == FALSE
 		|| magic == UI_MAGIC_FIRE_BALL && GetMagicActive(MAGIC_FIRE_BALL) == FALSE
 		|| magic == UI_MAGIC_FLAMEBLADE && GetMagicActive(MAGIC_FLAMEBLADE) == FALSE)
 		return FALSE;
 	else
 		return TRUE;
+}
+
+
+void RemoveMagicListElementAt(int idx)
+{
+	int magicCount = 0;
+	for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+	{
+		if (g_MagicListNew[i] != MAGIC_NONE)
+			magicCount++;
+	}
+	if (idx < 0 || idx >= magicCount) return;
+
+	// 指定された位置から、後続の有効な要素を前に移動
+	for (int i = idx; i < magicCount - 1; i++)
+	{
+		g_MagicListNew[i] = g_MagicListNew[i + 1];
+	}
+
+	// 最後の有効な要素を無効にする
+	g_MagicListNew[magicCount - 1] = MAGIC_NONE;
+	magicCount--;
+}
+BOOL InsertMagicListElement(int magic)
+{
+	for (int i = 0; i < MAGIC_SLOT_MAX; i++)
+	{
+		if (g_MagicListNew[i] == MAGIC_NONE)
+		{
+			g_MagicListNew[i] = magic;
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
 void SetRespawnMessageBox(BOOL render)

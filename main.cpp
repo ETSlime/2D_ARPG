@@ -489,9 +489,6 @@ void SetMode(int mode)
 		// エネミーの終了処理
 		UninitEnemy();
 
-		// プレイヤーの終了処理
-		UninitPlayer();
-
 		// エフェクトの終了処理
 		UninitEffect();
 
@@ -500,7 +497,6 @@ void SetMode(int mode)
 
 		InitMagic();
 		InitEffect();
-		InitPlayer();
 		InitEnemy();
 
 	}
